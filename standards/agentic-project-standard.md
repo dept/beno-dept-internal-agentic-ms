@@ -34,7 +34,14 @@ Every AI-ready project must maintain:
 3. **Assumption marking**: clearly tag inferred information.
 4. **Confidence scoring**: rate reliability of each major section.
 5. **Validation questions**: include unresolved questions blocking high confidence.
-6. **Update cadence**: refresh `.ai` after major releases, platform changes, or incident retros.
+## Update Cadence and Agent Support
+
+Two agents support the `.ai` lifecycle:
+
+- **AI Project Discovery Agent** (`agents/ai-project-discovery-agent.md`): generates the complete `.ai` folder for a new or previously undocumented project.
+- **AI Project Maintainer Agent** (`agents/ai-project-maintainer-agent.md`): keeps `.ai` files current as the project evolves. Run after each sprint, release, infrastructure change, or incident postmortem.
+
+Manual review of `.ai` files remains mandatory before merging changes. Agents produce drafts; human engineers validate and approve.
 
 ## Governance Principles
 

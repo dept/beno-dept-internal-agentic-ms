@@ -13,18 +13,21 @@
 - Standard approved by platform and managed services leadership
 - Initial pilot projects adopting required `.ai` structure
 
-## Phase 2: Project Discovery Agent
+## Phase 2: Project Agents
 
 ### Goals
 - Provide repeatable repository discovery and `.ai` generation.
+- Prevent documentation rot through automated maintenance after each sprint or release.
 
 ### Deliverables
-- `agents/ai-project-discovery-agent.md`
+- `agents/ai-project-discovery-agent.md` — generates the `.ai` folder from scratch
+- `agents/ai-project-maintainer-agent.md` — keeps the `.ai` folder current as the project evolves
 - Bootstrap prompt and templates
 
 ### Success Metrics
 - Discovery output generated for pilot repositories in <1 day
 - Reduced manual onboarding effort compared to baseline
+- `.ai` folders remain accurate across multiple sprint cycles without full regeneration
 
 ## Phase 3: AI-ready Managed Services Projects
 

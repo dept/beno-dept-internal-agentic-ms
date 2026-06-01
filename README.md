@@ -19,9 +19,13 @@ flowchart LR
     C --> D[Faster Onboarding]
     C --> E[Safer Change Delivery]
     C --> F[Operational Continuity]
+    G[Codebase Changes] --> H[AI Project Maintainer Agent]
+    H --> C
 ```
 
-## How the AI Project Discovery Agent Works
+## How the Agents Work
+
+### AI Project Discovery Agent
 
 The agent in `agents/ai-project-discovery-agent.md` performs a structured pass over a repository and delivery environment:
 1. Maps system architecture and runtime boundaries.
@@ -29,6 +33,17 @@ The agent in `agents/ai-project-discovery-agent.md` performs a structured pass o
 3. Identifies deployment, CMS, monitoring, and coding standards.
 4. Produces a complete `.ai` folder using the templates in `templates/`.
 5. Flags assumptions and unresolved gaps for human validation.
+
+### AI Project Maintainer Agent
+
+The agent in `agents/ai-project-maintainer-agent.md` keeps the `.ai` folder current as the project evolves:
+1. Detects what has changed since the last `.ai` update using git history and file evidence.
+2. Assesses staleness severity per file (critical / moderate / minor / current).
+3. Applies targeted updates to affected sections only — correct content is preserved.
+4. Captures new unknowns as validation questions.
+5. Produces a change summary with a clear record of what was updated and why.
+
+Run the Maintainer Agent after each sprint, release, infrastructure change, or incident postmortem.
 
 ## How to Bootstrap a Project
 

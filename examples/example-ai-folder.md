@@ -67,6 +67,9 @@ Key notes:
 - Agent: Discovery Agent
   - Scope: repository read, `.ai` generation
   - Requires approval: merge to main
+- Agent: Maintainer Agent
+  - Scope: repository read, `.ai` targeted updates post-sprint or post-release
+  - Requires approval: merge to main
 - Agent: Incident Assistant
   - Scope: summarize alerts, propose runbook actions
   - Restricted: direct production command execution

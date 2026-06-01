@@ -1,6 +1,8 @@
 # AI Project Discovery Agent
 
-## Purpose
+## Related Agent
+
+This agent generates the `.ai` baseline. To keep it current after the project evolves, use the **AI Project Maintainer Agent** (`agents/ai-project-maintainer-agent.md`).
 
 Generate a complete, review-ready `.ai` folder for any repository using evidence from code, configuration, infrastructure, and operations artifacts.
 
