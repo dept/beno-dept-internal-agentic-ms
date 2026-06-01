@@ -11,6 +11,17 @@ Run the **AI Project Discovery Agent** on this repository.
 
 **For monorepos:** Read `turbo.json`, `pnpm-workspace.yaml`, or root `package.json#workspaces` first. List all packages and treat each as a named service boundary before beginning per-package analysis.
 
+## Step 0 — Agentic setup inventory
+
+Before generating any files, scan the repository for existing agentic configuration:
+
+- **Agents**: `.github/agents/*.agent.md`, `.agents/`, `.claude/agents/`, `AGENTS.md`
+- **Instructions**: `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `CLAUDE.md`, `.cursor/rules/`
+- **Prompts / Skills**: `.github/prompts/*.prompt.md`, `.github/skills/`, `.claude/skills/`
+- **MCP**: `.github/mcp.json`, `.mcp.json`, `mcp.json`, any `mcpServers` block in VS Code settings
+
+Record all findings — they will be documented in `agent-registry.md` and used to decide whether to create or append wiring files.
+
 ## Step 1 — Generate `.ai/` context files
 
 Generate and write all nine files to `.ai/`:
@@ -34,18 +45,25 @@ For each file:
 
 ## Step 2 — Wire AI context for all tools
 
-After generating `.ai/`, create the following wiring files so every AI tool automatically loads the context:
+After generating `.ai/`, create the following wiring files so every AI tool automatically loads the context. **Check each file first — append if it exists, create if not. Never overwrite existing content.**
 
 **`.github/copilot-instructions.md`**
-Write instructions telling GitHub Copilot to read `.ai/` at the start of every session. Include the full list of `.ai/` files, behaviour rules (evidence-first, no hallucination, structured output), and a note to flag stale context.
+- Not present: create with full `.ai/` reading instructions and behaviour rules.
+- Already present: append a clearly delimited `## AI Project Context (.ai/)` section at the end.
 
 **`CLAUDE.md`** (repository root)
-Write the same instructions for Claude Code in the format Claude expects.
+- Not present: create with the same `.ai/` reading instructions in Claude's expected format.
+- Already present: append a `## AI Project Context (.ai/)` section at the end.
 
 **`.github/instructions/ai-context.instructions.md`**
-Write a Copilot instructions file with `applyTo: "**"` frontmatter that loads `.ai/` context for every file interaction.
+- Not present: create with `applyTo: "**"` frontmatter and concise `.ai/` loading instructions.
+- Already present: leave unchanged — report as already present in the completion summary.
 
-Do not overwrite an existing `.github/copilot-instructions.md` if it already exists — append the `.ai/` reading instructions to the end instead.
+All wiring files must instruct the AI to:
+1. Read `.ai/` files at the start of every session
+2. Cross-reference `.ai/` with any existing agents, instructions, and prompts found in Step 0
+3. Respect constraints and scopes defined in existing agentic files
+4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
 
 ## Step 3 — Completion summary
 
@@ -57,7 +75,10 @@ After all files are written, output:
 [list each file]
 
 ### AI wiring files created/updated
-[list each file]
+[list each file with action: created / appended / already present]
+
+### Existing agentic setup found
+[list files found in Step 0, or "None found"]
 
 ### Validation Questions to resolve
 [list open questions from all .ai/ files]

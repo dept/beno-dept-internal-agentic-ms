@@ -28,11 +28,12 @@ flowchart LR
 ### AI Project Discovery Agent
 
 The agent in `.github/agents/ai-project-discovery-agent.agent.md` is a fully executable VS Code agent. Select it from the agent picker in Copilot Chat and it will:
-1. Map system architecture and runtime boundaries.
-2. Extract dependencies and integration surface.
-3. Identify deployment, CMS, monitoring, and coding standards.
-4. Produce a complete `.ai` folder.
-5. Flag assumptions and unresolved gaps for human validation.
+1. Inventory any existing agentic setup (agents, instructions, prompts, MCP config) already in the repo.
+2. Map system architecture, runtime boundaries, and monorepo structure.
+3. Extract dependencies, integrations, deployment, CMS, monitoring, and coding standards.
+4. Produce all nine `.ai` files with confidence scores, assumptions, and validation questions.
+5. Wire AI tools (Copilot, Claude) to read `.ai/` — creating or appending to existing config files.
+6. Flag unresolved gaps for human validation.
 
 ### AI Project Maintainer Agent
 
@@ -49,20 +50,19 @@ Run the Maintainer Agent after each sprint, release, infrastructure change, or i
 
 ## How to Bootstrap a New Project
 
-### Step 1 — Copy agents, prompt, and templates into the project
+### Step 1 — Copy agents and prompt into the project
 
 ```bash
 cp -r .github/agents/ /path/to/your-project/.github/agents/
 cp -r .github/prompts/ /path/to/your-project/.github/prompts/
-cp -r templates/ /path/to/your-project/.ai/
 ```
 
-The Discovery Agent will automatically generate AI wiring files during bootstrap:
-- `.github/copilot-instructions.md` — loaded by GitHub Copilot in every session
-- `CLAUDE.md` — loaded by Claude Code automatically
-- `.github/instructions/ai-context.instructions.md` — loaded by Copilot for every file
+The `templates/` directory contains reference templates used by the agents internally — you do not need to copy them manually. The Discovery Agent generates all `.ai/` content from actual repository evidence.
 
-These files tell the AI to read `.ai/` before answering any questions about the project.
+During bootstrap, the agent automatically creates AI wiring files so every AI tool reads `.ai/`:
+- `.github/copilot-instructions.md` — loaded by GitHub Copilot in every session (created or appended)
+- `CLAUDE.md` — loaded by Claude Code automatically (created or appended)
+- `.github/instructions/ai-context.instructions.md` — loaded by Copilot for every file (created only if absent)
 
 ### Step 2 — Run the Discovery Agent
 

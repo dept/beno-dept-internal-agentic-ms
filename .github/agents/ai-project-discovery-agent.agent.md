@@ -39,6 +39,44 @@ Your job is to generate a complete, review-ready `.ai` folder for any repository
 
 ## Approach
 
+### 0) Agentic Setup Inventory
+
+Before any other analysis, scan the repository for existing agentic configuration. This informs `agent-registry.md` and prevents overwriting existing wiring.
+
+Scan these locations:
+
+**Agents**
+- `.github/agents/*.agent.md`
+- `.agents/` (root-level)
+- `.claude/agents/`
+- `AGENTS.md` (root)
+
+**Instructions**
+- `.github/copilot-instructions.md`
+- `.github/instructions/*.instructions.md`
+- `CLAUDE.md` (root)
+- `.cursor/rules/`
+
+**Prompts / Skills**
+- `.github/prompts/*.prompt.md`
+- `.github/skills/`
+- `.claude/skills/`
+
+**MCP configuration**
+- `.github/mcp.json`
+- `.mcp.json` (root)
+- `mcp.json` (root)
+- Any `mcpServers` block in VS Code settings
+
+For each file found, record:
+- File path
+- Name / description (from frontmatter if present)
+- Tool it targets (Copilot, Claude, Cursor, all)
+- Scope (workspace vs user)
+- Summary of what it does
+
+Document all findings in `agent-registry.md` under a dedicated **Existing Agentic Setup** section.
+
 ### 1) Repository Analysis
 - Start from the repository root. Read `package.json`, `turbo.json`, `nx.json`, `pnpm-workspace.yaml` first.
 - Identify languages, frameworks, package managers, and service boundaries.
@@ -89,6 +127,27 @@ Each file must include:
 - `Confidence: <0-100>%` per major section
 - `Validation Questions` section for unresolved gaps
 
+### 9) AI Context Wiring
+
+After generating `.ai/`, create or update wiring files so every AI tool automatically reads the project context. **Check if each file exists first** — if it does, append; never overwrite.
+
+**`.github/copilot-instructions.md`**
+- Not present: create with full `.ai/` reading instructions and behaviour rules.
+- Already present: append a `## AI Project Context (.ai/)` section at the end.
+
+**`CLAUDE.md`** (repository root)
+- Same append-or-create logic as above.
+
+**`.github/instructions/ai-context.instructions.md`**
+- Not present: create with `applyTo: "**"` frontmatter and concise `.ai/` loading instructions.
+- Already present: leave unchanged — report as already present in the completion summary.
+
+In all wiring files, instruct the AI to:
+1. Read `.ai/` files at the start of every session
+2. Cross-reference `.ai/` content with any existing agents, instructions, and prompts found in step 0
+3. Respect constraints and scopes defined in existing agentic files
+4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
+
 ## Output Format
 
 - Use stable headings and bullet points for machine readability.
@@ -102,28 +161,12 @@ Before finalising, verify:
 2. Every major claim cites a source file path or config reference.
 3. Unknowns are listed as questions, not silent omissions.
 4. No secrets are included.
-5. All three AI wiring files have been created/updated.
+5. All three AI wiring files have been created or updated.
+6. Existing agentic configuration is documented in `agent-registry.md`.
 
-## Step 2 — Wire AI context for all tools
+## Completion Summary
 
-After generating `.ai/`, create the following files so every AI tool automatically reads the project context:
-
-### `.github/copilot-instructions.md`
-Tell GitHub Copilot to read `.ai/` at the start of every session. Include:
-- The full list of `.ai/` files and what each contains
-- Behaviour rules: evidence-first, no hallucination, structured output, flag stale context
-- If this file already exists, append the `.ai/` instructions at the end — do not overwrite existing content
-
-### `CLAUDE.md` (repository root)
-Same instructions for Claude Code. Claude reads `CLAUDE.md` from the project root automatically.
-If it already exists, append — do not overwrite.
-
-### `.github/instructions/ai-context.instructions.md`
-A Copilot file-level instruction with `applyTo: "**"` frontmatter. This loads `.ai/` context for every file interaction in Copilot. Keep it concise — list the `.ai/` files to read and the core behaviour rules.
-
-## After Discovery
-
-Output a completion summary:
+Output after all files are written:
 ```
 ## Bootstrap Complete
 
@@ -131,7 +174,10 @@ Output a completion summary:
 [list each file]
 
 ### AI wiring files created/updated
-[list each file]
+[list each file with action: created / appended / already present]
+
+### Existing agentic setup found
+[list files found in step 0, or "None"]
 
 ### Validation Questions to resolve
 [consolidated list from all .ai/ files]

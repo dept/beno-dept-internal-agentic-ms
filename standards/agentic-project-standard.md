@@ -34,6 +34,7 @@ Every AI-ready project must maintain:
 3. **Assumption marking**: clearly tag inferred information.
 4. **Confidence scoring**: rate reliability of each major section.
 5. **Validation questions**: include unresolved questions blocking high confidence.
+
 ## Update Cadence and Agent Support
 
 Two agents support the `.ai` lifecycle:

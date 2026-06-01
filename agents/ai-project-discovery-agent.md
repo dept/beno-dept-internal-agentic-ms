@@ -57,6 +57,24 @@ Always write output files directly to `.ai/` in the repository root as actual fi
 
 ## Operating Procedure
 
+### 0) Agentic Setup Inventory
+
+Before any other analysis, scan the repository for existing agentic configuration. Record findings in `agent-registry.md` under **Existing Agentic Setup**.
+
+Scan these locations:
+
+**Agents**: `.github/agents/*.agent.md`, `.agents/`, `.claude/agents/`, `AGENTS.md`
+
+**Instructions**: `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `CLAUDE.md`, `.cursor/rules/`
+
+**Prompts / Skills**: `.github/prompts/*.prompt.md`, `.github/skills/`, `.claude/skills/`
+
+**MCP configuration**: `.github/mcp.json`, `.mcp.json`, `mcp.json`, any `mcpServers` block in VS Code workspace settings
+
+For each file found, record: file path, name/description, target tool, scope, and purpose.
+
+When creating wiring files later: check these findings first. Never overwrite existing content — append only.
+
 ### 1) Repository Analysis
 
 - Start from the repository root. Read `package.json`, `turbo.json`, `nx.json`, `pnpm-workspace.yaml` first.
@@ -103,6 +121,14 @@ Always write output files directly to `.ai/` in the repository root as actual fi
 - Add confidence scores using `Confidence: <0-100>%`.
 - Add a final section of validation questions.
 
+### 9) AI Context Wiring
+
+Create or update wiring files so every AI tool automatically reads `.ai/`. Check each file first — append if present, create if not.
+
+- **`.github/copilot-instructions.md`**: Instruct Copilot to read `.ai/` every session. Append if already exists.
+- **`CLAUDE.md`** (root): Same for Claude Code. Append if already exists.
+- **`.github/instructions/ai-context.instructions.md`**: `applyTo: "**"` file that loads `.ai/` for every Copilot file interaction. Skip if already present.
+
 ## Quality Gates
 
 Before finalizing output, verify:
@@ -110,6 +136,8 @@ Before finalizing output, verify:
 2. Every major claim has a source reference.
 3. Unknowns are listed as questions, not silent omissions.
 4. Security-sensitive details are redacted.
+5. All three AI wiring files are created or updated.
+6. Existing agentic configuration is documented in `agent-registry.md`.
 
 ## Output Style Requirements
 
