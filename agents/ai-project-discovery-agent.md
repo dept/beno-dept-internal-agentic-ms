@@ -38,13 +38,31 @@ Each output must include:
 - confidence scores per major section;
 - validation questions for unknowns.
 
+## Critical Output Rule
+
+Always write output files directly to `.ai/` in the repository root as actual files on disk. Never write to session files, temporary files, or chat output only. If `.ai/` does not exist, create it.
+
+## Analysis Scope
+
+**Always exclude** from analysis:
+- `node_modules/`, `.pnpm-store/`, `.yarn/`, `bun.lockb`
+- `.git/`, `.next/`, `.turbo/`, `dist/`, `build/`, `out/`, `.cache/`
+- `coverage/`, `.nyc_output/`, `storybook-static/`
+
+**For monorepos**, identify the workspace root first:
+- Look for `pnpm-workspace.yaml`, `turbo.json`, `nx.json`, `lerna.json`, or `workspaces` field in root `package.json`
+- List all workspace packages before beginning per-package analysis
+- Treat each package as a named service boundary in `architecture.md`
+- Record the monorepo tool and task runner in `project-context.md`
+
 ## Operating Procedure
 
 ### 1) Repository Analysis
 
+- Start from the repository root. Read `package.json`, `turbo.json`, `nx.json`, `pnpm-workspace.yaml` first.
 - Identify languages, frameworks, package managers, and service boundaries.
-- Detect monorepo vs single-service layout.
-- Locate API, frontend, worker, and shared library components.
+- Detect monorepo vs single-service layout. For monorepos, enumerate all packages explicitly.
+- Locate API, frontend, worker, shared library, database, and email components.
 
 ### 2) Architecture Discovery
 

@@ -57,6 +57,13 @@ cp -r .github/prompts/ /path/to/your-project/.github/prompts/
 cp -r templates/ /path/to/your-project/.ai/
 ```
 
+The Discovery Agent will automatically generate AI wiring files during bootstrap:
+- `.github/copilot-instructions.md` — loaded by GitHub Copilot in every session
+- `CLAUDE.md` — loaded by Claude Code automatically
+- `.github/instructions/ai-context.instructions.md` — loaded by Copilot for every file
+
+These files tell the AI to read `.ai/` before answering any questions about the project.
+
 ### Step 2 — Run the Discovery Agent
 
 In GitHub Copilot Chat, select **AI Project Discovery Agent** from the agent picker, then send:
