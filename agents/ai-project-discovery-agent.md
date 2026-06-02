@@ -136,7 +136,7 @@ Read the detected tech stack from `project-context.md` and all `package.json` fi
 1. **Skills**: Run `gh skill search <technology-name>` against [agentskills.io](https://agentskills.io) — install the highest-quality result per technology.
 2. **MCP servers**: Check first: `https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-registry.yml` (DEPT-verified official servers). If not found there, query `https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>` (only accept official vendor-org packages). Write confirmed servers to **all three IDE config files** (merging, never overwriting): `.vscode/mcp.json` (VS Code), `.cursor/mcp.json` (Cursor), `.mcp.json` (Claude Code root).
 3. **Fallback**: If `gh` is unavailable or returns no result, generate a minimal skill from `.ai/` evidence (no generic placeholders).
-4. **Project dev agent**: Create `.github/agents/project-dev-agent.agent.md` listing all installed skills.
+4. **Project dev agent**: Create `.github/agents/project-dev-agent.agent.md` with `tools: [read, edit, search, execute, web, agent, github/*, <mcp-key>/*]` — include a `<key>/*` entry for every MCP server installed, plus `github/*` always.
 
 Detection hints are in `config/stack-detection.yml` (maps package names to human-readable technology names). If a package is not listed, derive the technology name directly from the package name.
 
@@ -150,7 +150,7 @@ Before finalizing output, verify:
 5. All three AI wiring files are created or updated.
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology.
-8. `project-dev-agent.agent.md` created or reported as already present.
+8. `project-dev-agent.agent.md` created with correct `tools` list — including MCP `<key>/*` entries for every installed server.
 
 ## Output Style Requirements
 

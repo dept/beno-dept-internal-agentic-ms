@@ -321,13 +321,19 @@ Populate from `.ai/` evidence — no generic placeholders.
 
 #### Project dev agent
 
-After all skills are installed, create `.github/agents/project-dev-agent.agent.md` if not already present:
+After all skills are installed, create `.github/agents/project-dev-agent.agent.md` if not already present.
+
+**Tools to include:**
+- Always: `read`, `edit`, `search`, `execute`, `web`, `agent`
+- For every MCP server added to `.vscode/mcp.json`: add `<server-key>/*` (e.g. `contentful/*`, `vercel/*`, `nextjs/*`)
+- Always add `github/*` (GitHub MCP — available by default in VS Code Copilot)
+- If a browser-testing or devtools MCP was installed (e.g. `playwright/*`, `chrome-devtools/*`): add those too
 
 ```markdown
 ---
-description: "Project developer agent for [PROJECT_NAME]. Use for feature development, debugging, and code changes in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
+description: "Project developer agent for [PROJECT_NAME]. Use for feature development, debugging, code changes, and browser testing in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
 name: "Project Developer"
-tools: [read, edit, search, run_in_terminal]
+tools: [read, edit, search, execute, web, agent, github/*, [ADDITIONAL_MCP_TOOLS]]
 ---
 
 You are the developer agent for **[PROJECT_NAME]**.
@@ -338,12 +344,29 @@ Read `.ai/project-context.md`, `.ai/architecture.md`, and `.ai/coding-standards.
 ## Available Skills
 [list each installed skill, e.g.: - `/nextjs` — Next.js App Router patterns for this project]
 
+## Available MCP Integrations
+[list each MCP server wired in, e.g.:
+- `contentful/*` — read/write content models and entries
+- `vercel/*` — deployments, env vars, project settings
+- `github/*` — issues, PRs, code search]
+
 ## Behaviour Rules
 - Evidence first: read code before changing it.
 - Follow `.ai/coding-standards.md` conventions on all changes.
 - Respect service boundaries defined in `.ai/architecture.md`.
+- Use MCP tools directly when interacting with connected services — do not hardcode API calls.
+- For browser testing: use playwright or chrome-devtools MCP tools if available; fall back to `execute` to run test scripts.
 - Flag stale or missing `.ai/` context rather than guessing.
 - Never write secrets or credentials to any file.
+```
+
+**Example for a Next.js + Contentful + Vercel project:**
+```markdown
+---
+description: "Project developer agent for Acme. Use for feature development, debugging, and code changes in this Next.js + Contentful + Vercel project. Skills: nextjs, contentful, vercel."
+name: "Project Developer"
+tools: [read, edit, search, execute, web, agent, github/*, contentful/*, vercel/*, nextjs/*]
+---
 ```
 
 ## Output Format
@@ -362,7 +385,7 @@ Before finalising, verify:
 5. All three AI wiring files have been created or updated.
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology from the registry.
-8. `project-dev-agent.agent.md` created or reported as already present.
+8. `project-dev-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
 
 ## Completion Summary
 
