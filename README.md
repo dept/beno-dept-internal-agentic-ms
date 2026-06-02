@@ -33,7 +33,10 @@ The agent in `.github/agents/ai-project-discovery-agent.agent.md` is a fully exe
 3. Extract dependencies, integrations, deployment, CMS, monitoring, and coding standards.
 4. Produce all nine `.ai` files with confidence scores, assumptions, and validation questions.
 5. Wire AI tools (Copilot, Claude) to read `.ai/` — creating or appending to existing config files.
-6. Flag unresolved gaps for human validation.
+6. **Install developer skills** — searches the live public `gh skill` registry ([agentskills.io](https://agentskills.io)) for every detected technology. Works for any stack, not just a predefined list. Skills land in `.github/skills/`.
+7. **Add MCP server config** — queries the live [MCP registry](https://registry.modelcontextprotocol.io) per detected technology and adds official servers to `.github/mcp.json`. No hardcoded list required.
+8. **Create a project developer agent** (`.github/agents/project-dev-agent.agent.md`) listing all installed skills.
+9. Flag unresolved gaps for human validation.
 
 ### AI Project Maintainer Agent
 
@@ -59,10 +62,14 @@ cp -r .github/prompts/ /path/to/your-project/.github/prompts/
 
 The `templates/` directory contains reference templates used by the agents internally — you do not need to copy them manually. The Discovery Agent generates all `.ai/` content from actual repository evidence.
 
-During bootstrap, the agent automatically creates AI wiring files so every AI tool reads `.ai/`:
-- `.github/copilot-instructions.md` — loaded by GitHub Copilot in every session (created or appended)
-- `CLAUDE.md` — loaded by Claude Code automatically (created or appended)
-- `.github/instructions/ai-context.instructions.md` — loaded by Copilot for every file (created only if absent)
+During bootstrap, the agent automatically creates:
+- **`.ai/`** — nine context files describing the project
+- **AI wiring files** — `.github/copilot-instructions.md`, `CLAUDE.md`, `.github/instructions/ai-context.instructions.md` so every AI tool reads `.ai/`
+- **Developer skills** — fetched from the public `gh skill` registry ([agentskills.io](https://agentskills.io)) per detected technology and installed into `.github/skills/`
+- **MCP config** — `.github/mcp.json` entries for technologies with official MCP servers
+- **Project dev agent** — `.github/agents/project-dev-agent.agent.md` with all skills wired in
+
+After bootstrap, any developer opening the project can select **Project Developer** from the agent picker and immediately get context-aware help with all the right skills loaded.
 
 ### Step 2 — Run the Discovery Agent
 

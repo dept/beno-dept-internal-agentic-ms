@@ -77,6 +77,15 @@ After all files are written, output:
 ### AI wiring files created/updated
 [list each file with action: created / appended / already present]
 
+### Skills installed
+[list each .github/skills/<name>/SKILL.md created, or "None matched"]
+
+### MCP servers added
+[list any entries added to .github/mcp.json, or "None"]
+
+### Project dev agent
+[created / already present]
+
 ### Existing agentic setup found
 [list files found in Step 0, or "None found"]
 

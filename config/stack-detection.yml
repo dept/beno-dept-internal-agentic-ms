@@ -1,0 +1,275 @@
+# Stack Detection Hints
+#
+# PURPOSE: This file tells the Discovery Agent HOW to detect technologies
+# from a project's codebase. It does NOT define skills or MCP servers —
+# those are discovered live from public registries at runtime.
+#
+# RUNTIME BEHAVIOR:
+#   Skills:  gh skill search <technology-name>   → install best match
+#   MCP:     curl https://registry.modelcontextprotocol.io/api/servers?q=<technology-name>
+#            → pick official/highest-quality result
+#
+# HOW TO READ THIS FILE:
+#   The agent reads package.json deps and config file presence.
+#   When a detection rule matches, it uses the `name` as the search term
+#   for both `gh skill search` and the MCP registry query.
+#
+# ADDING NEW TECHNOLOGIES:
+#   Add a detection rule here with at least one detection method.
+#   The agent will then search live registries automatically.
+#   You do NOT need to hardcode skill packages or MCP server names.
+
+technologies:
+
+  # ─── Frontend / Frameworks ────────────────────────────────────────────────
+
+  - name: nextjs
+    display: "Next.js"
+    detect:
+      deps: ["next"]
+      config_files: ["next.config.js", "next.config.ts", "next.config.mjs"]
+
+  - name: react
+    display: "React"
+    detect:
+      deps: ["react", "react-dom"]
+
+  - name: vue
+    display: "Vue"
+    detect:
+      deps: ["vue", "@vue/core", "nuxt"]
+      config_files: ["vue.config.js", "nuxt.config.ts"]
+
+  - name: svelte
+    display: "Svelte"
+    detect:
+      deps: ["svelte", "@sveltejs/kit"]
+
+  - name: remix
+    display: "Remix"
+    detect:
+      deps: ["@remix-run/react", "@remix-run/node", "@remix-run/cloudflare"]
+
+  - name: astro
+    display: "Astro"
+    detect:
+      deps: ["astro"]
+      config_files: ["astro.config.mjs", "astro.config.ts"]
+
+  # ─── CMS ──────────────────────────────────────────────────────────────────
+
+  - name: contentful
+    display: "Contentful"
+    detect:
+      deps: ["contentful", "contentful-management", "@contentful/rich-text-react-renderer", "@contentful/live-preview"]
+
+  - name: sanity
+    display: "Sanity"
+    detect:
+      deps: ["@sanity/client", "sanity", "next-sanity"]
+
+  - name: storyblok
+    display: "Storyblok"
+    detect:
+      deps: ["@storyblok/react", "@storyblok/js", "storyblok-js-client"]
+
+  - name: wordpress
+    display: "WordPress"
+    detect:
+      deps: ["@wordpress/api-fetch"]
+      config_files: ["wp-config.php"]
+
+  - name: strapi
+    display: "Strapi"
+    detect:
+      deps: ["@strapi/strapi", "@strapi/plugin-graphql"]
+
+  - name: payload
+    display: "Payload CMS"
+    detect:
+      deps: ["payload", "@payloadcms/next"]
+
+  # ─── E-commerce ───────────────────────────────────────────────────────────
+
+  - name: shopify
+    display: "Shopify"
+    detect:
+      deps: ["@shopify/shopify-api", "@shopify/storefront-api-client", "@shopify/admin-api-client", "@shopify/remix-oxygen"]
+
+  - name: stripe
+    display: "Stripe"
+    detect:
+      deps: ["stripe", "@stripe/stripe-js", "@stripe/react-stripe-js"]
+
+  - name: woocommerce
+    display: "WooCommerce"
+    detect:
+      deps: ["@woocommerce/woocommerce-rest-api"]
+
+  # ─── Database / ORM ──────────────────────────────────────────────────────
+
+  - name: prisma
+    display: "Prisma"
+    detect:
+      deps: ["@prisma/client", "prisma"]
+      directories: ["prisma/"]
+
+  - name: drizzle
+    display: "Drizzle ORM"
+    detect:
+      deps: ["drizzle-orm", "drizzle-kit"]
+
+  - name: supabase
+    display: "Supabase"
+    detect:
+      deps: ["@supabase/supabase-js", "@supabase/ssr", "@supabase/auth-helpers-nextjs"]
+
+  - name: postgresql
+    display: "PostgreSQL"
+    detect:
+      deps: ["pg", "postgres", "node-postgres"]
+
+  - name: mongodb
+    display: "MongoDB"
+    detect:
+      deps: ["mongodb", "mongoose"]
+
+  - name: redis
+    display: "Redis"
+    detect:
+      deps: ["redis", "ioredis", "@upstash/redis"]
+
+  # ─── Deployment / Infrastructure ─────────────────────────────────────────
+
+  - name: vercel
+    display: "Vercel"
+    detect:
+      deps: ["vercel", "@vercel/og", "@vercel/analytics"]
+      config_files: ["vercel.json"]
+
+  - name: cloudflare
+    display: "Cloudflare"
+    detect:
+      deps: ["wrangler", "@cloudflare/workers-types"]
+      config_files: ["wrangler.toml", "wrangler.json"]
+
+  - name: aws
+    display: "AWS"
+    detect:
+      deps: ["@aws-sdk/client-s3", "@aws-sdk/client-ses", "aws-sdk"]
+      config_files: ["serverless.yml", "cdk.json"]
+
+  - name: docker
+    display: "Docker"
+    detect:
+      config_files: ["Dockerfile", "docker-compose.yml", "docker-compose.yaml"]
+
+  # ─── Monorepo / Build ─────────────────────────────────────────────────────
+
+  - name: turborepo
+    display: "Turborepo"
+    detect:
+      deps: ["turbo"]
+      config_files: ["turbo.json"]
+
+  - name: nx
+    display: "Nx"
+    detect:
+      deps: ["@nx/core", "nx"]
+      config_files: ["nx.json"]
+
+  # ─── Design ───────────────────────────────────────────────────────────────
+
+  - name: figma
+    display: "Figma"
+    detect:
+      deps: ["@figma/code-connect", "figma-js", "figma-api"]
+      # Also check for figma.com references in README or .ai/project-context.md
+
+  - name: storybook
+    display: "Storybook"
+    detect:
+      deps: ["@storybook/react", "@storybook/nextjs", "storybook"]
+      directories: [".storybook/"]
+
+  # ─── Messaging / Events ───────────────────────────────────────────────────
+
+  - name: azure-service-bus
+    display: "Azure Service Bus"
+    detect:
+      deps: ["@azure/service-bus"]
+
+  - name: kafka
+    display: "Kafka"
+    detect:
+      deps: ["kafkajs", "@confluentinc/kafka-javascript"]
+
+  # ─── Email ────────────────────────────────────────────────────────────────
+
+  - name: react-email
+    display: "React Email"
+    detect:
+      deps: ["@react-email/components", "@react-email/render", "react-email"]
+
+  - name: sendgrid
+    display: "SendGrid"
+    detect:
+      deps: ["@sendgrid/mail"]
+
+  # ─── Observability / Monitoring ───────────────────────────────────────────
+
+  - name: sentry
+    display: "Sentry"
+    detect:
+      deps: ["@sentry/nextjs", "@sentry/node", "@sentry/browser", "@sentry/react"]
+
+  - name: datadog
+    display: "Datadog"
+    detect:
+      deps: ["dd-trace", "datadog-lambda-js"]
+
+  # ─── Project Management ───────────────────────────────────────────────────
+
+  - name: linear
+    display: "Linear"
+    detect:
+      deps: ["@linear/sdk"]
+
+  - name: github
+    display: "GitHub (API)"
+    detect:
+      deps: ["@octokit/rest", "@octokit/graphql"]
+
+  - name: jira
+    display: "Jira"
+    detect:
+      deps: ["jira-client", "@atlassian/jira-software-api"]
+
+  # ─── API / Data ───────────────────────────────────────────────────────────
+
+  - name: graphql
+    display: "GraphQL"
+    detect:
+      deps: ["graphql", "@apollo/client", "urql", "graphql-request", "graphql-codegen"]
+
+  - name: trpc
+    display: "tRPC"
+    detect:
+      deps: ["@trpc/server", "@trpc/client"]
+
+  # ─── Testing ─────────────────────────────────────────────────────────────
+
+  - name: playwright
+    display: "Playwright"
+    detect:
+      deps: ["@playwright/test", "playwright"]
+
+  - name: cypress
+    display: "Cypress"
+    detect:
+      deps: ["cypress"]
+
+  - name: vitest
+    display: "Vitest"
+    detect:
+      deps: ["vitest"]

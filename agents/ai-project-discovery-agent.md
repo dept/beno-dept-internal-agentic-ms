@@ -129,6 +129,17 @@ Create or update wiring files so every AI tool automatically reads `.ai/`. Check
 - **`CLAUDE.md`** (root): Same for Claude Code. Append if already exists.
 - **`.github/instructions/ai-context.instructions.md`**: `applyTo: "**"` file that loads `.ai/` for every Copilot file interaction. Skip if already present.
 
+### 10) Stack-Aware Developer Setup
+
+Read the detected tech stack from `project-context.md` and all `package.json` files. For **every detected technology**, use live public registries — not a local predefined list. This means unknown or future stacks are handled automatically.
+
+1. **Skills**: Run `gh skill search <technology-name>` against [agentskills.io](https://agentskills.io) — install the highest-quality result per technology.
+2. **MCP servers**: Query `https://registry.modelcontextprotocol.io/api/servers?q=<technology-name>` — add official servers to `.github/mcp.json`.
+3. **Fallback**: If `gh` is unavailable or returns no result, generate a minimal skill from `.ai/` evidence (no generic placeholders).
+4. **Project dev agent**: Create `.github/agents/project-dev-agent.agent.md` listing all installed skills.
+
+Detection hints are in `config/stack-detection.yml` (maps package names to human-readable technology names). If a package is not listed, derive the technology name directly from the package name.
+
 ## Quality Gates
 
 Before finalizing output, verify:
@@ -138,6 +149,8 @@ Before finalizing output, verify:
 4. Security-sensitive details are redacted.
 5. All three AI wiring files are created or updated.
 6. Existing agentic configuration is documented in `agent-registry.md`.
+7. At least one skill file created per detected technology.
+8. `project-dev-agent.agent.md` created or reported as already present.
 
 ## Output Style Requirements
 

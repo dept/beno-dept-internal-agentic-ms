@@ -148,6 +148,124 @@ In all wiring files, instruct the AI to:
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
 
+### 10) Stack-Aware Developer Setup
+
+The goal is to install skills and MCP servers for **every technology found in this project** — not just a predefined list. Use live public registries so this works for any stack, including ones not anticipated here.
+
+#### Step A — Detect the tech stack
+
+Read `package.json` (all workspaces if monorepo) and config files at repository root. Extract:
+- All `dependencies`, `devDependencies`, and `peerDependencies` package names
+- Presence of config files (e.g. `next.config.*`, `turbo.json`, `wrangler.toml`, `Dockerfile`)
+- Technology names already written into `.ai/project-context.md`
+
+Use `config/stack-detection.yml` from this standards repository as detection hints — it maps package names to human-readable technology names. If a package is not listed there, derive the technology name from the package itself (e.g. `@prisma/client` → `prisma`, `@shopify/shopify-api` → `shopify`).
+
+#### Step B — Install skills from the public registry
+
+For each detected technology, search and install from [agentskills.io](https://agentskills.io) — the live public skills registry:
+
+```bash
+# Search live registry for a skill
+gh skill search <technology-name>
+
+# Install the best match (highest quality / most downloaded)
+gh skill install <owner>/<repo> <skill-name>
+
+# Pin version for reproducibility
+gh skill install <owner>/<repo> <skill-name> --pin v1.0.0
+```
+
+Skills are installed into `.github/skills/<name>/` automatically.
+
+**Rules:**
+1. Search for every detected technology — not just ones in a local list.
+2. Skip if a skill with that name already exists in `.github/skills/`.
+3. If `gh skill search` returns no result, skip — do not fabricate a skill.
+4. Record each result (installed / skipped / not found) for the completion summary.
+
+#### Step C — Find and add MCP servers
+
+For each detected technology, query the **live MCP registry** for an official or high-quality server:
+
+```bash
+curl -s "https://registry.modelcontextprotocol.io/api/servers?q=<technology-name>"
+```
+
+Evaluate results: prefer servers from the official vendor (e.g. `@contentful/mcp-server` over community forks). Check the `source` or `author` field to identify official packages.
+
+If a server is found, add it to `.github/mcp.json` (create if absent, merge if present):
+
+```json
+{
+  "mcpServers": {
+    "<technology-key>": {
+      "command": "npx",
+      "args": ["-y", "<mcp-package-name>"],
+      "env": { "<REQUIRED_ENV_VAR>": "${<REQUIRED_ENV_VAR>}" }
+    }
+  }
+}
+```
+
+**Rules:**
+1. Only add entries for technologies **confirmed present** in this project.
+2. Only use MCP servers returned by the live registry — never hardcode package names.
+3. Include the `env` block only when the MCP server requires credentials — use the env var name from the server's documentation.
+4. Never write actual secret values — use `${ENV_VAR_NAME}` placeholders only.
+5. If the registry returns no result for a technology, skip — do not guess a package name.
+
+#### Step D — Fallback when `gh` CLI or registry is unavailable
+
+If `gh` CLI is not installed or the MCP registry is unreachable, generate a minimal skill file from the `.ai/` analysis:
+
+```markdown
+---
+name: <technology-name>
+description: "Use when: [specific scenarios for THIS project based on .ai/ files]"
+---
+
+# [Technology Display Name]
+
+## Project Context
+Read [relevant .ai/ file] for how [technology] is configured in this project.
+
+## Key Files
+- [actual paths discovered during analysis]
+
+## Common Operations
+[most relevant operations for how this tech is used in this project]
+```
+
+Populate from `.ai/` evidence — no generic placeholders.
+
+#### Project dev agent
+
+After all skills are installed, create `.github/agents/project-dev-agent.agent.md` if not already present:
+
+```markdown
+---
+description: "Project developer agent for [PROJECT_NAME]. Use for feature development, debugging, and code changes in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
+name: "Project Developer"
+tools: [read, edit, search, run_in_terminal]
+---
+
+You are the developer agent for **[PROJECT_NAME]**.
+
+## Before Each Task
+Read `.ai/project-context.md`, `.ai/architecture.md`, and `.ai/coding-standards.md`.
+
+## Available Skills
+[list each installed skill, e.g.: - `/nextjs` — Next.js App Router patterns for this project]
+
+## Behaviour Rules
+- Evidence first: read code before changing it.
+- Follow `.ai/coding-standards.md` conventions on all changes.
+- Respect service boundaries defined in `.ai/architecture.md`.
+- Flag stale or missing `.ai/` context rather than guessing.
+- Never write secrets or credentials to any file.
+```
+
 ## Output Format
 
 - Use stable headings and bullet points for machine readability.
@@ -163,6 +281,8 @@ Before finalising, verify:
 4. No secrets are included.
 5. All three AI wiring files have been created or updated.
 6. Existing agentic configuration is documented in `agent-registry.md`.
+7. At least one skill file created per detected technology from the registry.
+8. `project-dev-agent.agent.md` created or reported as already present.
 
 ## Completion Summary
 
@@ -175,6 +295,15 @@ Output after all files are written:
 
 ### AI wiring files created/updated
 [list each file with action: created / appended / already present]
+
+### Skills installed
+[list each .github/skills/<name>/SKILL.md created, or "None matched"]
+
+### MCP servers added
+[list any entries added to .github/mcp.json, or "None"]
+
+### Project dev agent
+[created / already present]
 
 ### Existing agentic setup found
 [list files found in step 0, or "None"]
