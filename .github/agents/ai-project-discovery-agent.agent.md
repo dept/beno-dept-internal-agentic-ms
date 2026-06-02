@@ -189,8 +189,10 @@ Skills are installed into `.github/skills/<name>/` automatically.
 For each detected technology, query the **live MCP registry** for an official or high-quality server:
 
 ```bash
-curl -s "https://registry.modelcontextprotocol.io/api/servers?q=<technology-name>"
+curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>"
 ```
+
+> **Note:** The query parameter is `search=`, not `q=`. The `/v0/servers` path is required.
 
 Evaluate results: prefer servers from the official vendor (e.g. `@contentful/mcp-server` over community forks). Check the `source` or `author` field to identify official packages.
 

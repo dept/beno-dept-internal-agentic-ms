@@ -6,7 +6,7 @@
 #
 # RUNTIME BEHAVIOR:
 #   Skills:  gh skill search <technology-name>   → install best match
-#   MCP:     curl https://registry.modelcontextprotocol.io/api/servers?q=<technology-name>
+#   MCP:     curl https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>
 #            → pick official/highest-quality result
 #
 # HOW TO READ THIS FILE:
