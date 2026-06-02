@@ -1,29 +1,55 @@
-# MCP Server Fallback Registry
+# DEPT MCP Server Registry
 #
-# PURPOSE: Curated list of verified MCP servers that are NOT indexed in the
-# live registry at registry.modelcontextprotocol.io.
+# PURPOSE: Curated list of VERIFIED official MCP servers for common technologies.
+# This is the PRIMARY source checked by the Discovery Agent — before querying the
 #
-# The Discovery Agent checks this file ONLY when the live registry returns
-# no usable result for a detected technology.
+# public registry (registry.modelcontextprotocol.io), which has no reliable quality
+# signal and returns unverified community packages.
 #
-# MAINTENANCE: When a server appears in the live registry, remove it from here
-# to avoid drift. Add entries when a vendor ships an official MCP server but
-# hasn't registered it.
+# MAINTENANCE: Entries here are manually verified against vendor documentation.
+# Add entries when a vendor ships an official MCP server. Remove or update when
+# a server changes significantly.
 #
-# TRANSPORT TYPES:
+# TRANSPORT TYPES (metadata — describes the protocol, not a JSON output field):
 #   stdio  — local process, launched via npx/node/uvx
 #   http   — remote server, uses OAuth or API key in Authorization header
+#
+# JSON OUTPUT FORMAT:
+#   VS Code (.vscode/mcp.json)  → "servers" key; entries use "type": "stdio" or "type": "http"
+#   Cursor (.cursor/mcp.json)   → "mcpServers" key; stdio entries need no "type"; http uses "type": "http"
+#   Claude Code (.mcp.json)     → "mcpServers" key; same as Cursor
 #
 # LAST VERIFIED: 2026-06-02
 
 servers:
+
+  # ─── Frontend / Frameworks ────────────────────────────────────────────────
+
+  nextjs:
+    display: "Next.js"
+    source: "Official — https://github.com/vercel/next-devtools"
+    detect: ["next"]
+    protocol: stdio
+    command: npx
+    args: ["-y", "next-devtools-mcp@0.3.6"]
+    note: "No env var required. Vercel's own devtools MCP for Next.js projects."
+
+  storybook:
+    display: "Storybook"
+    source: "Official — https://storybook.js.org/addons/@storybook/addon-mcp"
+    detect: ["storybook", "@storybook/react", "@storybook/nextjs"]
+    protocol: stdio
+    command: npx
+    args: ["-y", "@storybook/addon-mcp"]
+    note: "No env var required."
 
   # ─── CMS ──────────────────────────────────────────────────────────────────
 
   contentful:
     display: "Contentful"
     source: "Official — https://www.contentful.com/developers/docs/tools/mcp-server/"
-    transport: http
+    detect: ["contentful", "contentful-management"]
+    protocol: http
     vscode_config:
       type: "http"
       url: "https://mcp.contentful.com/mcp"
@@ -33,7 +59,8 @@ servers:
   storyblok:
     display: "Storyblok"
     source: "Official — https://www.storyblok.com/docs/mcp-server"
-    transport: stdio
+    detect: ["@storyblok/react", "@storyblok/js", "storyblok-js-client"]
+    protocol: stdio
     command: npx
     args: ["-y", "@storyblok/mcp"]
     env_var: "STORYBLOK_TOKEN"
@@ -44,7 +71,8 @@ servers:
   shopify:
     display: "Shopify"
     source: "Official — https://shopify.dev/docs/apps/tools/mcp"
-    transport: stdio
+    detect: ["@shopify/shopify-api", "@shopify/storefront-api-client", "@shopify/admin-api-client"]
+    protocol: stdio
     command: npx
     args: ["-y", "@shopify/dev-mcp@latest"]
     note: "No env var required — authenticates via browser OAuth using Shopify CLI session"
@@ -52,41 +80,66 @@ servers:
   # ─── Database / ORM ──────────────────────────────────────────────────────
 
   prisma:
-    display: "Prisma"
+    display: "Prisma ORM"
     source: "Official — https://www.prisma.io/docs/orm/more/development-environment/mcp-server"
-    transport: stdio
+    detect: ["@prisma/client", "prisma"]
+    protocol: stdio
     command: npx
     args: ["-y", "prisma-mcp"]
-    note: "Reads prisma/schema.prisma directly — no env var required"
+    note: "Reads prisma/schema.prisma directly — no env var required. Do NOT confuse with @prismatic-io/prism-mcp which is for the Prismatic integration platform."
+
+  prismatic:
+    display: "Prismatic (integration platform)"
+    source: "Official — https://prismatic.io/docs/mcp"
+    detect: ["@prismatic-io/spectral", "@prismatic-io/embedded"]
+    protocol: stdio
+    command: npx
+    args: ["-y", "@prismatic-io/prism-mcp@1.4.4", "${workspaceRoot}"]
+    note: "For Prismatic integration platform only — NOT for Prisma ORM."
 
   # ─── Deployment ───────────────────────────────────────────────────────────
 
   vercel:
     display: "Vercel"
     source: "Official — https://vercel.com/docs/mcp"
-    transport: http
+    detect: ["vercel", "@vercel/og", "@vercel/analytics"]
+    protocol: http
     vscode_config:
       type: "http"
-      url: "https://mcp.vercel.com/mcp"
+      url: "https://mcp.vercel.com"
     auth: "OAuth (browser flow on first connect)"
     note: "Remote server. No token env var needed — uses OAuth."
 
   netlify:
     display: "Netlify"
     source: "Official — https://docs.netlify.com/ai/mcp/"
-    transport: http
+    detect: ["netlify"]
+    protocol: http
     vscode_config:
       type: "http"
       url: "https://mcp.netlify.com/mcp"
     auth: "OAuth"
     note: "Remote server. Uses OAuth."
 
+  # ─── Project Management ───────────────────────────────────────────────────
+
+  atlassian:
+    display: "Atlassian (Jira + Confluence)"
+    source: "Official — https://www.atlassian.com/platform/remote-mcp-server"
+    detect: ["@atlaskit/jira-rest-client", "jira-client", "@atlassian/jira-software-api"]
+    protocol: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.atlassian.com/v1/mcp"
+    auth: "OAuth (browser flow on first connect)"
+    note: "Covers Jira, Confluence, and other Atlassian products in one server. Uses OAuth."
+
   # ─── Design ───────────────────────────────────────────────────────────────
 
   figma:
     display: "Figma"
     source: "Official — https://help.figma.com/hc/en-us/articles/32132100833559"
-    transport: http
+    protocol: http
     vscode_config:
       type: "http"
       url: "https://www.figma.com/mcp"
@@ -98,7 +151,7 @@ servers:
   sentry:
     display: "Sentry"
     source: "Official — https://docs.sentry.io/product/sentry-mcp/"
-    transport: http
+    protocol: http
     vscode_config:
       type: "http"
       url: "https://mcp.sentry.io/mcp"
@@ -110,7 +163,7 @@ servers:
   stripe:
     display: "Stripe"
     source: "Official — https://docs.stripe.com/stripe-mcp"
-    transport: http
+    protocol: http
     vscode_config:
       type: "http"
       url: "https://mcp.stripe.com"

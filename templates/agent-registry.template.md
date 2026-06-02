@@ -15,7 +15,9 @@ Document everything found during the agentic setup inventory:
 | Instructions | `.github/copilot-instructions.md` | Copilot | Project-wide instructions |
 | Instructions | `CLAUDE.md` | Claude Code | Project-wide instructions |
 | Prompt | `.github/prompts/example.prompt.md` | Copilot | Example prompt |
-| MCP | `.github/mcp.json` | Copilot/Claude | MCP server config |
+| MCP | `.vscode/mcp.json` | VS Code / Copilot | MCP server config |
+| MCP | `.cursor/mcp.json` | Cursor | MCP server config |
+| MCP | `.mcp.json` | Claude Code | MCP server config |
 
 If none found: `None detected — this project has no prior agentic configuration.`
 

@@ -7,7 +7,7 @@
 # RUNTIME BEHAVIOR:
 #   Skills:  gh skill search <technology-name>   → install best match
 #   MCP:     1) curl https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>
-#            2) fallback: curl https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-fallback.yml
+#            2) fallback: curl https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-registry.yml
 #            → pick official/highest-quality result
 #
 # HOW TO READ THIS FILE:
@@ -241,10 +241,10 @@ technologies:
     detect:
       deps: ["@octokit/rest", "@octokit/graphql"]
 
-  - name: jira
-    display: "Jira"
+  - name: atlassian
+    display: "Atlassian (Jira / Confluence)"
     detect:
-      deps: ["jira-client", "@atlassian/jira-software-api"]
+      deps: ["jira-client", "@atlassian/jira-software-api", "@atlaskit/jira-rest-client", "@atlassian/confluence-client"]
 
   # ─── API / Data ───────────────────────────────────────────────────────────
 

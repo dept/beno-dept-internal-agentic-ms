@@ -18,7 +18,7 @@ Before generating any files, scan the repository for existing agentic configurat
 - **Agents**: `.github/agents/*.agent.md`, `.agents/`, `.claude/agents/`, `AGENTS.md`
 - **Instructions**: `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `CLAUDE.md`, `.cursor/rules/`
 - **Prompts / Skills**: `.github/prompts/*.prompt.md`, `.github/skills/`, `.claude/skills/`
-- **MCP**: `.github/mcp.json`, `.mcp.json`, `mcp.json`, any `mcpServers` block in VS Code settings
+- **MCP**: `.vscode/mcp.json` (VS Code), `.cursor/mcp.json` (Cursor), `.mcp.json` (Claude Code root), any `mcpServers` block in VS Code settings
 
 Record all findings — they will be documented in `agent-registry.md` and used to decide whether to create or append wiring files.
 
@@ -81,7 +81,7 @@ After all files are written, output:
 [list each .github/skills/<name>/SKILL.md created, or "None matched"]
 
 ### MCP servers added
-[list any entries added to .github/mcp.json, or "None"]
+[list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]
 
 ### Project dev agent
 [created / already present]

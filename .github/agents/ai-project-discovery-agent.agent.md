@@ -63,9 +63,9 @@ Scan these locations:
 - `.claude/skills/`
 
 **MCP configuration**
-- `.github/mcp.json`
-- `.mcp.json` (root)
-- `mcp.json` (root)
+- `.vscode/mcp.json` (VS Code / Copilot)
+- `.cursor/mcp.json` (Cursor)
+- `.mcp.json` (Claude Code, root)
 - Any `mcpServers` block in VS Code settings
 
 For each file found, record:
@@ -186,71 +186,114 @@ Skills are installed into `.github/skills/<name>/` automatically.
 
 #### Step C — Find and add MCP servers
 
-For each detected technology, query the **live MCP registry** for an official or high-quality server:
+**Priority order — always check in this sequence, stop at the first match:**
 
+**1. DEPT MCP Registry (primary — highest trust):**
+```bash
+curl -s "https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-registry.yml"
+```
+If the technology has an entry in this file and `skip` is not `true`, use it. This file contains manually verified official servers. Do not query the live registry for technologies that are already in this file.
+
+**2. Public MCP registry (secondary — only when no DEPT registry entry exists):**
 ```bash
 curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>"
 ```
 
 > **Note:** The query parameter is `search=`, not `q=`. The `/v0/servers` path is required.
 
-Evaluate results: prefer servers from the official vendor. Check the `source` or `author` field to identify official packages. If the registry returns results but none are clearly official or relevant, move to the fallback step.
+The registry's `official_status` field is not a reliable signal — every entry gets `active`. **Only accept a registry result if it passes ALL of the following checks:**
 
-**If the live registry returns no usable result**, fetch the DEPT curated fallback list at runtime:
+- The `repository.url` field contains a GitHub org that matches the technology vendor (e.g. `github.com/Shopify/` for Shopify, `github.com/prisma/` for Prisma)
+- The npm package identifier starts with the vendor's own scope (e.g. `@shopify/`, `@prisma/`) — **not** an individual's scope (e.g. `@den.dance/`, `@miller-joe/`)
+- The GitHub org has more than one contributor (check `github.com/<org>/<repo>/graphs/contributors` if uncertain)
 
-```bash
-curl -s "https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-fallback.yml"
-```
+If no result passes these checks, **skip** — do not install from unverified community accounts. Individual-account packages (`io.github.<username>/`) are always rejected unless they are the only source for a major well-known project with thousands of stars.
 
-This file contains verified servers that vendors ship but haven't registered in the public registry (e.g. Contentful, Vercel, Figma, Shopify, Stripe, Sentry — all of which use remote OAuth servers with no npm package). It requires no local copy in the target project.
+#### Writing MCP config — target files per IDE
 
-Add confirmed servers to `.github/mcp.json`. There are two transport types — use the correct format for each:
+Each IDE reads MCP config from a different location. Write to **all three** so the project works regardless of which IDE the developer uses. **Never remove or overwrite existing content** — read the file first, merge new entries in, and write back.
 
-**Local/stdio server** (launched via npx):
-```json
-{
-  "mcpServers": {
-    "prisma": {
-      "command": "npx",
-      "args": ["-y", "prisma-mcp"]
-    },
-    "stripe": {
-      "command": "npx",
-      "args": ["-y", "@stripe/mcp", "--tools=all"],
-      "env": { "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}" }
-    }
-  }
-}
-```
+| IDE | File | Root key | stdio entry format | http entry format |
+|---|---|---|---|---|
+| VS Code / Copilot | `.vscode/mcp.json` | `servers` | `"type": "stdio"` + `command` + `args` | `"type": "http"` + `url` |
+| Cursor | `.cursor/mcp.json` | `mcpServers` | `command` + `args` (no `type` field) | `"type": "http"` + `url` |
+| Claude Code | `.mcp.json` (root) | `mcpServers` | `command` + `args` (no `type` field) | `"type": "http"` + `url` |
 
-**Remote/HTTP server** (OAuth, no local process):
+> ⚠️ **Critical format rules:**
+> - Never use `"transport"` as a JSON key — the correct field is `"type"`
+> - Never use `"mcpServers"` in `.vscode/mcp.json` — VS Code requires `"servers"`
+> - Never use `"servers"` in `.cursor/mcp.json` or `.mcp.json` — those IDEs require `"mcpServers"`
+
+**For each target file:**
+1. If the file does not exist, create it with only the new entries.
+2. If it exists, read it, deep-merge new entries into the existing object — **never delete existing keys**.
+3. Skip any entry whose key already exists in the file — do not overwrite.
+
+**`.vscode/mcp.json`** — VS Code format:
 ```json
 {
   "servers": {
+    "nextjs": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@0.3.6"]
+    },
     "contentful": {
       "type": "http",
       "url": "https://mcp.contentful.com/mcp"
     },
     "vercel": {
       "type": "http",
-      "url": "https://mcp.vercel.com/mcp"
-    },
-    "figma": {
-      "type": "http",
-      "url": "https://www.figma.com/mcp"
+      "url": "https://mcp.vercel.com"
     }
   }
 }
 ```
 
-> Note: VS Code uses `"servers"` (not `"mcpServers"`) for remote HTTP entries. Write both transport types into `.github/mcp.json` — VS Code merges them correctly.
+**`.cursor/mcp.json`** — Cursor format:
+```json
+{
+  "mcpServers": {
+    "nextjs": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@0.3.6"]
+    },
+    "contentful": {
+      "type": "http",
+      "url": "https://mcp.contentful.com/mcp"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    }
+  }
+}
+```
+
+**`.mcp.json`** (Claude Code) — identical structure to Cursor:
+```json
+{
+  "mcpServers": {
+    "nextjs": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@0.3.6"]
+    },
+    "contentful": {
+      "type": "http",
+      "url": "https://mcp.contentful.com/mcp"
+    }
+  }
+}
+```
 
 **Rules:**
 1. Only add entries for technologies **confirmed present** in this project.
-2. Use live registry first, fallback file second, skip if neither has a result.
+2. DEPT MCP Registry first, public registry second, skip if neither passes quality checks.
 3. Include `env` only when credentials are required — use `${ENV_VAR_NAME}` placeholders only, never real values.
 4. Remote OAuth servers require no env vars — the user completes OAuth on first connect.
-5. If `mcp-fallback.yml` marks `skip: true` for a technology, omit it entirely.
+5. If `mcp-registry.yml` marks `skip: true` for a technology, omit it entirely.
+6. **Never install from individual GitHub accounts** — only from vendor orgs or the DEPT MCP Registry.
+7. **Never remove or overwrite existing MCP config entries** — merge only.
 
 #### Step D — Fallback when `gh` CLI or registry is unavailable
 
@@ -337,7 +380,7 @@ Output after all files are written:
 [list each .github/skills/<name>/SKILL.md created, or "None matched"]
 
 ### MCP servers added
-[list any entries added to .github/mcp.json, or "None"]
+[list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]
 
 ### Project dev agent
 [created / already present]

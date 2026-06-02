@@ -69,7 +69,7 @@ Scan these locations:
 
 **Prompts / Skills**: `.github/prompts/*.prompt.md`, `.github/skills/`, `.claude/skills/`
 
-**MCP configuration**: `.github/mcp.json`, `.mcp.json`, `mcp.json`, any `mcpServers` block in VS Code workspace settings
+**MCP configuration**: `.vscode/mcp.json` (VS Code — uses `"servers"` key), `.cursor/mcp.json` (Cursor — uses `"mcpServers"` key), `.mcp.json` (Claude Code — uses `"mcpServers"` key), any `mcpServers` block in VS Code workspace settings
 
 For each file found, record: file path, name/description, target tool, scope, and purpose.
 
@@ -134,7 +134,7 @@ Create or update wiring files so every AI tool automatically reads `.ai/`. Check
 Read the detected tech stack from `project-context.md` and all `package.json` files. For **every detected technology**, use live public registries — not a local predefined list. This means unknown or future stacks are handled automatically.
 
 1. **Skills**: Run `gh skill search <technology-name>` against [agentskills.io](https://agentskills.io) — install the highest-quality result per technology.
-2. **MCP servers**: Query `https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>` first. If no result, fetch `https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-fallback.yml` (curated servers not in the live registry, e.g. Contentful, Vercel, Figma). Add confirmed servers to `.github/mcp.json`.
+2. **MCP servers**: Check first: `https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-registry.yml` (DEPT-verified official servers). If not found there, query `https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>` (only accept official vendor-org packages). Write confirmed servers to **all three IDE config files** (merging, never overwriting): `.vscode/mcp.json` (VS Code), `.cursor/mcp.json` (Cursor), `.mcp.json` (Claude Code root).
 3. **Fallback**: If `gh` is unavailable or returns no result, generate a minimal skill from `.ai/` evidence (no generic placeholders).
 4. **Project dev agent**: Create `.github/agents/project-dev-agent.agent.md` listing all installed skills.
 
