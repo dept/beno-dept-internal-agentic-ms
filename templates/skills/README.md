@@ -21,4 +21,4 @@ If `gh` is unavailable, the agent generates a skill file from the matching templ
 
 1. Add an entry to `config/stack-detection.yml` with detection patterns and `gh_skill_search` term
 2. Add a fallback template here (optional but recommended)
-3. Update the detection table in Step 10 of `.github/agents/ai-project-discovery-agent.agent.md`
+3. Update the detection table in Step 10 of `agents/ai-project-discovery-agent.agent.md`

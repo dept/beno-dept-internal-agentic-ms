@@ -27,7 +27,7 @@ flowchart LR
 
 ### AI Project Discovery Agent
 
-The agent in `.github/agents/ai-project-discovery-agent.agent.md` is a fully executable VS Code agent. Select it from the agent picker in Copilot Chat and it will:
+The agent in `agents/ai-project-discovery-agent.agent.md` is a fully executable VS Code agent. Copy it to `.github/agents/` in your project, then select it from the agent picker in Copilot Chat and it will:
 1. Inventory any existing agentic setup (agents, instructions, prompts, MCP config) already in the repo.
 2. Map system architecture, runtime boundaries, and monorepo structure.
 3. Extract dependencies, integrations, deployment, CMS, monitoring, and coding standards.
@@ -40,7 +40,7 @@ The agent in `.github/agents/ai-project-discovery-agent.agent.md` is a fully exe
 
 ### AI Project Maintainer Agent
 
-The agent in `.github/agents/ai-project-maintainer-agent.agent.md` keeps the `.ai` folder current as the project evolves:
+The agent in `agents/ai-project-maintainer-agent.agent.md` keeps the `.ai` folder current as the project evolves:
 1. Detects what has changed since the last `.ai` update using git history and file evidence.
 2. Assesses staleness severity per file (critical / moderate / minor / current).
 3. Applies targeted updates to affected sections only — correct content is preserved.
@@ -49,15 +49,14 @@ The agent in `.github/agents/ai-project-maintainer-agent.agent.md` keeps the `.a
 
 Run the Maintainer Agent after each sprint, release, infrastructure change, or incident postmortem.
 
-> Full agent logic documentation is in `agents/` for reference. The executable `.agent.md` files in `.github/agents/` are what VS Code and Copilot load at runtime.
-
 ## How to Bootstrap a New Project
 
 ### Step 1 — Copy agents and prompt into the project
 
 ```bash
-cp -r .github/agents/ /path/to/your-project/.github/agents/
-cp -r .github/prompts/ /path/to/your-project/.github/prompts/
+cp agents/ai-project-discovery-agent.agent.md /path/to/your-project/.github/agents/
+cp agents/ai-project-maintainer-agent.agent.md /path/to/your-project/.github/agents/
+cp prompts/bootstrap-project-context.prompt.md /path/to/your-project/.github/prompts/
 ```
 
 The `templates/` directory contains reference templates used by the agents internally — you do not need to copy them manually. The Discovery Agent generates all `.ai/` content from actual repository evidence.
