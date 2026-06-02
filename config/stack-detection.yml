@@ -7,7 +7,7 @@
 # RUNTIME BEHAVIOR:
 #   Skills:  gh skill search <technology-name>   → install best match
 #   MCP:     1) curl https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>
-#            2) fallback: check config/mcp-fallback.yml for servers not in the registry
+#            2) fallback: curl https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-fallback.yml
 #            → pick official/highest-quality result
 #
 # HOW TO READ THIS FILE:

@@ -134,7 +134,7 @@ Create or update wiring files so every AI tool automatically reads `.ai/`. Check
 Read the detected tech stack from `project-context.md` and all `package.json` files. For **every detected technology**, use live public registries — not a local predefined list. This means unknown or future stacks are handled automatically.
 
 1. **Skills**: Run `gh skill search <technology-name>` against [agentskills.io](https://agentskills.io) — install the highest-quality result per technology.
-2. **MCP servers**: Query `https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>` first. If no result, check `config/mcp-fallback.yml` (curated servers not in the live registry, e.g. Contentful, Vercel, Figma). Add confirmed servers to `.github/mcp.json`.
+2. **MCP servers**: Query `https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>` first. If no result, fetch `https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-fallback.yml` (curated servers not in the live registry, e.g. Contentful, Vercel, Figma). Add confirmed servers to `.github/mcp.json`.
 3. **Fallback**: If `gh` is unavailable or returns no result, generate a minimal skill from `.ai/` evidence (no generic placeholders).
 4. **Project dev agent**: Create `.github/agents/project-dev-agent.agent.md` listing all installed skills.
 

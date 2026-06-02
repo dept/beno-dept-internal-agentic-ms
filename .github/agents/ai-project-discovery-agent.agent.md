@@ -196,7 +196,13 @@ curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-
 
 Evaluate results: prefer servers from the official vendor. Check the `source` or `author` field to identify official packages. If the registry returns results but none are clearly official or relevant, move to the fallback step.
 
-**If the live registry returns no usable result**, check `config/mcp-fallback.yml` from the DEPT standards repository. This file contains verified servers that vendors ship but haven't registered in the public registry (e.g. Contentful, Vercel, Figma, Shopify, Stripe, Sentry — all of which use remote OAuth servers with no npm package).
+**If the live registry returns no usable result**, fetch the DEPT curated fallback list at runtime:
+
+```bash
+curl -s "https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-fallback.yml"
+```
+
+This file contains verified servers that vendors ship but haven't registered in the public registry (e.g. Contentful, Vercel, Figma, Shopify, Stripe, Sentry — all of which use remote OAuth servers with no npm package). It requires no local copy in the target project.
 
 Add confirmed servers to `.github/mcp.json`. There are two transport types — use the correct format for each:
 
