@@ -194,28 +194,57 @@ curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-
 
 > **Note:** The query parameter is `search=`, not `q=`. The `/v0/servers` path is required.
 
-Evaluate results: prefer servers from the official vendor (e.g. `@contentful/mcp-server` over community forks). Check the `source` or `author` field to identify official packages.
+Evaluate results: prefer servers from the official vendor. Check the `source` or `author` field to identify official packages. If the registry returns results but none are clearly official or relevant, move to the fallback step.
 
-If a server is found, add it to `.github/mcp.json` (create if absent, merge if present):
+**If the live registry returns no usable result**, check `config/mcp-fallback.yml` from the DEPT standards repository. This file contains verified servers that vendors ship but haven't registered in the public registry (e.g. Contentful, Vercel, Figma, Shopify, Stripe, Sentry — all of which use remote OAuth servers with no npm package).
 
+Add confirmed servers to `.github/mcp.json`. There are two transport types — use the correct format for each:
+
+**Local/stdio server** (launched via npx):
 ```json
 {
   "mcpServers": {
-    "<technology-key>": {
+    "prisma": {
       "command": "npx",
-      "args": ["-y", "<mcp-package-name>"],
-      "env": { "<REQUIRED_ENV_VAR>": "${<REQUIRED_ENV_VAR>}" }
+      "args": ["-y", "prisma-mcp"]
+    },
+    "stripe": {
+      "command": "npx",
+      "args": ["-y", "@stripe/mcp", "--tools=all"],
+      "env": { "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}" }
     }
   }
 }
 ```
 
+**Remote/HTTP server** (OAuth, no local process):
+```json
+{
+  "servers": {
+    "contentful": {
+      "type": "http",
+      "url": "https://mcp.contentful.com/mcp"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com/mcp"
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://www.figma.com/mcp"
+    }
+  }
+}
+```
+
+> Note: VS Code uses `"servers"` (not `"mcpServers"`) for remote HTTP entries. Write both transport types into `.github/mcp.json` — VS Code merges them correctly.
+
 **Rules:**
 1. Only add entries for technologies **confirmed present** in this project.
-2. Only use MCP servers returned by the live registry — never hardcode package names.
-3. Include the `env` block only when the MCP server requires credentials — use the env var name from the server's documentation.
-4. Never write actual secret values — use `${ENV_VAR_NAME}` placeholders only.
-5. If the registry returns no result for a technology, skip — do not guess a package name.
+2. Use live registry first, fallback file second, skip if neither has a result.
+3. Include `env` only when credentials are required — use `${ENV_VAR_NAME}` placeholders only, never real values.
+4. Remote OAuth servers require no env vars — the user completes OAuth on first connect.
+5. If `mcp-fallback.yml` marks `skip: true` for a technology, omit it entirely.
 
 #### Step D — Fallback when `gh` CLI or registry is unavailable
 

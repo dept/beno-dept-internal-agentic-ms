@@ -1,0 +1,130 @@
+# MCP Server Fallback Registry
+#
+# PURPOSE: Curated list of verified MCP servers that are NOT indexed in the
+# live registry at registry.modelcontextprotocol.io.
+#
+# The Discovery Agent checks this file ONLY when the live registry returns
+# no usable result for a detected technology.
+#
+# MAINTENANCE: When a server appears in the live registry, remove it from here
+# to avoid drift. Add entries when a vendor ships an official MCP server but
+# hasn't registered it.
+#
+# TRANSPORT TYPES:
+#   stdio  — local process, launched via npx/node/uvx
+#   http   — remote server, uses OAuth or API key in Authorization header
+#
+# LAST VERIFIED: 2026-06-02
+
+servers:
+
+  # ─── CMS ──────────────────────────────────────────────────────────────────
+
+  contentful:
+    display: "Contentful"
+    source: "Official — https://www.contentful.com/developers/docs/tools/mcp-server/"
+    transport: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.contentful.com/mcp"
+    auth: "OAuth (browser flow on first connect)"
+    note: "No npm package. Uses OAuth — no token env var to configure."
+
+  storyblok:
+    display: "Storyblok"
+    source: "Official — https://www.storyblok.com/docs/mcp-server"
+    transport: stdio
+    command: npx
+    args: ["-y", "@storyblok/mcp"]
+    env_var: "STORYBLOK_TOKEN"
+    note: "Personal access token from My Account → API Keys"
+
+  # ─── E-commerce ───────────────────────────────────────────────────────────
+
+  shopify:
+    display: "Shopify"
+    source: "Official — https://shopify.dev/docs/apps/tools/mcp"
+    transport: stdio
+    command: npx
+    args: ["-y", "@shopify/dev-mcp@latest"]
+    note: "No env var required — authenticates via browser OAuth using Shopify CLI session"
+
+  # ─── Database / ORM ──────────────────────────────────────────────────────
+
+  prisma:
+    display: "Prisma"
+    source: "Official — https://www.prisma.io/docs/orm/more/development-environment/mcp-server"
+    transport: stdio
+    command: npx
+    args: ["-y", "prisma-mcp"]
+    note: "Reads prisma/schema.prisma directly — no env var required"
+
+  # ─── Deployment ───────────────────────────────────────────────────────────
+
+  vercel:
+    display: "Vercel"
+    source: "Official — https://vercel.com/docs/mcp"
+    transport: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.vercel.com/mcp"
+    auth: "OAuth (browser flow on first connect)"
+    note: "Remote server. No token env var needed — uses OAuth."
+
+  netlify:
+    display: "Netlify"
+    source: "Official — https://docs.netlify.com/ai/mcp/"
+    transport: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.netlify.com/mcp"
+    auth: "OAuth"
+    note: "Remote server. Uses OAuth."
+
+  # ─── Design ───────────────────────────────────────────────────────────────
+
+  figma:
+    display: "Figma"
+    source: "Official — https://help.figma.com/hc/en-us/articles/32132100833559"
+    transport: http
+    vscode_config:
+      type: "http"
+      url: "https://www.figma.com/mcp"
+    auth: "OAuth"
+    note: "Remote server. Uses OAuth — no token env var needed. Requires Dev or Full seat on Professional+ plan for full access."
+
+  # ─── Observability ────────────────────────────────────────────────────────
+
+  sentry:
+    display: "Sentry"
+    source: "Official — https://docs.sentry.io/product/sentry-mcp/"
+    transport: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.sentry.io/mcp"
+    auth: "OAuth"
+    note: "Remote server. Uses OAuth."
+
+  # ─── Payments ─────────────────────────────────────────────────────────────
+
+  stripe:
+    display: "Stripe"
+    source: "Official — https://docs.stripe.com/stripe-mcp"
+    transport: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.stripe.com"
+    auth: "OAuth"
+    npm_alternative:
+      command: npx
+      args: ["-y", "@stripe/mcp", "--tools=all"]
+      env_var: "STRIPE_SECRET_KEY"
+    note: "Prefer remote OAuth server. Local npx option available if OAuth not feasible."
+
+  # ─── Monorepo ─────────────────────────────────────────────────────────────
+
+  turborepo:
+    display: "Turborepo"
+    source: "Community — https://github.com/vercel/turborepo/discussions"
+    note: "No official MCP server available yet. Skip."
+    skip: true
