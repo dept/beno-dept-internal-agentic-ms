@@ -27,7 +27,7 @@ flowchart LR
 
 ### AI Project Discovery Agent
 
-The agent in `agents/ai-project-discovery-agent.agent.md` is a fully executable VS Code agent. Copy it to `.github/agents/` in your project, then select it from the agent picker in Copilot Chat and it will:
+The agent in `agents/ai-project-discovery.agent.md` is a fully executable VS Code agent. Copy it to `.github/agents/` in your project, then select it from the agent picker in Copilot Chat and it will:
 1. Inventory any existing agentic setup (agents, instructions, prompts, MCP config) already in the repo.
 2. Map system architecture, runtime boundaries, and monorepo structure.
 3. Extract dependencies, integrations, deployment, CMS, monitoring, and coding standards.
@@ -40,7 +40,7 @@ The agent in `agents/ai-project-discovery-agent.agent.md` is a fully executable 
 
 ### AI Project Maintainer Agent
 
-The agent in `agents/ai-project-maintainer-agent.agent.md` keeps the `.ai` folder current as the project evolves:
+The agent in `agents/ai-project-maintainer.agent.md` keeps the `.ai` folder current as the project evolves:
 1. Detects what has changed since the last `.ai` update using git history and file evidence.
 2. Assesses staleness severity per file (critical / moderate / minor / current).
 3. Applies targeted updates to affected sections only — correct content is preserved.
@@ -49,45 +49,36 @@ The agent in `agents/ai-project-maintainer-agent.agent.md` keeps the `.ai` folde
 
 Run the Maintainer Agent after each sprint, release, infrastructure change, or incident postmortem.
 
-## How to Bootstrap a New Project
+## How to Bootstrap inside a New Project
 
-### Step 1 — Copy agents and prompt into the project
+### Step 1 — Run the bootstrap prompt
 
-```bash
-cp agents/ai-project-discovery-agent.agent.md /path/to/your-project/.github/agents/
-cp agents/ai-project-maintainer-agent.agent.md /path/to/your-project/.github/agents/
-cp prompts/bootstrap-project-context.prompt.md /path/to/your-project/.github/prompts/
+In GitHub Copilot Chat (in your project), paste the following URL and press Enter:
+
+```
+https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/bootstrap-project-context.prompt.md
 ```
 
-The `templates/` directory contains reference templates used by the agents internally — you do not need to copy them manually. The Discovery Agent generates all `.ai/` content from actual repository evidence.
+The agent fetches the prompt from the DEPT standards repo, installs the Discovery and Maintainer agents into `.github/agents/`, and immediately runs full project discovery — all in one shot. No manual file copying required.
 
 During bootstrap, the agent automatically creates:
+- **`.github/agents/`** — Discovery and Maintainer agents installed from this repo
 - **`.ai/`** — nine context files describing the project
 - **AI wiring files** — `.github/copilot-instructions.md`, `CLAUDE.md`, `.github/instructions/ai-context.instructions.md` so every AI tool reads `.ai/`
-- **Developer skills** — fetched from the public `gh skill` registry ([agentskills.io](https://agentskills.io)) per detected technology and installed into `.github/skills/`
+- **Developer skills** — fetched from the public `gh skill` registry ([agentskills.io](https://agentskills.io)) per detected technology, installed into `.github/skills/`
 - **MCP config** — `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json` entries for technologies with official MCP servers (merged, never overwritten)
 - **Project dev agent** — `.github/agents/project-dev-agent.agent.md` with all skills wired in
 
 After bootstrap, any developer opening the project can select **Project Developer** from the agent picker and immediately get context-aware help with all the right skills loaded.
 
-### Step 2 — Run the Discovery Agent
-
-In GitHub Copilot Chat, select **AI Project Discovery Agent** from the agent picker, then send:
-
-```
-Bootstrap this project's .ai folder
-```
-
-Or run the slash command `/bootstrap-project-context`. The agent reads the repository and generates all nine `.ai` files automatically.
-
-### Step 3 — Review and approve
+### Step 2 — Review and approve
 
 1. Review all generated `.ai` files.
 2. Resolve `Validation Questions` — gaps the agent could not verify from code alone.
 3. Commit `.ai/` to a feature branch and open a PR for team review.
 4. Merge when approved.
 
-### Step 4 — Keep it current
+### Step 3 — Keep it current
 
 After each sprint or release, select the **AI Project Maintainer Agent** in Copilot Chat and run it. It detects what changed and updates only the affected sections.
 

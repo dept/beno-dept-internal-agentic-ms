@@ -20,8 +20,8 @@
 - Prevent documentation rot through automated maintenance after each sprint or release.
 
 ### Deliverables
-- `agents/ai-project-discovery-agent.agent.md` — generates the `.ai` folder from scratch
-- `agents/ai-project-maintainer-agent.agent.md` — keeps the `.ai` folder current as the project evolves
+- `agents/ai-project-discovery.agent.md` — generates the `.ai` folder from scratch
+- `agents/ai-project-maintainer.agent.md` — keeps the `.ai` folder current as the project evolves
 - Bootstrap prompt and templates
 
 ### Success Metrics

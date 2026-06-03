@@ -12,4 +12,4 @@ Skills are installed directly into the target project's `.github/skills/` by the
 ## Adding a new technology
 
 1. Add an entry to `config/stack-detection.yml` with detection patterns and a `search_term`
-2. Update the technology detection table in `agents/ai-project-discovery-agent.agent.md`
+2. Update the technology detection table in `agents/ai-project-discovery.agent.md`

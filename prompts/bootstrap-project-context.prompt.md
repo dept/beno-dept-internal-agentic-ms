@@ -1,17 +1,30 @@
 ---
-agent: "AI Project Discovery Agent"
-description: "Bootstrap a new project's .ai folder by running the AI Project Discovery Agent. Analyzes the repository and generates all nine .ai context files plus AI wiring files."
+description: "Bootstrap DEPT AI tooling into a new project — fetches discovery and maintainer agents, installs them into .github/agents/, then runs full project discovery and generates .ai/ context files."
 ---
 
-Run the **AI Project Discovery Agent** on this repository.
+You are bootstrapping DEPT Agentic Standards into this project.
 
-**Critical:** Write all output as actual files to the repository on disk. Do not write to session files or summarise in chat only. If `.ai/` does not exist, create it.
+**Critical:** Write all output as actual files to the repository on disk. Do not write to session files or summarise in chat only.
 
 **Exclude from analysis:** `node_modules/`, `.next/`, `dist/`, `build/`, `.turbo/`, `.git/`, `coverage/`, `.cache/`, `.pnpm-store/`
 
 **For monorepos:** Read `turbo.json`, `pnpm-workspace.yaml`, or root `package.json#workspaces` first. List all packages and treat each as a named service boundary before beginning per-package analysis.
 
-## Step 0 — Agentic setup inventory
+## Step 0 — Install DEPT agents into this project
+
+Fetch the following files from the DEPT Agentic Standards repo and write them to the paths shown. **Skip any file that already exists.**
+
+| Source URL | Write to |
+|---|---|
+| `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md` | `.github/agents/ai-project-discovery.agent.md` |
+| `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-maintainer.agent.md` | `.github/agents/ai-project-maintainer.agent.md` |
+| `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/bootstrap-project-context.prompt.md` | `.github/prompts/bootstrap-project-context.prompt.md` |
+
+Create `.github/agents/` and `.github/prompts/` directories if they do not exist.
+
+After writing all files, continue with the steps below.
+
+## Step 1 — Agentic setup inventory
 
 Before generating any files, scan the repository for existing agentic configuration:
 
@@ -22,7 +35,7 @@ Before generating any files, scan the repository for existing agentic configurat
 
 Record all findings — they will be documented in `agent-registry.md` and used to decide whether to create or append wiring files.
 
-## Step 1 — Generate `.ai/` context files
+## Step 2 — Generate `.ai/` context files
 
 Generate and write all nine files to `.ai/`:
 - `project-context.md`
@@ -43,7 +56,7 @@ For each file:
 5. Cite source evidence using file paths and config names.
 6. Redact any secrets or privileged credentials.
 
-## Step 2 — Wire AI context for all tools
+## Step 3 — Wire AI context for all tools
 
 After generating `.ai/`, create the following wiring files so every AI tool automatically loads the context. **Check each file first — append if it exists, create if not. Never overwrite existing content.**
 
@@ -65,11 +78,14 @@ All wiring files must instruct the AI to:
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
 
-## Step 3 — Completion summary
+## Step 4 — Completion summary
 
 After all files are written, output:
 ```
 ## Bootstrap Complete
+
+### Agents installed
+[list each .github/agents/*.agent.md created, or "Already present"]
 
 ### .ai/ files created
 [list each file]
