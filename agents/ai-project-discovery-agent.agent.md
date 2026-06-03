@@ -1,7 +1,7 @@
 ---
 description: "Use when bootstrapping a new project's .ai folder, generating project context, running repository discovery, creating architecture documentation, or setting up AI-ready project documentation from scratch."
 name: "AI Project Discovery Agent"
-tools: [read, search, edit]
+tools: [read, search, edit, execute, web]
 ---
 
 You are an AI Project Discovery Agent for DEPT Managed Services.
@@ -190,7 +190,7 @@ Skills are installed into `.github/skills/<name>/` automatically.
 
 **1. DEPT MCP Registry (primary — highest trust):**
 ```bash
-curl -s "https://raw.githubusercontent.com/elmarkou/dept-agentic-standards/main/config/mcp-registry.yml"
+curl -s "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/config/mcp-registry.yml"
 ```
 If the technology has an entry in this file and `skip` is not `true`, use it. This file contains manually verified official servers. Do not query the live registry for technologies that are already in this file.
 
