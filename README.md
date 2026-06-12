@@ -2,6 +2,8 @@
 
 `dept-agentic-standards` is the DEPT framework for making Managed Services projects AI-ready. It provides two executable agents, a self-installing bootstrap prompt, and templates that together give any project a complete, evidence-based AI context in one step.
 
+Managed Services teams should be able to onboard an AI agent into any project in hours, not weeks. This repository defines the minimum operational, architectural, and governance context required for that outcome.
+
 ## What it does
 
 ```mermaid
@@ -17,6 +19,8 @@ flowchart LR
 ```
 
 One URL in Copilot Chat bootstraps everything. No cloning this repo. No manual file copying.
+
+The bootstrap process also checks for Confluence documentation and environment URLs (test, acc, prod), prompting for any missing information and storing it in the generated context files and package.json.
 
 ## The agents
 
@@ -60,7 +64,7 @@ Press Enter. The agent fetches the prompt from this repo and runs. No manual fil
 | `.github/agents/ai-project-discovery.agent.md` | Discovery agent (installed from this repo) |
 | `.github/agents/ai-project-maintainer.agent.md` | Maintainer agent (installed from this repo) |
 | `.github/prompts/bootstrap-project-context.prompt.md` | This prompt (for future re-runs) |
-| `.ai/*.md` | Nine context files describing the project |
+| `.ai/*.md` | Nine context files describing the project (now includes Confluence and environment URLs) |
 | `.github/copilot-instructions.md` | Copilot wiring to read `.ai/` |
 | `CLAUDE.md` | Claude wiring to read `.ai/` |
 | `.github/instructions/ai-context.instructions.md` | Shared instructions for all tools |
@@ -72,7 +76,7 @@ Existing files are never overwritten — agents append or skip.
 
 ## After bootstrap
 
-**Review:** Open each `.ai/` file and resolve the `Validation Questions` — gaps the agent flagged but could not verify from code alone. Commit to a feature branch and open a PR.
+**Review:** Open each `.ai/` file and resolve the `Validation Questions` — gaps the agent flagged but could not verify from code alone. Also verify that the Confluence page and environment URLs (test, acc, prod) were correctly captured in the appropriate files and that package.json has been updated with this information. Commit to a feature branch and open a PR.
 
 **Keep current:** After each sprint or release, select **AI Project Maintainer** in the agent picker and run it.
 

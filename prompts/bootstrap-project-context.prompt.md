@@ -35,6 +35,22 @@ Before generating any files, scan the repository for existing agentic configurat
 
 Record all findings — they will be documented in `agent-registry.md` and used to decide whether to create or append wiring files.
 
+## Step 1.5 — Check for Confluence and Environment URLs
+
+Check for the existence of Confluence page and URLs for test, acc, and prod environments:
+- Confluence page (for project documentation)
+- Test environment URL
+- Acceptance (acc) environment URL
+- Production (prod) environment URL
+
+If any of these are missing from the codebase or configuration, prompt the user to provide them:
+- Ask for Confluence URL or page identifier
+- Ask for test environment URL
+- Ask for acceptance environment URL  
+- Ask for production environment URL
+
+Store this information for use in the next step when generating `.ai/` files.
+
 ## Step 2 — Generate `.ai/` context files
 
 Generate and write all nine files to `.ai/`:
@@ -51,10 +67,13 @@ Generate and write all nine files to `.ai/`:
 For each file:
 1. Start from root config files. Map all packages/apps first.
 2. Extract evidence from source code, config, CI/CD, and infrastructure files.
-3. Populate every section — no placeholders, no empty sections.
-4. Include `Assumption:` tags, `Confidence: <0-100>%`, and `Validation Questions` per major section.
-5. Cite source evidence using file paths and config names.
-6. Redact any secrets or privileged credentials.
+3. Include the Confluence page and environment URLs (test, acc, prod) collected in Step 1.5 where relevant:
+   - Confluence URL in project-context.md or dependencies.md
+   - Environment URLs in operational-context.md
+4. Populate every section — no placeholders, no empty sections.
+5. Include `Assumption:` tags, `Confidence: <0-100>%`, and `Validation Questions` per major section.
+6. Cite source evidence using file paths and config names.
+7. Redact any secrets or privileged credentials.
 
 ## Step 3 — Wire AI context for all tools
 
@@ -77,6 +96,24 @@ All wiring files must instruct the AI to:
 2. Cross-reference `.ai/` with any existing agents, instructions, and prompts found in Step 0
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
+
+## Step 3.5 — Update package.json with Environment URLs
+
+Check if package.json exists in the repository root. If it exists, update it to include the Confluence and environment URLs collected in Step 1.5. The URLs should be added in a "config" object following npm package.json conventions:
+
+```json
+{
+  "config": {
+    "confluenceUrl": "https://your-confluence-page.example.com",
+    "testUrl": "https://test.your-app.example.com",
+    "accUrl": "https://acc.your-app.example.com", 
+    "prodUrl": "https://prod.your-app.example.com"
+  }
+}
+```
+
+If package.json does not exist, create a minimal one with just the config section containing these URLs.
+Always preserve existing content in package.json - only add or update the config section.
 
 ## Step 4 — Completion summary
 
@@ -104,6 +141,12 @@ After all files are written, output:
 
 ### Existing agentic setup found
 [list files found in Step 0, or "None found"]
+
+### Confluence and Environment URLs
+[list Confluence URL, test URL, acc URL, prod URL collected or "None provided"]
+
+### Package.json Updates
+[list any updates made to package.json to include environment URLs, or "None"]
 
 ### Validation Questions to resolve
 [list open questions from all .ai/ files]
