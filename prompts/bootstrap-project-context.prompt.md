@@ -4,7 +4,7 @@ description: "Bootstrap DEPT AI tooling into a new project — fetches discovery
 
 You are bootstrapping DEPT Agentic Standards into this project.
 
-**Critical:** Write all output as actual files to the repository on disk. Do not write to session files or summarise in chat only.
+**Critical:** Write all output as actual files to the repository on disk. Do not write to session files or summarise in chat only. Follow superpowers:writing-skills discipline: evidence first, no hallucination, all unknowns flagged explicitly.
 
 **Exclude from analysis:** `node_modules/`, `.next/`, `dist/`, `build/`, `.turbo/`, `.git/`, `coverage/`, `.cache/`, `.pnpm-store/`
 
@@ -24,6 +24,23 @@ Create `.github/agents/` and `.github/prompts/` directories if they do not exist
 
 After writing all files, continue with the steps below.
 
+## Step 0.5 — Install required superpowers skills
+
+The agents and instructions installed in Step 0 reference superpowers skills using `/superpowers:` notation. These skills must be available locally for the agents to reference them.
+
+Fetch the following required skills from the DEPT Agentic Standards repo and write them to `.github/skills/`:
+
+| Skill Name | Source URL | Write to |
+|---|---|---|
+| writing-skills | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/writing-skills/SKILL.md` | `.github/skills/writing-skills/SKILL.md` |
+| systematic-debugging | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/systematic-debugging/SKILL.md` | `.github/skills/systematic-debugging/SKILL.md` |
+| verification-before-completion | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/verification-before-completion/SKILL.md` | `.github/skills/verification-before-completion/SKILL.md` |
+| test-driven-development | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/test-driven-development/SKILL.md` | `.github/skills/test-driven-development/SKILL.md` |
+
+Create `.github/skills/` directory if it does not exist. **Skip any skill that already exists.**
+
+These skills provide discipline and patterns that the agents reference. After writing them, verify that agents can load the skills when `/superpowers:skill-name` is referenced.
+
 ## Step 1 — Agentic setup inventory
 
 Before generating any files, scan the repository for existing agentic configuration:
@@ -35,21 +52,21 @@ Before generating any files, scan the repository for existing agentic configurat
 
 Record all findings — they will be documented in `agent-registry.md` and used to decide whether to create or append wiring files.
 
-## Step 1.5 — Check for Confluence and Environment URLs
+## Step 1.5 — Collect Handover and Onboarding Links
 
-Check for the existence of Confluence page and URLs for test, acc, and prod environments:
-- Confluence page (for project documentation)
+Collect the links needed for handover and onboarding:
+- GitHub repository URL
 - Test environment URL
 - Acceptance (acc) environment URL
 - Production (prod) environment URL
+- Keeper URL (or equivalent source for `.env` values)
 
-If any of these are missing from the codebase or configuration, prompt the user to provide them:
-- Ask for Confluence URL or page identifier
-- Ask for test environment URL
-- Ask for acceptance environment URL  
-- Ask for production environment URL
+Do not ask the user for a Confluence URL. The Confluence location is always created under:
+- `https://dept-nl.atlassian.net/wiki/spaces/MS/Projects`
 
-Store this information for use in the next step when generating `.ai/` files.
+If any GitHub, environment, or Keeper link cannot be verified from codebase/config evidence, prompt the user for the missing values.
+
+Store this information for `.ai/` generation and Confluence documentation creation.
 
 ## Step 2 — Generate `.ai/` context files
 
@@ -67,9 +84,9 @@ Generate and write all nine files to `.ai/`:
 For each file:
 1. Start from root config files. Map all packages/apps first.
 2. Extract evidence from source code, config, CI/CD, and infrastructure files.
-3. Include the Confluence page and environment URLs (test, acc, prod) collected in Step 1.5 where relevant:
-   - Confluence URL in project-context.md or dependencies.md
-   - Environment URLs in operational-context.md
+3. Include the onboarding links collected in Step 1.5 where relevant:
+  - GitHub and Keeper references in `onboarding.md` and `project-context.md`
+  - Environment URLs in `operational-context.md`
 4. Populate every section — no placeholders, no empty sections.
 5. Include `Assumption:` tags, `Confidence: <0-100>%`, and `Validation Questions` per major section.
 6. Cite source evidence using file paths and config names.
@@ -97,23 +114,26 @@ All wiring files must instruct the AI to:
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
 
-## Step 3.5 — Update package.json with Environment URLs
+## Step 3.5 — Create Confluence Project Documentation
 
-Check if package.json exists in the repository root. If it exists, update it to include the Confluence and environment URLs collected in Step 1.5. The URLs should be added in a "config" object following npm package.json conventions:
+After `.ai/` files are generated and AI wiring is complete, create project documentation in Confluence.
 
-```json
-{
-  "config": {
-    "confluenceUrl": "https://your-confluence-page.example.com",
-    "testUrl": "https://test.your-app.example.com",
-    "accUrl": "https://acc.your-app.example.com", 
-    "prodUrl": "https://prod.your-app.example.com"
-  }
-}
-```
+Target location:
+- Space: `MS`
+- Parent path: `Projects`
+- Base URL: `https://dept-nl.atlassian.net/wiki/spaces/MS/Projects`
 
-If package.json does not exist, create a minimal one with just the config section containing these URLs.
-Always preserve existing content in package.json - only add or update the config section.
+Rules:
+1. Ensure the `Projects` directory path exists. Create missing pages in that path when required.
+2. Create a project page under `Projects` if it does not exist yet.
+3. Create readable, role-friendly documentation for developers and client managers. Keep it practical and not overly technical.
+4. Prefer a subpage structure for readability, for example:
+   - Overview
+   - Environments and Access
+   - Onboarding and Handover
+5. Include GitHub URL, environment URLs, and Keeper URL (or equivalent secrets-location reference).
+6. If GitHub/environment/Keeper links are still unknown, prompt the user before finalizing pages.
+7. Do not create a separate coding standards page in Confluence unless explicitly requested.
 
 ## Step 4 — Completion summary
 
@@ -124,14 +144,18 @@ After all files are written, output:
 ### Agents installed
 [list each .github/agents/*.agent.md created, or "Already present"]
 
+### Superpowers skills installed
+- writing-skills
+- systematic-debugging
+- verification-before-completion
+- test-driven-development
+[Or note if already present]
+
 ### .ai/ files created
 [list each file]
 
 ### AI wiring files created/updated
 [list each file with action: created / appended / already present]
-
-### Skills installed
-[list each .github/skills/<name>/SKILL.md created, or "None matched"]
 
 ### MCP servers added
 [list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]
@@ -142,11 +166,11 @@ After all files are written, output:
 ### Existing agentic setup found
 [list files found in Step 0, or "None found"]
 
-### Confluence and Environment URLs
-[list Confluence URL, test URL, acc URL, prod URL collected or "None provided"]
+### Handover and Access Links
+[list GitHub URL, test URL, acc URL, prod URL, Keeper URL collected or "Missing: <fields>"]
 
-### Package.json Updates
-[list any updates made to package.json to include environment URLs, or "None"]
+### Confluence Pages
+[list created/updated pages under MS/Projects, or "None"]
 
 ### Validation Questions to resolve
 [list open questions from all .ai/ files]

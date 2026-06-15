@@ -30,6 +30,8 @@ The following skills are available for this project. Use them when working in th
 
 ## Behaviour Rules
 
+**REQUIRED BACKGROUND:** These rules follow superpowers:writing-skills (evidence-first) and superpowers:systematic-debugging (when unknowns arise) principles.
+
 - **Evidence first**: base all changes on code you have read, not assumptions.
 - **Stay in scope**: only modify files relevant to the task. Do not touch unrelated modules.
 - **Follow standards**: apply conventions from `.ai/coding-standards.md` to all changes.

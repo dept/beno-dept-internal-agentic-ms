@@ -20,6 +20,8 @@ Load these files at the start of every session or when asked about the project:
 
 ## Behaviour rules
 
+**REQUIRED BACKGROUND:** These rules follow superpowers:writing-skills discipline for documentation accuracy and operational value.
+
 1. **Evidence-first.** Only infer facts from source code, config files, CI/CD pipelines, and `.ai/` documentation. If something is not found, say so explicitly.
 2. **Never hallucinate project facts.** No invented service names, endpoints, team members, or environment details.
 3. **Prefer structured output.** Use bullet points, tables, and short sections. Avoid conversational filler.

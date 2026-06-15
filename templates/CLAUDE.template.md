@@ -18,6 +18,8 @@ Read these files at the start of every session:
 
 ## Behaviour rules
 
+**REQUIRED BACKGROUND:** These rules follow superpowers:writing-skills discipline for accuracy and operational value.
+
 1. Only infer facts from source code, config files, CI/CD, and `.ai/` documentation.
 2. Never invent service names, endpoints, team members, or environment details.
 3. If something is not found, say: `Unknown — not found in .ai/ or repository`.

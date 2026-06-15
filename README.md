@@ -20,7 +20,7 @@ flowchart LR
 
 One URL in Copilot Chat bootstraps everything. No cloning this repo. No manual file copying.
 
-The bootstrap process also checks for Confluence documentation and environment URLs (test, acc, prod), prompting for any missing information and storing it in the generated context files and package.json.
+The bootstrap process creates Confluence project documentation under `https://dept-nl.atlassian.net/wiki/spaces/MS/Projects`, builds readable onboarding/handover pages (with subpages when useful), and collects missing GitHub/environment/Keeper links only when they cannot be verified from repository evidence.
 
 ## The agents
 
@@ -64,7 +64,8 @@ Press Enter. The agent fetches the prompt from this repo and runs. No manual fil
 | `.github/agents/ai-project-discovery.agent.md` | Discovery agent (installed from this repo) |
 | `.github/agents/ai-project-maintainer.agent.md` | Maintainer agent (installed from this repo) |
 | `.github/prompts/bootstrap-project-context.prompt.md` | This prompt (for future re-runs) |
-| `.ai/*.md` | Nine context files describing the project (now includes Confluence and environment URLs) |
+| `.github/skills/<name>/SKILL.md` | Superpowers skills (writing-skills, systematic-debugging, verification-before-completion, test-driven-development) |
+| `.ai/*.md` | Nine context files describing the project, including onboarding and environment context |
 | `.github/copilot-instructions.md` | Copilot wiring to read `.ai/` |
 | `CLAUDE.md` | Claude wiring to read `.ai/` |
 | `.github/instructions/ai-context.instructions.md` | Shared instructions for all tools |
@@ -74,9 +75,22 @@ Press Enter. The agent fetches the prompt from this repo and runs. No manual fil
 
 Existing files are never overwritten — agents append or skip.
 
+### Superpowers Skills
+
+The agents and project instructions reference **superpowers skills** using `/superpowers:skill-name` notation. These skills provide discipline and patterns for quality development:
+
+- **writing-skills**: Evidence-first documentation and skill creation discipline
+- **systematic-debugging**: Root-cause analysis and debugging patterns
+- **verification-before-completion**: Quality gates and testing before declaring work done
+- **test-driven-development**: TDD patterns and RED-GREEN-REFACTOR cycle
+
+These skills are installed automatically in Step 0.5 of the bootstrap process. They are fetched from this repository and written to `.github/skills/`. Agents reference these skills with `/superpowers:skill-name` notation when they need to invoke those disciplines.
+
 ## After bootstrap
 
-**Review:** Open each `.ai/` file and resolve the `Validation Questions` — gaps the agent flagged but could not verify from code alone. Also verify that the Confluence page and environment URLs (test, acc, prod) were correctly captured in the appropriate files and that package.json has been updated with this information. Commit to a feature branch and open a PR.
+**Review:** Open each `.ai/` file and resolve the `Validation Questions` : gaps the agent flagged but could not verify from code alone. Also verify that Confluence pages under `MS/Projects` were created or updated correctly, and that GitHub/environment/Keeper references are accurate.
+
+**Maintain:** The maintainer agent updates Confluence pages when project context changes in ways relevant to onboarding/handover. Bugfix-only changes that do not alter important operational context should not trigger Confluence updates.
 
 **Keep current:** After each sprint or release, select **AI Project Maintainer** in the agent picker and run it.
 

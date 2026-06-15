@@ -16,8 +16,8 @@ Project delivery evolves from ad hoc documentation to structured, AI-consumable 
 ## Future AI Agents
 
 Target agent families:
-- Discovery agents (project mapping and initial `.ai` generation)
-- Maintainer agents (keeping `.ai` folders current after sprints, releases, and incidents)
+- ~~Discovery agents (project mapping and initial `.ai` generation)~~ ✓ IMPLEMENTED
+- ~~Maintainer agents (keeping `.ai` folders current after sprints, releases, and incidents)~~ ✓ IMPLEMENTED
 - Change-planning agents (impact/risk analysis)
 - Incident agents (triage and runbook assistance)
 - QA/release agents (test gap and release readiness checks)
