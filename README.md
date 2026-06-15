@@ -47,15 +47,15 @@ The bootstrap process creates Confluence project documentation under `https://de
 4. Captures new unknowns as validation questions.
 5. Produces a change summary of what was updated and why.
 
-## How to bootstrap a new project
+## How to migrate a project into Managed Services
 
 Open **GitHub Copilot Chat** inside the target project and paste this URL:
 
 ```
-https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/bootstrap-project-context.prompt.md
+https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate-ms.prompt.md
 ```
 
-Press Enter. The agent fetches the prompt from this repo and runs. No manual file copying needed.
+Press Enter. The prompt runs the complete migration workflow. No manual setup needed.
 
 **What gets created:**
 
