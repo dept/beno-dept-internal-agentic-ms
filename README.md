@@ -160,7 +160,7 @@ dept-agentic-standards/
     ├── CLAUDE.template.md
     ├── ai-context.instructions.template.md
     └── agents/
-        └── project-dev-agent.template.md
+        └── support-agent.template.md
 ```
 
 ## Configuration

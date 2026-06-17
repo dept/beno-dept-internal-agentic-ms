@@ -376,9 +376,9 @@ Read [relevant .ai/ file] for how [technology] is configured in this project.
 
 Populate from `.ai/` evidence — no generic placeholders.
 
-#### Project dev agent
+#### Support agent
 
-After all skills are installed, create `.github/agents/project-dev-agent.agent.md` if not already present.
+After all skills are installed, create `.github/agents/support-agent.agent.md` if not already present.
 
 **Tools to include:**
 - Always: `read`, `edit`, `search`, `execute`, `web`, `agent`
@@ -388,12 +388,12 @@ After all skills are installed, create `.github/agents/project-dev-agent.agent.m
 
 ```markdown
 ---
-description: "Project developer agent for [PROJECT_NAME]. Use for feature development, debugging, code changes, and browser testing in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
-name: "Project Developer"
+description: "Support agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
+name: "Support Agent"
 tools: [read, edit, search, execute, web, agent, github/*, [ADDITIONAL_MCP_TOOLS]]
 ---
 
-You are the developer agent for **[PROJECT_NAME]**.
+You are the support agent for **[PROJECT_NAME]**.
 
 ## Before Each Task
 Read `.ai/project-context.md`, `.ai/architecture.md`, and `.ai/coding-standards.md`.
@@ -420,8 +420,8 @@ Read `.ai/project-context.md`, `.ai/architecture.md`, and `.ai/coding-standards.
 **Example for a Next.js + Contentful + Vercel project:**
 ```markdown
 ---
-description: "Project developer agent for Acme. Use for feature development, debugging, and code changes in this Next.js + Contentful + Vercel project. Skills: nextjs, contentful, vercel."
-name: "Project Developer"
+description: "Support agent for Acme. Use for feature development, debugging, support tasks, and code changes in this Next.js + Contentful + Vercel project. Skills: nextjs, contentful, vercel."
+name: "Support Agent"
 tools: [read, edit, search, execute, web, agent, github/*, contentful/*, vercel/*, nextjs/*]
 ---
 ```
@@ -442,7 +442,7 @@ Before finalising, verify:
 5. All three AI wiring files have been created or updated.
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
-8. `project-dev-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
+8. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
 
 ## Completion Summary
 

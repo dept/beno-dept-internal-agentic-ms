@@ -105,11 +105,11 @@ curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-
 
 **Read first, merge, write back.** Never remove or overwrite existing entries.
 
-## Step 11: Generate Project Developer Agent
+## Step 11: Generate Support Agent
 
-Create `.github/agents/project-dev-agent.agent.md` if not already present.
+Create `.github/agents/support-agent.agent.md` if not already present.
 
-**Tools to include (use template/agents/project-dev-agent.template.md):**
+**Tools to include (use template/agents/support-agent.template.md):**
 
 1. **Core tools** (always present):
    - `read` — file system access
@@ -129,7 +129,7 @@ Create `.github/agents/project-dev-agent.agent.md` if not already present.
    - Example: if `.vscode/mcp.json` has `@atlassian/mcp-jira`, add `jira/*`
 
 **Agent content from template:**
-- Use `templates/agents/project-dev-agent.template.md`
+- Use `templates/agents/support-agent.template.md`
 - Substitute all `[PLACEHOLDER]` values in the body:
   - `[PROJECT_NAME]` → from `.ai/project-context.md`
   - `[TECH_STACK_SUMMARY]` → e.g., "Node.js + Next.js + PostgreSQL + Vercel"
@@ -154,7 +154,7 @@ Create `.github/agents/project-dev-agent.agent.md` if not already present.
 - [ ] Skills searched for all detected technologies
 - [ ] MCP servers installed (or documented why not)
 - [ ] MCP config written to all 3 IDE files
-- [ ] Project developer agent created
+- [ ] Project support agent created
 
 ## Completion Signal
 

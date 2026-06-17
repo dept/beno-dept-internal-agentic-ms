@@ -120,7 +120,7 @@ For each detected technology:
 2. Check DEPT MCP registry for servers
 3. Fallback to public MCP registry
 4. Write MCP config to all three IDE files
-5. Generate project-dev-agent with detected tools
+5. Generate support-agent with detected tools
 
 ## Quality Gates
 

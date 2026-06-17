@@ -10,12 +10,12 @@ You are running the **DEPT Managed Services Migration** workflow. This orchestra
 
 After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ AI agents installed and ready to use (discovery and maintainer agents)
+- ✓ Support agent installed and ready to use (discovery and maintainer agents)
 - ✓ Superpowers skills available (evidence-first discipline, systematic debugging, verification, TDD)
 - ✓ All AI tools wired (Copilot, Claude, Cursor auto-load `.ai/` context)
 - ✓ Confluence handover pages created
 - ✓ Stack-specific skills and MCP servers installed
-- ✓ Project developer agent configured
+- ✓ Support agent configured
 
 **Time estimate:** 15-30 minutes depending on repository complexity.
 
@@ -92,8 +92,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 4: Stack-Aware Tooling
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/04-stack-tooling.prompt.md`
-**Does:** Detects tech stack, installs skills + MCP servers, creates project dev agent
-**Verify before continuing:** MCP config in all 3 IDEs, project-dev-agent exists
+**Does:** Detects tech stack, installs skills + MCP servers, creates support agent
+**Verify before continuing:** MCP config in all 3 IDEs, support-agent exists
 
 ---
 
@@ -123,7 +123,7 @@ After all phases complete, output:
 - Technologies detected: [count]
 - Skills installed: [list or "None matched"]
 - MCP servers added: [list or "None"]
-- Project developer agent: [created / present]
+- Support agent: [created / present]
 
 ### Validation
 Run: scripts/validate.sh .
