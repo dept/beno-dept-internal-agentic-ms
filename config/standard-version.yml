@@ -1,0 +1,16 @@
+# DEPT Agentic Project Standard — Version Tracker
+# This file is the single source of truth for the current standard version.
+# Bump this when templates, required files, or agent definitions change.
+
+standard:
+  version: "1.0.0"
+  release_date: "2026-06-17"
+  changelog:
+    - version: "1.0.0"
+      date: "2026-06-17"
+      changes:
+        - "Initial standard: 9 required .ai/ context files"
+        - "Discovery Agent v1 and Maintainer Agent v1"
+        - "Stack detection for JS/TS ecosystems"
+        - "MCP registry with 15 verified servers"
+        - "Templates for Copilot, Claude, and Cursor wiring"

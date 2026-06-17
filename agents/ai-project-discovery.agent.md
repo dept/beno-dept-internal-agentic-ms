@@ -194,28 +194,52 @@ Read `package.json` (all workspaces if monorepo) and config files at repository 
 
 Use `config/stack-detection.yml` from this standards repository as detection hints — it maps package names to human-readable technology names. If a package is not listed there, derive the technology name from the package itself (e.g. `@prisma/client` → `prisma`, `@shopify/shopify-api` → `shopify`).
 
-#### Step B — Install skills from the public registry
+#### Step B — Install skills from GitHub
 
-For each detected technology, search and install from [agentskills.io](https://agentskills.io) — the live public skills registry:
+For each detected technology, search GitHub for community SKILL.md files using the `gh` CLI:
 
 ```bash
-# Search live registry for a skill
-gh skill search <technology-name>
-
-# Install the best match (highest quality / most downloaded)
-gh skill install <owner>/<repo> <skill-name>
-
-# Pin version for reproducibility
-gh skill install <owner>/<repo> <skill-name> --pin v1.0.0
+# Search GitHub for SKILL.md files matching the technology
+gh search repos "SKILL.md <technology-name>" --sort stars --limit 5 --json fullName,url,stargazersCount
 ```
 
-Skills are installed into `.github/skills/<name>/` automatically.
+If a result looks authoritative (vendor org, high stars), fetch the SKILL.md:
+
+```bash
+# Download into the project skills folder
+curl -sL "https://raw.githubusercontent.com/<owner>/<repo>/main/SKILL.md" \
+  -o ".github/skills/<technology-name>/SKILL.md"
+```
 
 **Rules:**
-1. Search for every detected technology — not just ones in a local list.
+1. Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`) — not individual accounts.
 2. Skip if a skill with that name already exists in `.github/skills/`.
-3. If `gh skill search` returns no result, skip — do not fabricate a skill.
-4. Record each result (installed / skipped / not found) for the completion summary.
+3. If no suitable GitHub result is found, generate a minimal project-specific skill from `.ai/` evidence (see Fallback below).
+4. Record each result (downloaded / skipped / generated fallback) for the completion summary.
+
+**Fallback — generate skill from project evidence:**
+
+When `gh search` returns no authoritative result, write a minimal skill file populated from what was actually found during analysis:
+
+```markdown
+---
+name: <technology-name>
+description: "Use when working with <technology> in [PROJECT_NAME]: [specific scenarios based on .ai/ files]."
+---
+
+# <Technology Display Name>
+
+## Project Context
+Read `.ai/project-context.md` for how <technology> is used in this project.
+
+## Key Files
+- [actual paths discovered during analysis]
+
+## Common Operations
+[most relevant operations for how this tech is actually used here — from .ai/ evidence only]
+```
+
+Populate from `.ai/` evidence only — no generic placeholders.
 
 #### Step C — Find and add MCP servers
 
@@ -417,7 +441,7 @@ Before finalising, verify:
 4. No secrets are included.
 5. All three AI wiring files have been created or updated.
 6. Existing agentic configuration is documented in `agent-registry.md`.
-7. At least one skill file created per detected technology from the registry.
+7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
 8. `project-dev-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
 
 ## Completion Summary

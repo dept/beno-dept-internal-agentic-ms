@@ -1,111 +1,225 @@
-# dept-agentic-standards
+# DEPT Agentic Project Standards
 
-`dept-agentic-standards` is the DEPT framework for making Managed Services projects AI-ready. It provides two executable agents, a self-installing bootstrap prompt, and templates that together give any project a complete, evidence-based AI context in one step.
+> Making Managed Services projects AI-ready with structured context, governed agents, and automated maintenance.
 
-Managed Services teams should be able to onboard an AI agent into any project in hours, not weeks. This repository defines the minimum operational, architectural, and governance context required for that outcome.
+## What This Is
 
-## What it does
+A framework that transforms any repository into an AI-ready project by:
 
-```mermaid
-flowchart LR
-    A[Any Project Repo] -->|paste one URL| B[Bootstrap Prompt]
-    B -->|fetches + installs| C[Discovery Agent]
-    B -->|fetches + installs| D[Maintainer Agent]
-    C --> E[.ai/ context files]
-    C --> F[Skills + MCP config]
-    C --> G[Project dev agent]
-    H[Sprint / Release] --> D
-    D --> E
+1. **Defining a standard** — The `.ai/` folder structure (9 context files) that any AI tool can consume
+2. **Providing agents** — Discovery (bootstraps `.ai/`) and Maintainer (keeps it current)
+3. **Shipping tooling** — Scaffold script, validation script, and composable migration prompts
+4. **Curating registries** — Stack detection (77 technologies) and MCP server registry
+
+## Quick Start
+
+### Option A: Deterministic Scaffold (No LLM)
+
+```bash
+# Creates .ai/ folder structure + IDE wiring (templates only, no content)
+./scripts/scaffold.sh /path/to/your/project
 ```
 
-One URL in Copilot Chat bootstraps everything. No cloning this repo. No manual file copying.
+Then run the Discovery Agent to fill templates with real project data.
 
-The bootstrap process creates Confluence project documentation under `https://dept-nl.atlassian.net/wiki/spaces/MS/Projects`, builds readable onboarding/handover pages (with subpages when useful), and collects missing GitHub/environment/Keeper links only when they cannot be verified from repository evidence.
+### Option B: Full AI Migration (LLM-powered)
 
-## The agents
-
-### AI Project Discovery Agent
-
-`agents/ai-project-discovery.agent.md` — runs once to set up a new project. It:
-
-1. Inventories any existing agentic setup already in the repo (agents, instructions, MCP config).
-2. Maps architecture, runtime boundaries, and monorepo structure from code evidence.
-3. Generates all nine `.ai/` context files with confidence scores and validation questions.
-4. Wires every AI tool (Copilot, Claude, Cursor) to read `.ai/` — appending to existing config, never overwriting.
-5. Searches the live [`gh skill` registry](https://agentskills.io) for every detected technology and installs matching skills into `.github/skills/`.
-6. Queries the live [MCP registry](https://registry.modelcontextprotocol.io) and the [DEPT curated registry](config/mcp-registry.yml) per detected technology — merges official MCP servers into `.vscode/mcp.json`, `.cursor/mcp.json`, and `.mcp.json`.
-7. Generates a project developer agent (`.github/agents/project-dev-agent.agent.md`) wired to all installed skills and MCP tools.
-8. Flags unresolved gaps for human validation.
-
-### AI Project Maintainer Agent
-
-`agents/ai-project-maintainer.agent.md` — run after each sprint, release, or infrastructure change. It:
-
-1. Detects what has changed using git history and file evidence.
-2. Assesses staleness per `.ai/` file (critical / moderate / minor / current).
-3. Applies targeted updates to affected sections — preserving correct content.
-4. Captures new unknowns as validation questions.
-5. Produces a change summary of what was updated and why.
-
-## How to migrate a project into Managed Services
-
-Open **GitHub Copilot Chat** inside the target project and paste this URL:
-
-```
-https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate-ms.prompt.md
+**Step 1** — Bootstrap the prompt into your project (run once in terminal):
+```bash
+mkdir -p .github/prompts && \
+  curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
+  -o ".github/prompts/migrate.prompt.md"
 ```
 
-Press Enter. The prompt runs the complete migration workflow. No manual setup needed.
+**Step 2** — Run it in your AI tool:
+```
+# VS Code Copilot / Cursor (after step 1)
+@workspace /migrate
 
-**What gets created:**
+# Claude Code (can fetch directly without step 1)
+Fetch https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md and follow the instructions.
 
-| Path | What |
-|---|---|
-| `.github/agents/ai-project-discovery.agent.md` | Discovery agent (installed from this repo) |
-| `.github/agents/ai-project-maintainer.agent.md` | Maintainer agent (installed from this repo) |
-| `.github/prompts/bootstrap-project-context.prompt.md` | This prompt (for future re-runs) |
-| `.github/skills/<name>/SKILL.md` | Superpowers skills (writing-skills, systematic-debugging, verification-before-completion, test-driven-development) |
-| `.ai/*.md` | Nine context files describing the project, including onboarding and environment context |
-| `.github/copilot-instructions.md` | Copilot wiring to read `.ai/` |
-| `CLAUDE.md` | Claude wiring to read `.ai/` |
-| `.github/instructions/ai-context.instructions.md` | Shared instructions for all tools |
-| `.github/skills/<name>/SKILL.md` | Skills per detected technology |
-| `.vscode/mcp.json` / `.cursor/mcp.json` / `.mcp.json` | MCP server config per detected technology |
-| `.github/agents/project-dev-agent.agent.md` | Project dev agent with all tools wired |
+# Any tool with file access (after step 1)
+Read .github/prompts/migrate.prompt.md and follow the instructions.
+```
 
-Existing files are never overwritten — agents append or skip.
+This orchestrates 4 phases:
+1. **Install** — agents + superpowers skills
+2. **Discover** — analyze repo, generate `.ai/` context
+3. **Integrate** — wire AI tools, create Confluence docs
+4. **Stack Tooling** — install skills + MCP servers for detected tech
 
-### Superpowers Skills
+### Option C: Phase-by-Phase (Recommended for complex projects)
 
-The agents and project instructions reference **superpowers skills** using `/superpowers:skill-name` notation. These skills provide discipline and patterns for quality development:
+Bootstrap all phase prompts first:
+```bash
+mkdir -p .github/prompts
+BASE="https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts"
+for f in 01-install 02-discover 03-integrate 04-stack-tooling; do
+  curl -sL "$BASE/$f.prompt.md" -o ".github/prompts/$f.prompt.md"
+done
+```
 
-- **writing-skills**: Evidence-first documentation and skill creation discipline
-- **systematic-debugging**: Root-cause analysis and debugging patterns
-- **verification-before-completion**: Quality gates and testing before declaring work done
-- **test-driven-development**: TDD patterns and RED-GREEN-REFACTOR cycle
+Then run each phase in your AI tool:
+```
+# VS Code Copilot / Cursor
+@workspace /01-install
+@workspace /02-discover
+@workspace /03-integrate
+@workspace /04-stack-tooling
+```
 
-These skills are installed automatically in Step 0.5 of the bootstrap process. They are fetched from this repository and written to `.github/skills/`. Agents reference these skills with `/superpowers:skill-name` notation when they need to invoke those disciplines.
+## What Gets Created
 
-## After bootstrap
-
-**Review:** Open each `.ai/` file and resolve the `Validation Questions` : gaps the agent flagged but could not verify from code alone. Also verify that Confluence pages under `MS/Projects` were created or updated correctly, and that GitHub/environment/Keeper references are accurate.
-
-**Maintain:** The maintainer agent updates Confluence pages when project context changes in ways relevant to onboarding/handover. Bugfix-only changes that do not alter important operational context should not trigger Confluence updates.
-
-**Keep current:** After each sprint or release, select **AI Project Maintainer** in the agent picker and run it.
-
-## Repository structure
+After migration, your project has:
 
 ```
-agents/          # Executable agents (copy to .github/agents/ in target project)
-prompts/         # Bootstrap prompt (reference by URL, no copy needed)
-config/          # Stack detection patterns + DEPT curated MCP registry
-standards/       # Agentic project standard documentation
-templates/       # .ai/ file templates used by the discovery agent
-docs/            # Vision and roadmap
-examples/        # Example .ai/ output
+your-project/
+├── .ai/                           # AI context (the standard)
+│   ├── .meta.yml                  # Provenance & version tracking
+│   ├── project-context.md         # Business context, ownership, environments
+│   ├── architecture.md            # System topology, data flows, boundaries
+│   ├── runbooks.md                # Incident procedures, rollback, escalation
+│   ├── dependencies.md            # Vendor inventory, risk, upgrade paths
+│   ├── cms.md                     # CMS architecture, content lifecycle
+│   ├── operational-context.md     # Deployment, monitoring, SLOs
+│   ├── coding-standards.md        # Conventions, quality gates, testing
+│   ├── agent-registry.md          # All agentic config in one place
+│   └── onboarding.md              # Setup, access, local dev
+├── .github/
+│   ├── agents/                    # Copilot agent definitions
+│   ├── copilot-instructions.md    # Copilot → .ai/ wiring
+│   ├── instructions/              # VS Code AI context
+│   ├── prompts/                   # Reusable prompts
+│   └── skills/                    # Superpowers skills
+├── CLAUDE.md                      # Claude → .ai/ wiring
+├── .vscode/mcp.json               # MCP servers (VS Code)
+├── .cursor/mcp.json               # MCP servers (Cursor)
+└── .mcp.json                      # MCP servers (Claude Code)
 ```
+
+## Validation
+
+Verify any project's `.ai/` folder meets the standard:
+
+```bash
+./scripts/validate.sh /path/to/your/project
+```
+
+Checks: required files present, content quality, placeholder detection, staleness.
+
+## Agents
+
+| Agent | Purpose | Logic |
+|-------|---------|-------|
+| [Discovery Agent](agents/ai-project-discovery.agent.md) | Bootstraps `.ai/` from scratch | [logic.md](agents/ai-project-discovery/logic.md) |
+| [Maintainer Agent](agents/ai-project-maintainer.agent.md) | Keeps `.ai/` current over time | [logic.md](agents/ai-project-maintainer/logic.md) |
+
+Agent logic is separated from tool-specific wiring — see `agents/*/logic.md` for portable workflow definitions.
+
+## Repository Structure
+
+```
+dept-agentic-standards/
+├── agents/                        # Agent definitions (Copilot format)
+│   ├── ai-project-discovery.agent.md
+│   ├── ai-project-maintainer.agent.md
+│   ├── ai-project-discovery/logic.md    # Tool-agnostic workflow
+│   └── ai-project-maintainer/logic.md   # Tool-agnostic workflow
+├── config/
+│   ├── change-impact-matrix.yml   # Maps code changes → .ai/ updates
+│   ├── mcp-registry.yml           # Curated MCP servers (with staleness tracking)
+│   ├── stack-detection.yml        # 77 technologies across 8 ecosystems
+│   ├── standard-version.yml       # Current standard version (single source of truth)
+│   └── validation-rules.yml       # Rules for validate.sh
+├── docs/
+│   ├── roadmap.md                 # 5-phase rollout plan
+│   ├── success-metrics.md         # KPIs and feedback loop
+│   └── vision.md                  # Strategic direction
+├── examples/
+│   ├── example-ai-folder.md       # Next.js + Contentful + Azure
+│   ├── dotnet-api-example.md      # .NET 8 + Azure App Service
+│   └── python-monorepo-example.md # FastAPI + Celery + AWS
+├── prompts/
+│   ├── migrate.prompt.md          # Orchestrator (chains 4 phases)
+│   ├── 01-install.prompt.md       # Phase 1: Install agents + skills
+│   ├── 02-discover.prompt.md      # Phase 2: Analyze + generate .ai/
+│   ├── 03-integrate.prompt.md     # Phase 3: Wire tools + Confluence
+│   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + dev agent
+├── scripts/
+│   ├── scaffold.sh                # Deterministic .ai/ folder creation
+│   └── validate.sh                # Quality gate for .ai/ compliance
+├── standards/
+│   └── agentic-project-standard.md # The formal standard definition
+└── templates/                     # Templates for all generated files
+    ├── meta.template.yml
+    ├── project-context.template.md
+    ├── architecture.template.md
+    ├── ... (9 context templates)
+    ├── copilot-instructions.template.md
+    ├── CLAUDE.template.md
+    ├── ai-context.instructions.template.md
+    └── agents/
+        └── project-dev-agent.template.md
+```
+
+## Configuration
+
+### Stack Detection
+
+`config/stack-detection.yml` covers 77 technologies across:
+- Frontend (Next.js, React, Vue, Svelte, Remix, Astro)
+- Backend (.NET, Python, Go, Java, PHP, Ruby, Rust)
+- CMS (Contentful, Sanity, Storyblok, WordPress, Strapi)
+- Infrastructure (Terraform, Bicep, Pulumi, Docker, K8s)
+- CI/CD (GitHub Actions, Azure Pipelines, GitLab, Jenkins)
+- Database (Prisma, Drizzle, Supabase, PostgreSQL, MongoDB)
+- And more...
+
+### MCP Registry
+
+`config/mcp-registry.yml` — manually verified MCP servers with:
+- Per-entry `last_verified` dates
+- Detection hints matching stack-detection categories
+- Transport type (stdio/HTTP), auth methods, and quality notes
+- Staleness policy: re-verify entries older than 90 days
 
 ## Roadmap
 
-See `docs/roadmap.md`. Short version: harden the standard → automate discovery → scale across managed services → specialized agents → commercial offering.
+| Phase | Status | Description |
+|-------|--------|-------------|
+| 1. Standard | ✅ Complete | Define `.ai/` baseline + templates |
+| 2. Agents | ✅ Complete | Discovery + Maintainer agents |
+| 3. Scale | 🔄 In Progress | Roll out across Managed Services |
+| 4. Specialize | Planned | Incident, Release, QA agents |
+| 5. Commercial | Planned | Service proposition + pricing |
+
+See [docs/roadmap.md](docs/roadmap.md) for details.
+
+### Next Steps — Phase 3+ Tickets
+
+Ready-to-implement improvement tickets for Q3 2026+:
+- **MA-1:** Pilot Program — Bootstrap 5 reference projects
+- **MA-2:** Jira MCP integration
+- **MA-3:** Agent escalation workflows
+- **MA-4:** Adoption dashboard
+- **MA-5:** Troubleshooting guide
+- Plus 10+ additional tickets for Phase 4, 5, 6
+
+See [docs/phase3-plus-tickets.md](docs/phase3-plus-tickets.md) for full backlog (can be imported to Jira).
+
+## Measuring Success
+
+See [docs/success-metrics.md](docs/success-metrics.md) for:
+- Leading indicators (weekly): migration count, scaffold success rate, developer adoption
+- Lagging indicators (monthly): staleness, MTTR improvement, developer NPS
+- Red flags and automated collection methods
+
+## Contributing
+
+1. Clone this repo
+2. Make changes to templates, agents, or config
+3. Bump version in `config/standard-version.yml` if changing the standard
+4. Test with `./scripts/scaffold.sh` on a sample project
+5. Validate with `./scripts/validate.sh`
+6. Open a PR

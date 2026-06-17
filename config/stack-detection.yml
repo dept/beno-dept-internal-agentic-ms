@@ -11,7 +11,8 @@
 #            → pick official/highest-quality result
 #
 # HOW TO READ THIS FILE:
-#   The agent reads package.json deps and config file presence.
+#   The agent reads package.json deps, config file presence, and
+#   language-specific manifest files (*.csproj, go.mod, pom.xml, etc.).
 #   When a detection rule matches, it uses the `name` as the search term
 #   for both `gh skill search` and the MCP registry query.
 #
@@ -274,3 +275,322 @@ technologies:
     display: "Vitest"
     detect:
       deps: ["vitest"]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MULTI-LANGUAGE / ECOSYSTEM DETECTION
+  # Technologies beyond the JS/TS ecosystem, detected via manifest files,
+  # project structure, and language-specific config.
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ─── .NET Ecosystem ──────────────────────────────────────────────────────
+
+  - name: dotnet
+    display: ".NET"
+    category: backend
+    detect:
+      config_files: ["*.csproj", "*.sln", "global.json", "*.fsproj"]
+    skills_search_terms: ["dotnet", "csharp", "aspnet"]
+    notes: "Detected via C#/F# project files or solution files. Covers ASP.NET Core, Blazor, MAUI, etc."
+
+  - name: dotnet-aspnet
+    display: "ASP.NET Core"
+    category: backend
+    detect:
+      config_files: ["appsettings.json", "appsettings.Development.json"]
+      directories: ["Controllers/", "Pages/", "Views/"]
+    skills_search_terms: ["aspnet", "aspnet-core", "dotnet-web"]
+    notes: "ASP.NET Core web apps detected via appsettings.json and conventional directories."
+
+  - name: dotnet-fsharp
+    display: "F#"
+    category: backend
+    detect:
+      config_files: ["*.fsproj"]
+    skills_search_terms: ["fsharp", "dotnet-fsharp"]
+    notes: "F# projects detected via .fsproj files."
+
+  # ─── Python Ecosystem ────────────────────────────────────────────────────
+
+  - name: python
+    display: "Python"
+    category: backend
+    detect:
+      config_files: ["pyproject.toml", "requirements.txt", "setup.py", "setup.cfg"]
+    skills_search_terms: ["python", "python3"]
+    notes: "General Python project detected via standard manifest files."
+
+  - name: python-poetry
+    display: "Python (Poetry)"
+    category: backend
+    detect:
+      config_files: ["poetry.lock", "pyproject.toml"]
+    skills_search_terms: ["python", "poetry"]
+    notes: "Poetry-managed Python project. pyproject.toml with [tool.poetry] section."
+
+  - name: python-pipenv
+    display: "Python (Pipenv)"
+    category: backend
+    detect:
+      config_files: ["Pipfile", "Pipfile.lock"]
+    skills_search_terms: ["python", "pipenv"]
+    notes: "Pipenv-managed Python project detected via Pipfile."
+
+  - name: python-uv
+    display: "Python (uv)"
+    category: backend
+    detect:
+      config_files: ["uv.lock"]
+    skills_search_terms: ["python", "uv"]
+    notes: "uv-managed Python project detected via uv.lock."
+
+  - name: django
+    display: "Django"
+    category: backend
+    detect:
+      config_files: ["manage.py"]
+      directories: ["templates/", "staticfiles/"]
+    skills_search_terms: ["django", "python-django"]
+    notes: "Django web framework detected via manage.py and conventional directories."
+
+  - name: fastapi
+    display: "FastAPI"
+    category: backend
+    detect:
+      config_files: ["pyproject.toml", "requirements.txt"]
+      # Look for 'fastapi' in requirements.txt or pyproject.toml dependencies
+    skills_search_terms: ["fastapi", "python-fastapi"]
+    notes: "FastAPI detected when fastapi appears in Python dependency files."
+
+  - name: flask
+    display: "Flask"
+    category: backend
+    detect:
+      config_files: ["pyproject.toml", "requirements.txt"]
+      # Look for 'flask' in requirements.txt or pyproject.toml dependencies
+    skills_search_terms: ["flask", "python-flask"]
+    notes: "Flask detected when flask appears in Python dependency files."
+
+  # ─── Go Ecosystem ────────────────────────────────────────────────────────
+
+  - name: golang
+    display: "Go"
+    category: backend
+    detect:
+      config_files: ["go.mod", "go.sum"]
+    skills_search_terms: ["golang", "go"]
+    notes: "Go projects detected via go.mod module file."
+
+  - name: golang-gin
+    display: "Go (Gin)"
+    category: backend
+    detect:
+      config_files: ["go.mod"]
+      # Look for 'github.com/gin-gonic/gin' in go.mod
+    skills_search_terms: ["golang", "gin", "go-gin"]
+    notes: "Gin web framework detected when gin-gonic/gin appears in go.mod."
+
+  - name: golang-echo
+    display: "Go (Echo)"
+    category: backend
+    detect:
+      config_files: ["go.mod"]
+      # Look for 'github.com/labstack/echo' in go.mod
+    skills_search_terms: ["golang", "echo", "go-echo"]
+    notes: "Echo web framework detected when labstack/echo appears in go.mod."
+
+  # ─── Java / Kotlin / JVM ─────────────────────────────────────────────────
+
+  - name: java-maven
+    display: "Java (Maven)"
+    category: backend
+    detect:
+      config_files: ["pom.xml"]
+    skills_search_terms: ["java", "maven", "spring"]
+    notes: "Maven-based Java project detected via pom.xml."
+
+  - name: java-gradle
+    display: "Java/Kotlin (Gradle)"
+    category: backend
+    detect:
+      config_files: ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"]
+    skills_search_terms: ["java", "kotlin", "gradle", "spring"]
+    notes: "Gradle-based JVM project detected via build.gradle or build.gradle.kts."
+
+  - name: spring-boot
+    display: "Spring Boot"
+    category: backend
+    detect:
+      config_files: ["pom.xml", "build.gradle", "build.gradle.kts"]
+      directories: ["src/main/java/", "src/main/resources/"]
+      # Look for 'spring-boot' in pom.xml or build.gradle
+    skills_search_terms: ["spring-boot", "spring", "java-spring"]
+    notes: "Spring Boot detected when spring-boot-starter appears in Maven/Gradle config."
+
+  - name: kotlin
+    display: "Kotlin"
+    category: backend
+    detect:
+      config_files: ["build.gradle.kts", "*.kt"]
+    skills_search_terms: ["kotlin", "kotlin-jvm"]
+    notes: "Kotlin detected via .kt source files or Gradle Kotlin DSL."
+
+  # ─── Infrastructure as Code ──────────────────────────────────────────────
+
+  - name: terraform
+    display: "Terraform"
+    category: infrastructure
+    detect:
+      config_files: ["main.tf", "*.tf", "terraform.tfvars", ".terraform.lock.hcl"]
+      directories: [".terraform/"]
+    skills_search_terms: ["terraform", "hashicorp-terraform", "hcl"]
+    notes: "Terraform IaC detected via .tf files. Supports AWS, Azure, GCP providers."
+
+  - name: bicep
+    display: "Azure Bicep"
+    category: infrastructure
+    detect:
+      config_files: ["*.bicep", "bicepconfig.json"]
+    skills_search_terms: ["bicep", "azure-bicep", "azure-infrastructure"]
+    notes: "Azure Bicep IaC detected via .bicep files."
+
+  - name: pulumi
+    display: "Pulumi"
+    category: infrastructure
+    detect:
+      config_files: ["Pulumi.yaml", "Pulumi.yml"]
+      directories: [".pulumi/"]
+    skills_search_terms: ["pulumi", "infrastructure-as-code"]
+    notes: "Pulumi IaC detected via Pulumi.yaml project file. Supports multiple languages."
+
+  - name: cloudformation
+    display: "AWS CloudFormation"
+    category: infrastructure
+    detect:
+      config_files: ["template.yaml", "template.yml", "template.json"]
+      directories: ["cloudformation/"]
+      # Also detect via AWSTemplateFormatVersion in YAML files
+    skills_search_terms: ["cloudformation", "aws-cloudformation", "aws-sam"]
+    notes: "AWS CloudFormation/SAM templates detected via template.yaml or cloudformation/ directory."
+
+  - name: kubernetes
+    display: "Kubernetes"
+    category: infrastructure
+    detect:
+      config_files: ["k8s.yaml", "k8s.yml", "kustomization.yaml"]
+      directories: ["k8s/", "kubernetes/", "charts/"]
+    skills_search_terms: ["kubernetes", "k8s", "helm"]
+    notes: "Kubernetes manifests and Helm charts detected via conventional directories."
+
+  - name: helm
+    display: "Helm"
+    category: infrastructure
+    detect:
+      config_files: ["Chart.yaml", "Chart.yml"]
+      directories: ["charts/", "templates/"]
+    skills_search_terms: ["helm", "kubernetes-helm"]
+    notes: "Helm charts detected via Chart.yaml."
+
+  # ─── CI/CD ───────────────────────────────────────────────────────────────
+
+  - name: github-actions
+    display: "GitHub Actions"
+    category: ci-cd
+    detect:
+      directories: [".github/workflows/"]
+      config_files: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    skills_search_terms: ["github-actions", "github-ci"]
+    notes: "GitHub Actions CI/CD detected via .github/workflows/ directory."
+
+  - name: azure-pipelines
+    display: "Azure Pipelines"
+    category: ci-cd
+    detect:
+      config_files: ["azure-pipelines.yml", "azure-pipelines.yaml"]
+      directories: [".azure-pipelines/"]
+    skills_search_terms: ["azure-pipelines", "azure-devops"]
+    notes: "Azure DevOps Pipelines detected via azure-pipelines.yml."
+
+  - name: gitlab-ci
+    display: "GitLab CI"
+    category: ci-cd
+    detect:
+      config_files: [".gitlab-ci.yml"]
+    skills_search_terms: ["gitlab-ci", "gitlab"]
+    notes: "GitLab CI/CD detected via .gitlab-ci.yml."
+
+  - name: jenkins
+    display: "Jenkins"
+    category: ci-cd
+    detect:
+      config_files: ["Jenkinsfile", "jenkins.yml"]
+      directories: [".jenkins/"]
+    skills_search_terms: ["jenkins", "jenkins-pipeline"]
+    notes: "Jenkins CI detected via Jenkinsfile (declarative or scripted pipeline)."
+
+  - name: circleci
+    display: "CircleCI"
+    category: ci-cd
+    detect:
+      config_files: [".circleci/config.yml"]
+      directories: [".circleci/"]
+    skills_search_terms: ["circleci", "circle-ci"]
+    notes: "CircleCI detected via .circleci/config.yml."
+
+  # ─── PHP / Laravel ───────────────────────────────────────────────────────
+
+  - name: php
+    display: "PHP"
+    category: backend
+    detect:
+      config_files: ["composer.json", "composer.lock"]
+    skills_search_terms: ["php", "composer"]
+    notes: "PHP project detected via composer.json package manifest."
+
+  - name: laravel
+    display: "Laravel"
+    category: backend
+    detect:
+      config_files: ["artisan", "composer.json"]
+      directories: ["app/Http/", "routes/", "resources/views/"]
+      # Also detect when composer.json contains laravel/framework dependency
+    skills_search_terms: ["laravel", "php-laravel"]
+    notes: "Laravel framework detected via artisan CLI and conventional directory structure. Confirm via laravel/framework in composer.json."
+
+  - name: symfony
+    display: "Symfony"
+    category: backend
+    detect:
+      config_files: ["composer.json", "symfony.lock"]
+      directories: ["config/packages/", "src/Controller/"]
+      # Also detect when composer.json contains symfony/ dependencies
+    skills_search_terms: ["symfony", "php-symfony"]
+    notes: "Symfony framework detected via symfony.lock or symfony/ deps in composer.json."
+
+  # ─── Ruby / Rails ────────────────────────────────────────────────────────
+
+  - name: ruby
+    display: "Ruby"
+    category: backend
+    detect:
+      config_files: ["Gemfile", "Gemfile.lock", ".ruby-version"]
+    skills_search_terms: ["ruby", "rubygems"]
+    notes: "Ruby project detected via Gemfile dependency manifest."
+
+  - name: rails
+    display: "Ruby on Rails"
+    category: backend
+    detect:
+      config_files: ["Gemfile", "config/routes.rb", "Rakefile"]
+      directories: ["app/controllers/", "app/models/", "app/views/", "db/migrate/"]
+    skills_search_terms: ["rails", "ruby-on-rails"]
+    notes: "Rails framework detected via config/routes.rb and conventional MVC directory structure."
+
+  # ─── Rust ────────────────────────────────────────────────────────────────
+
+  - name: rust
+    display: "Rust"
+    category: backend
+    detect:
+      config_files: ["Cargo.toml", "Cargo.lock"]
+    skills_search_terms: ["rust", "cargo"]
+    notes: "Rust project detected via Cargo.toml manifest."

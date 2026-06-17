@@ -1,15 +1,22 @@
 # Skill Templates
 
-The Discovery Agent installs skills from the **public `gh skill` registry** at runtime in the target project:
+The Discovery Agent installs skills into the target project at runtime. Skills are fetched from **vendor GitHub repositories**, not from a central registry:
 
 ```bash
-gh skill search nextjs
-gh skill install <owner>/<repo> nextjs
+# Search for a vendor-maintained SKILL.md on GitHub
+gh search repos "SKILL.md <technology-name>" --sort stars --limit 5
+
+# If a vendor org result is found, download it
+curl -sL "https://raw.githubusercontent.com/<owner>/<repo>/main/SKILL.md" \
+  -o ".github/skills/<technology-name>/SKILL.md"
 ```
 
-Skills are installed directly into the target project's `.github/skills/` by the `gh` CLI — they come from the public internet ([agentskills.io](https://agentskills.io)), not from this repo. No fallback templates are stored here; the live registry is the single source.
+If no authoritative vendor-owned result is found, the agent generates a minimal project-specific skill from the `.ai/` evidence collected during discovery. These generated skills live in the target project's `.github/skills/` folder, not in this repo.
+
+No template skills are stored here. Skills for this standards repo itself (agents, prompts, scripts) live at the repo root under `agents/` and `prompts/`.
 
 ## Adding a new technology
 
-1. Add an entry to `config/stack-detection.yml` with detection patterns and a `search_term`
-2. Update the technology detection table in `agents/ai-project-discovery.agent.md`
+1. Add an entry to `config/stack-detection.yml` with detection patterns
+2. Add a matching entry to `config/mcp-registry.yml` if a verified MCP server exists
+3. The Discovery Agent will use these when bootstrapping projects that include the technology

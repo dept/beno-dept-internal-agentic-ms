@@ -1,0 +1,209 @@
+# DEPT Agentic Standard — Change Impact Matrix
+# Maps source code/config changes to which .ai/ files need updating.
+# Used by the Maintainer Agent to determine what to refresh after changes.
+
+# HOW TO READ:
+#   trigger: what kind of file change was detected
+#   impacts: which .ai/ files are affected
+#   severity: how urgently the .ai/ file needs updating
+#     critical = blocking (architecture change, new service, removed dependency)
+#     moderate = should update within sprint
+#     minor = update when convenient
+#   action: what the maintainer should do
+
+change_impact_rules:
+
+  # --- Architecture & Infrastructure ---
+  - trigger: "New service or package added (new directory in monorepo, new microservice)"
+    detect_by:
+      - "new directory matching workspace pattern"
+      - "new entry in pnpm-workspace.yaml or turbo.json"
+      - "new *.csproj or go.mod in subdirectory"
+    impacts:
+      - file: architecture.md
+        severity: critical
+        action: "Add new service to topology diagram and describe boundaries"
+      - file: project-context.md
+        severity: moderate
+        action: "Update service inventory and tech stack summary"
+      - file: dependencies.md
+        severity: moderate
+        action: "Add new service dependencies"
+
+  - trigger: "Infrastructure config changed (Terraform, Bicep, Docker, CI/CD)"
+    detect_by:
+      - "changes to *.tf, *.bicep, Pulumi.*, Dockerfile"
+      - "changes to .github/workflows/, azure-pipelines.yml"
+      - "changes to docker-compose.yml"
+    impacts:
+      - file: architecture.md
+        severity: moderate
+        action: "Update deployment topology if new resources added"
+      - file: operational-context.md
+        severity: moderate
+        action: "Update deployment pipeline and environment descriptions"
+      - file: runbooks.md
+        severity: minor
+        action: "Check if new infra needs operational procedures"
+
+  - trigger: "Database schema or ORM changes"
+    detect_by:
+      - "new migration files (alembic, EF Core, Prisma, Drizzle)"
+      - "changes to schema.prisma, models.py, *.entity.ts"
+    impacts:
+      - file: architecture.md
+        severity: minor
+        action: "Update data flow if new entities are significant"
+      - file: dependencies.md
+        severity: minor
+        action: "Update if new database dependency introduced"
+
+  # --- Dependencies & Packages ---
+  - trigger: "Major dependency added or removed"
+    detect_by:
+      - "changes to package.json dependencies (not devDependencies)"
+      - "changes to requirements.txt, pyproject.toml [dependencies]"
+      - "changes to *.csproj PackageReference"
+      - "new MCP server config in .vscode/mcp.json"
+    impacts:
+      - file: dependencies.md
+        severity: moderate
+        action: "Add/remove from dependency inventory, assess risk"
+      - file: project-context.md
+        severity: minor
+        action: "Update tech stack if it's a framework-level change"
+
+  - trigger: "Major version bump (semver major)"
+    detect_by:
+      - "dependency version changed from X.y.z to (X+1).y.z"
+    impacts:
+      - file: dependencies.md
+        severity: moderate
+        action: "Update version, note breaking changes, assess risk level"
+      - file: runbooks.md
+        severity: minor
+        action: "Check if upgrade introduces new failure modes"
+
+  # --- CMS & Content ---
+  - trigger: "CMS configuration changed"
+    detect_by:
+      - "changes to contentful config, sanity schema, storyblok config"
+      - "changes to CMS SDK initialization or client setup"
+      - "new content types or webhook registrations"
+    impacts:
+      - file: cms.md
+        severity: critical
+        action: "Update content model, webhooks, and publishing flow"
+      - file: architecture.md
+        severity: minor
+        action: "Update if CMS integration topology changed"
+
+  # --- API & Integrations ---
+  - trigger: "API routes or endpoints changed"
+    detect_by:
+      - "changes to route files (pages/api/, app/api/, routes/, controllers/)"
+      - "new OpenAPI/Swagger specs"
+      - "GraphQL schema changes"
+    impacts:
+      - file: architecture.md
+        severity: moderate
+        action: "Update API surface area and integration flows"
+      - file: coding-standards.md
+        severity: minor
+        action: "Verify API conventions still documented correctly"
+
+  # --- Operations & Monitoring ---
+  - trigger: "Monitoring or alerting config changed"
+    detect_by:
+      - "changes to Sentry config, Datadog config, Application Insights"
+      - "new alert rules or dashboards"
+      - "changes to health check endpoints"
+    impacts:
+      - file: operational-context.md
+        severity: moderate
+        action: "Update observability section"
+      - file: runbooks.md
+        severity: moderate
+        action: "Update incident response with new alert procedures"
+
+  - trigger: "Environment or deployment config changed"
+    detect_by:
+      - "changes to environment variable definitions"
+      - "new environment added (e.g., new deployment target)"
+      - "changes to deployment scripts or pipeline"
+    impacts:
+      - file: operational-context.md
+        severity: moderate
+        action: "Update environments and promotion flow"
+      - file: onboarding.md
+        severity: minor
+        action: "Update setup instructions if new env vars needed"
+
+  # --- Coding Standards ---
+  - trigger: "Linting, testing, or quality config changed"
+    detect_by:
+      - "changes to .eslintrc, .prettierrc, ruff.toml, .editorconfig"
+      - "changes to jest.config, vitest.config, pytest.ini"
+      - "changes to tsconfig.json strict settings"
+      - "changes to CI quality gate thresholds"
+    impacts:
+      - file: coding-standards.md
+        severity: moderate
+        action: "Update conventions and quality gates"
+
+  - trigger: "Git workflow or branch strategy changed"
+    detect_by:
+      - "changes to branch protection rules"
+      - "changes to CODEOWNERS"
+      - "changes to PR templates"
+    impacts:
+      - file: coding-standards.md
+        severity: minor
+        action: "Update branching and PR requirements"
+      - file: onboarding.md
+        severity: minor
+        action: "Update contribution workflow"
+
+  # --- Agents & AI Tooling ---
+  - trigger: "Agent or AI config changed"
+    detect_by:
+      - "changes to .github/agents/, CLAUDE.md, .cursor/rules/"
+      - "changes to .github/copilot-instructions.md"
+      - "changes to MCP config files"
+      - "new skills installed"
+    impacts:
+      - file: agent-registry.md
+        severity: critical
+        action: "Update agent inventory, instructions, MCP servers"
+
+  # --- Team & Access ---
+  - trigger: "Team or access changes"
+    detect_by:
+      - "changes to CODEOWNERS"
+      - "changes to README team/contact section"
+      - "new contributors (detectable via git log)"
+    impacts:
+      - file: project-context.md
+        severity: minor
+        action: "Update ownership and contact information"
+      - file: onboarding.md
+        severity: minor
+        action: "Update access requirements if new systems added"
+
+# --- Conflict Resolution Rules ---
+conflict_resolution:
+  # When .ai/ files have been manually edited by humans
+  rules:
+    - "Sections marked with <!-- human-maintained --> are NEVER auto-updated"
+    - "If file has been manually edited since last maintenance, show diff and ask for review"
+    - "Maintainer additions go at the end of sections, not inline"
+    - "When in doubt, append a '## Updates (auto-generated)' section rather than modifying existing content"
+    - "Never remove content — only add, update, or mark as potentially stale"
+
+  escalation:
+    - severity: critical
+      action: "Create PR with changes, assign to CODEOWNERS, require human review"
+    - severity: moderate
+      action: "Create PR with changes, auto-merge after 48h if no objections"
+    - severity: minor
+      action: "Batch into weekly maintenance PR"

@@ -1,0 +1,52 @@
+# DEPT Agentic Standard — Validation Rules
+# Used by scripts/validate.sh to verify .ai/ folder quality.
+
+validation:
+  # All files that MUST exist in a compliant .ai/ folder
+  required_files:
+    - project-context.md
+    - architecture.md
+    - runbooks.md
+    - dependencies.md
+    - cms.md
+    - operational-context.md
+    - coding-standards.md
+    - agent-registry.md
+    - onboarding.md
+
+  # Optional but recommended
+  recommended_files:
+    - .meta.yml
+
+  # Quality checks applied to each file
+  quality:
+    min_content_lines: 10          # Files under this are likely stubs
+    max_todo_markers: 0            # No [TODO] or {{PLACEHOLDER}} allowed
+    require_headings: true         # Must have at least one markdown heading
+    todo_patterns:
+      - "[TODO]"
+      - "{{.*}}"
+      - "[PLACEHOLDER]"
+      - "TBD"
+      - "FIXME"
+
+  # File-specific checks
+  file_checks:
+    architecture.md:
+      should_contain:
+        - "mermaid"               # Should have a diagram
+    runbooks.md:
+      should_contain:
+        - "## "                   # Should have procedure headings
+    dependencies.md:
+      should_contain:
+        - "|"                     # Should have a table
+    agent-registry.md:
+      should_contain:
+        - "Discovery"             # Must reference the discovery agent
+
+  # Staleness detection
+  staleness:
+    warn_after_days: 30           # Yellow flag
+    critical_after_days: 90       # Red flag
+    check_git_activity: true      # Compare .ai/ last commit vs repo last commit

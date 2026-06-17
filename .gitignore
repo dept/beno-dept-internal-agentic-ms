@@ -1,2 +1,16 @@
-# VS Code local history
-.history/
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Hermes
+.hermes/
+
+# Node (if any tooling is added later)
+node_modules/
+.memory/
