@@ -27,14 +27,14 @@ Then run the Discovery Agent to fill templates with real project data.
 **Step 1** — Bootstrap the prompt into your project (run once in terminal):
 ```bash
 mkdir -p .github/prompts && \
-  curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
+  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
   -o ".github/prompts/migrate.prompt.md"
 ```
 
 **Step 2** — Run it in your AI tool:
 ```
 # VS Code Copilot / Cursor (after step 1)
-@workspace /migrate
+@workspace /ms-migration
 
 # Claude Code (can fetch directly without step 1)
 Fetch https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md and follow the instructions.
@@ -57,7 +57,7 @@ Bootstrap all phase prompts first:
 mkdir -p .github/prompts
 BASE="https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts"
 for f in 01-install 02-discover 03-integrate 04-stack-tooling; do
-  curl -sL "$BASE/$f.prompt.md" -o ".github/prompts/$f.prompt.md"
+  command curl -sL "$BASE/$f.prompt.md" -o ".github/prompts/$f.prompt.md"
 done
 ```
 
@@ -70,19 +70,30 @@ Then run each phase in your AI tool:
 @workspace /04-stack-tooling
 ```
 
-### Option D: Graphify-Assisted Discovery (Default inside `/migrate`)
+### Option D: Graphify-Assisted Discovery (Default inside `/ms-migration`)
 
-`/migrate` now **attempts Graphify automatically before Discovery** so you do not need two different migration habits.
+`/ms-migration` now **attempts Graphify automatically before Discovery** so you do not need two different migration habits.
 
-Default behavior inside `/migrate`:
-- if `graphify` is installed, run `graphify . --wiki`
-- else if `uv` is available, run `uv tool install graphifyy` and then `graphify . --wiki`
-- else if `pipx` is available, run `pipx install graphifyy` and then `graphify . --wiki`
-- else if `python3` is available, run `python3 -m pip install --user graphifyy` and then `python3 -m graphify . --wiki`
+Default behavior inside `/ms-migration`:
+- if `graphify` is installed, use it, and if a backend SDK is missing try to repair it with the matching extra (`graphifyy[openai]`, `graphifyy[gemini]`, `graphifyy[anthropic]`)
+- else if `uv` is available, run `uv tool install ...` and then `graphify . --wiki`
+- else if `pipx` is available, run `pipx install ... --force` and then `graphify . --wiki`
+- else if `python3` is available, install `pipx` first via `python3 -m pip install --user pipx`, try `python3 -m pipx install ... --force`, and only then fall back to `python3 -m pip install --user ...`
 - else continue migration without blocking
 
+**Important:** Graphify can run without an API key for code-only repositories, but doc-heavy repositories may fail with `error: no LLM API key found (... doc/paper/image file(s) need semantic extraction)`. In that case, set one of `GOOGLE_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `MOONSHOT_API_KEY`, or `DEEPSEEK_API_KEY` before running the migration, or let the migration continue without Graphify.
+
+Also install the matching Graphify backend dependency when needed:
+- OpenAI backend → `uv tool install "graphifyy[openai]" --force`
+- Gemini backend → `uv tool install "graphifyy[gemini]" --force`
+- Claude backend → `uv tool install "graphifyy[anthropic]" --force`
+- If `uv` is unavailable, prefer `pipx install "graphifyy[...]" --force`
+- If both `uv` and `pipx` are unavailable, install pipx first with `python3 -m pip install --user pipx` and then use `python3 -m pipx install "graphifyy[...]" --force`
+
+If Graphify says `the 'openai' package is required for this backend but is not installed`, it found your API key but the backend dependency is missing. If `graphify` is already on PATH, reinstall that same tool with the matching extra instead of only rerunning the base install.
+
 **Why this shape?**
-- one entry point for users (`/migrate`)
+- one entry point for users (`/ms-migration`)
 - better structural discovery when Graphify is available
 - migration still succeeds on machines where Graphify cannot be installed
 

@@ -28,7 +28,52 @@ fi
 
 GRAPHIFY_RUNNER=(graphify)
 
+graphify_package_spec() {
+  if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+    printf '%s' 'graphifyy[openai]'
+  elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+    printf '%s' 'graphifyy[anthropic]'
+  elif [[ -n "${GOOGLE_API_KEY:-}" || -n "${GEMINI_API_KEY:-}" ]]; then
+    printf '%s' 'graphifyy[gemini]'
+  else
+    printf '%s' 'graphifyy'
+  fi
+}
+
+graphify_backend_module() {
+  if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+    printf '%s' 'openai'
+  elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+    printf '%s' 'anthropic'
+  elif [[ -n "${GOOGLE_API_KEY:-}" || -n "${GEMINI_API_KEY:-}" ]]; then
+    printf '%s' 'google.genai'
+  else
+    printf '%s' ''
+  fi
+}
+
+has_graphify_llm_key() {
+  [[ -n "${GOOGLE_API_KEY:-}" ]] || \
+  [[ -n "${GEMINI_API_KEY:-}" ]] || \
+  [[ -n "${ANTHROPIC_API_KEY:-}" ]] || \
+  [[ -n "${OPENAI_API_KEY:-}" ]] || \
+  [[ -n "${MOONSHOT_API_KEY:-}" ]] || \
+  [[ -n "${DEEPSEEK_API_KEY:-}" ]]
+}
+
+repo_has_semantic_files() {
+  find "$PROJECT_DIR" \
+    \( -path '*/.git/*' -o -path '*/node_modules/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.next/*' -o -path '*/coverage/*' \) -prune -o \
+    -type f \( \
+      -iname '*.md' -o -iname '*.markdown' -o -iname '*.mdx' -o \
+      -iname '*.pdf' -o -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.gif' \
+    \) -print -quit | grep -q .
+}
+
 ensure_graphify() {
+  local package_spec
+  package_spec="$(graphify_package_spec)"
+
   if command -v graphify >/dev/null 2>&1; then
     GRAPHIFY_RUNNER=(graphify)
     return 0
@@ -37,22 +82,33 @@ ensure_graphify() {
   echo "graphify not found; attempting install..."
 
   if command -v uv >/dev/null 2>&1; then
-    echo "Installing with uv: uv tool install graphifyy"
-    uv tool install graphifyy
+    echo "Installing with uv: uv tool install $package_spec"
+    uv tool install "$package_spec"
     GRAPHIFY_RUNNER=(graphify)
     return 0
   fi
 
   if command -v pipx >/dev/null 2>&1; then
-    echo "Installing with pipx: pipx install graphifyy"
-    pipx install graphifyy
+    echo "Installing with pipx: pipx install $package_spec --force"
+    pipx install "$package_spec" --force
     GRAPHIFY_RUNNER=(graphify)
     return 0
   fi
 
   if command -v python3 >/dev/null 2>&1; then
-    echo "Installing with Python user site: python3 -m pip install --user graphifyy"
-    python3 -m pip install --user graphifyy
+    echo "uv not found and pipx not found; installing pipx first via python3 -m pip install --user pipx"
+    python3 -m pip install --user pipx
+    if python3 -m pipx --version >/dev/null 2>&1; then
+      echo "Installing with pipx module: python3 -m pipx install $package_spec --force"
+      python3 -m pipx install "$package_spec" --force
+      if command -v graphify >/dev/null 2>&1; then
+        GRAPHIFY_RUNNER=(graphify)
+        return 0
+      fi
+    fi
+
+    echo "Falling back to Python user site: python3 -m pip install --user $package_spec"
+    python3 -m pip install --user "$package_spec"
     GRAPHIFY_RUNNER=(python3 -m graphify)
     return 0
   fi
@@ -72,7 +128,76 @@ EOF
   return 1
 }
 
+install_graphify_backend_dependency_if_needed() {
+  local package_spec backend_module graphify_path graphify_python
+  package_spec="$(graphify_package_spec)"
+  backend_module="$(graphify_backend_module)"
+
+  [[ -n "$backend_module" ]] || return 0
+  command -v graphify >/dev/null 2>&1 || return 0
+
+  graphify_path="$(command -v graphify)"
+  graphify_python="$(python3 - <<'PY' "$graphify_path"
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+try:
+    first = p.read_text(errors='ignore').splitlines()[0]
+except Exception:
+    print('')
+    raise SystemExit
+print(first[2:].strip() if first.startswith('#!') else '')
+PY
+)"
+
+  if [[ -n "$graphify_python" ]] && [[ -x "$graphify_python" ]] && "$graphify_python" - <<'PY' "$backend_module" >/dev/null 2>&1
+import importlib.util, sys
+sys.exit(0 if importlib.util.find_spec(sys.argv[1]) else 1)
+PY
+  then
+    return 0
+  fi
+
+  echo "graphify is installed but missing backend dependency '$backend_module'; reinstalling with $package_spec"
+
+  if command -v uv >/dev/null 2>&1; then
+    uv tool install "$package_spec" --force
+    return 0
+  fi
+
+  if command -v pipx >/dev/null 2>&1; then
+    pipx install "$package_spec" --force
+    return 0
+  fi
+
+  if command -v python3 >/dev/null 2>&1; then
+    if python3 -m pipx --version >/dev/null 2>&1; then
+      python3 -m pipx install "$package_spec" --force
+      return 0
+    fi
+    python3 -m pip install --user "$package_spec"
+    return 0
+  fi
+}
+
 ensure_graphify
+install_graphify_backend_dependency_if_needed
+
+if ! has_graphify_llm_key && repo_has_semantic_files; then
+  cat <<'EOF'
+Skipping Graphify pre-pass: repository contains docs/PDFs/images, but no supported Graphify LLM API key is set.
+
+Graphify can process code-only repositories without a key, but doc/paper/image extraction requires one of:
+  GOOGLE_API_KEY or GEMINI_API_KEY
+  ANTHROPIC_API_KEY
+  OPENAI_API_KEY
+  MOONSHOT_API_KEY
+  DEEPSEEK_API_KEY
+
+Continuing without Graphify is expected for the DEPT migration flow.
+EOF
+  exit 0
+fi
 
 cd "$PROJECT_DIR"
 

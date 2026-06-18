@@ -1,4 +1,6 @@
 ---
+name: "ms-migration"
+argument-hint: "Target project or migration context to use"
 description: "Migrate any project into DEPT Managed Services standards. Runs a non-blocking Graphify pre-pass plus 4 phases: install, discover, integrate, stack-tooling. Each phase is self-contained and idempotent."
 ---
 
@@ -42,13 +44,13 @@ After this workflow completes:
 **Option A — One-liner bootstrap (any terminal):**
 ```bash
 mkdir -p .github/prompts && \
-  curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
+  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
   -o ".github/prompts/migrate.prompt.md"
 ```
 Then invoke it in your AI tool:
 ```
 # VS Code Copilot / Cursor
-@workspace /migrate
+@workspace /ms-migration
 
 # Claude Code
 claude --prompt .github/prompts/migrate.prompt.md
@@ -70,7 +72,7 @@ Paste the raw URL into the chat and ask Copilot to read and follow it.
 
 ## Graphify Pre-Pass (Default, Non-Blocking)
 
-Before Phase 1, **attempt to run Graphify automatically** in the target repository. This keeps `/migrate` as the single entry point while improving Discovery quality on large or legacy repos.
+Before Phase 1, **attempt to run Graphify automatically** in the target repository. This keeps `/ms-migration` as the single entry point while improving Discovery quality on large or legacy repos.
 
 ### Default behavior
 1. If `graphify` is already installed, run it first.
@@ -78,6 +80,31 @@ Before Phase 1, **attempt to run Graphify automatically** in the target reposito
 3. If `uv` is unavailable, try `pipx install graphifyy`.
 4. If neither is available but Python is present, try `python3 -m pip install --user graphifyy` and run Graphify via `python3 -m graphify`.
 5. If installation or execution fails, **continue the migration anyway** — Graphify is a strong accelerator, not a hard blocker.
+
+### Important Graphify prerequisite
+Graphify can analyze a **code-only corpus** without an LLM API key, but if the repository includes Markdown docs, PDFs, or images it may stop with an error like:
+
+```text
+error: no LLM API key found (... doc/paper/image file(s) need semantic extraction)
+```
+
+To avoid that, set one supported key before running this prompt when doc-heavy repos are involved:
+- `GOOGLE_API_KEY` or `GEMINI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `OPENAI_API_KEY`
+- `MOONSHOT_API_KEY`
+- `DEEPSEEK_API_KEY`
+
+Also install the matching Graphify backend dependency when needed:
+- OpenAI backend → `uv tool install "graphifyy[openai]" --force`
+- Gemini backend → `uv tool install "graphifyy[gemini]" --force`
+- Claude backend → `uv tool install "graphifyy[anthropic]" --force`
+- If `uv` is unavailable, prefer `pipx install "graphifyy[...]" --force`
+- If both `uv` and `pipx` are unavailable, install pipx first with `python3 -m pip install --user pipx` and then use `python3 -m pipx install "graphifyy[...]" --force`
+
+If Graphify says `the 'openai' package is required for this backend but is not installed`, it found your API key but the backend dependency is missing. If `graphify` is already on PATH, reinstall that same tool with the matching extra instead of only rerunning the base install.
+
+If no supported key is available, skip Graphify and continue the migration with raw-repo discovery instead of blocking the full workflow.
 
 ### Command sequence
 ```bash
@@ -99,7 +126,7 @@ fi
 It produces `graphify-out/wiki/index.md`, which is easier for Discovery to traverse than raw JSON alone.
 
 **Why is `python3 -m pip` last?**
-Upstream warns plain `pip install` can create PATH/interpreter mismatches on some machines. DEPT only uses it as a fallback to keep `/migrate` as close as possible to a one-command workflow.
+Upstream warns plain `pip install` can create PATH/interpreter mismatches on some machines. DEPT only uses it as a fallback to keep `/ms-migration` as close as possible to a one-command workflow.
 
 ### After Graphify runs
 - Read `graphify-out/GRAPH_REPORT.md` first
