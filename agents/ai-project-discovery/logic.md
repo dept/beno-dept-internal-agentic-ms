@@ -130,5 +130,5 @@ Before declaring complete:
 - [ ] AI wiring files created/updated
 - [ ] Skills searched for all detected technologies
 - [ ] MCP servers installed where available
-- [ ] Project dev agent created
+- [ ] Support agent created
 - [ ] No secrets in any generated file

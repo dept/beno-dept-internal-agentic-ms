@@ -1,21 +1,22 @@
 ---
-description: "Migrate any project into DEPT Managed Services standards. Orchestrates 4 phases: install, discover, integrate, stack-tooling. Each phase is self-contained and idempotent."
+description: "Migrate any project into DEPT Managed Services standards. Runs a non-blocking Graphify pre-pass plus 4 phases: install, discover, integrate, stack-tooling. Each phase is self-contained and idempotent."
 ---
 
 # Migrate Project to DEPT Managed Services Standards
 
-You are running the **DEPT Managed Services Migration** workflow. This orchestrates 4 phases to transform any repository into an AI-ready Managed Services project.
+You are running the **DEPT Managed Services Migration** workflow. This runs a non-blocking Graphify pre-pass plus 4 phases to transform any repository into an AI-ready Managed Services project.
 
 ## What You'll Get
 
 After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ Support agent installed and ready to use (discovery and maintainer agents)
+- ✓ Discovery and Maintainer agents installed and ready to use
 - ✓ Superpowers skills available (evidence-first discipline, systematic debugging, verification, TDD)
 - ✓ All AI tools wired (Copilot, Claude, Cursor auto-load `.ai/` context)
 - ✓ Confluence handover pages created
 - ✓ Stack-specific skills and MCP servers installed
 - ✓ Support agent configured
+- ✓ Graphify structural pre-pass attempted before Discovery
 
 **Time estimate:** 15-30 minutes depending on repository complexity.
 
@@ -40,8 +41,9 @@ After this workflow completes:
 
 **Option A — One-liner bootstrap (any terminal):**
 ```bash
-curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
-  -o ".github/prompts/migrate.prompt.md" && mkdir -p .github/prompts
+mkdir -p .github/prompts && \
+  curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
+  -o ".github/prompts/migrate.prompt.md"
 ```
 Then invoke it in your AI tool:
 ```
@@ -65,6 +67,50 @@ Claude Code and web-enabled agents can read a raw URL directly. The result is th
 Paste the raw URL into the chat and ask Copilot to read and follow it.
 
 ---
+
+## Graphify Pre-Pass (Default, Non-Blocking)
+
+Before Phase 1, **attempt to run Graphify automatically** in the target repository. This keeps `/migrate` as the single entry point while improving Discovery quality on large or legacy repos.
+
+### Default behavior
+1. If `graphify` is already installed, run it first.
+2. If it is not installed, prefer `uv tool install graphifyy`.
+3. If `uv` is unavailable, try `pipx install graphifyy`.
+4. If neither is available but Python is present, try `python3 -m pip install --user graphifyy` and run Graphify via `python3 -m graphify`.
+5. If installation or execution fails, **continue the migration anyway** — Graphify is a strong accelerator, not a hard blocker.
+
+### Command sequence
+```bash
+# from the target repository root
+if command -v graphify >/dev/null 2>&1; then
+  graphify . --wiki
+elif command -v uv >/dev/null 2>&1; then
+  uv tool install graphifyy && graphify . --wiki || true
+elif command -v pipx >/dev/null 2>&1; then
+  pipx install graphifyy && graphify . --wiki || true
+elif command -v python3 >/dev/null 2>&1; then
+  python3 -m pip install --user graphifyy && python3 -m graphify . --wiki || true
+else
+  echo "Graphify unavailable; continuing with raw-repo discovery"
+fi
+```
+
+**Why `--wiki`?**
+It produces `graphify-out/wiki/index.md`, which is easier for Discovery to traverse than raw JSON alone.
+
+**Why is `python3 -m pip` last?**
+Upstream warns plain `pip install` can create PATH/interpreter mismatches on some machines. DEPT only uses it as a fallback to keep `/migrate` as close as possible to a one-command workflow.
+
+### After Graphify runs
+- Read `graphify-out/GRAPH_REPORT.md` first
+- Read `graphify-out/wiki/index.md` if present
+- Read `graphify-out/graph.json` only when needed for structural verification
+- Treat `graphify-out/` as **supplemental evidence** — verify important claims against actual repo files before writing `.ai/`
+
+### Git hygiene
+If `graphify-out/` was created, ensure it is ignored by default unless the team explicitly wants to commit it:
+- If `.gitignore` exists and does not already contain `graphify-out/`, append it
+- If `.gitignore` does not exist, create one with `graphify-out/`
 
 ## Phase Execution
 
@@ -128,6 +174,11 @@ After all phases complete, output:
 ### Validation
 Run: scripts/validate.sh .
 Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
+
+### Graphify pre-pass
+- Install path: [already installed / uv / pipx / unavailable]
+- Graphify run: [succeeded / failed / skipped]
+- `graphify-out/` available to Discovery: [yes / no]
 
 ### Next Steps
 1. Review .ai/ files and resolve Validation Questions

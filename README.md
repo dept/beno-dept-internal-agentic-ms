@@ -43,11 +43,12 @@ Fetch https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/
 Read .github/prompts/migrate.prompt.md and follow the instructions.
 ```
 
-This orchestrates 4 phases:
-1. **Install** — agents + superpowers skills
-2. **Discover** — analyze repo, generate `.ai/` context
-3. **Integrate** — wire AI tools, create Confluence docs
-4. **Stack Tooling** — install skills + MCP servers for detected tech
+This orchestrates a Graphify pre-pass plus 4 phases:
+1. **Graphify pre-pass** — attempt structural graph generation (non-blocking)
+2. **Install** — agents + superpowers skills
+3. **Discover** — analyze repo, generate `.ai/` context
+4. **Integrate** — wire AI tools, create Confluence docs
+5. **Stack Tooling** — install skills + MCP servers for detected tech
 
 ### Option C: Phase-by-Phase (Recommended for complex projects)
 
@@ -68,6 +69,30 @@ Then run each phase in your AI tool:
 @workspace /03-integrate
 @workspace /04-stack-tooling
 ```
+
+### Option D: Graphify-Assisted Discovery (Default inside `/migrate`)
+
+`/migrate` now **attempts Graphify automatically before Discovery** so you do not need two different migration habits.
+
+Default behavior inside `/migrate`:
+- if `graphify` is installed, run `graphify . --wiki`
+- else if `uv` is available, run `uv tool install graphifyy` and then `graphify . --wiki`
+- else if `pipx` is available, run `pipx install graphifyy` and then `graphify . --wiki`
+- else if `python3` is available, run `python3 -m pip install --user graphifyy` and then `python3 -m graphify . --wiki`
+- else continue migration without blocking
+
+**Why this shape?**
+- one entry point for users (`/migrate`)
+- better structural discovery when Graphify is available
+- migration still succeeds on machines where Graphify cannot be installed
+
+**Use Graphify as an accelerator, not a replacement for `.ai/`.**
+- `graphify-out/` helps with code structure, dependency shape, and cross-file relationships
+- `.ai/` still captures operational context, onboarding, environments, ownership, runbooks, and support constraints
+- Discovery treats `graphify-out/` as **supplemental evidence** and verifies important claims against the source repository
+- `graphify-out/` should be ignored in Git by default unless a team explicitly chooses to commit it
+
+See [docs/graphify-integration.md](docs/graphify-integration.md) for the workflow and caveats.
 
 ## What Gets Created
 
@@ -145,7 +170,7 @@ dept-agentic-standards/
 │   ├── 01-install.prompt.md       # Phase 1: Install agents + skills
 │   ├── 02-discover.prompt.md      # Phase 2: Analyze + generate .ai/
 │   ├── 03-integrate.prompt.md     # Phase 3: Wire tools + Confluence
-│   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + dev agent
+│   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + support agent
 ├── scripts/
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
 │   └── validate.sh                # Quality gate for .ai/ compliance

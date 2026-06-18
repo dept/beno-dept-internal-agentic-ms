@@ -23,6 +23,29 @@ description: "Phase 2: Analyze the repository and generate complete .ai/ context
 
 **For monorepos:** Read `turbo.json`, `pnpm-workspace.yaml`, or root `package.json#workspaces` first. Map all packages before per-package analysis.
 
+## Graphify Input (Expected When Available)
+
+If the repository contains a `graphify-out/` directory, use it as the **first structural input** before broad raw-source scanning.
+
+**Read in this order:**
+1. `graphify-out/GRAPH_REPORT.md`
+2. `graphify-out/wiki/index.md` (if present)
+3. `graphify-out/graph.json` (for detailed structural verification only)
+
+**Use Graphify specifically for:**
+- probable service boundaries
+- cross-file call paths
+- import/dependency clusters
+- hotspots / highly connected nodes
+- prioritizing which raw files to inspect next
+
+**Verification rule:**
+- Treat Graphify output as **supplemental evidence**, not the source of truth
+- Any important claim written into `.ai/` must still be verified against actual repository files, config, CI/CD, infra, or other primary evidence
+- Do **not** replace operational discovery with Graphify — environments, escalation paths, runbooks, SLAs, ownership, and support constraints still come from project docs, CI/CD, infra, and human-provided evidence
+
+**If `graphify-out/` is absent:** continue normally with raw-repository discovery. Do not fail the phase.
+
 ## Step 3: Scan Existing Agentic Configuration
 
 Before generating new files, identify what already exists:

@@ -42,7 +42,30 @@ Your job is to generate a complete, review-ready `.ai` folder for any repository
 
 ## Approach
 
-### 0) Agentic Setup Inventory
+### Graphify Structural Input
+
+If a `graphify-out/` directory exists in the repository, use it as the **first structural input** before broad repository scanning. `/migrate` attempts to generate this automatically in a non-blocking pre-pass, so expect it to be present when Graphify was available on the machine.
+
+Read in this order:
+1. `graphify-out/GRAPH_REPORT.md` — quick summary of central nodes, surprising links, and suggested questions
+2. `graphify-out/wiki/index.md` — navigable markdown knowledge base if present
+3. `graphify-out/graph.json` — only when you need to verify specific structural relationships at higher fidelity
+
+Use Graphify output to:
+- identify likely service boundaries faster
+- spot cross-file call paths and dependency clusters
+- prioritize which raw files to inspect next
+
+Do **not** treat Graphify as the source of truth. Important claims must still be verified against repository evidence before they are written into `.ai/` files.
+
+Graphify is especially useful for:
+- large legacy repositories
+- monorepos with unclear package boundaries
+- mixed code + docs + diagrams corpora
+
+Graphify is **not** a substitute for operational discovery. It will not reliably provide support ownership, environment URLs, SLAs, incident escalation paths, deployment approvals, or client-specific runbook nuance unless those facts already exist in source documents that you separately verify.
+
+### Agentic Setup Inventory
 
 Before any other analysis, scan the repository for existing agentic configuration. This informs `agent-registry.md` and prevents overwriting existing wiring.
 
@@ -130,7 +153,7 @@ Each file must include:
 - `Confidence: <0-100>%` per major section
 - `Validation Questions` section for unresolved gaps
 
-### 8.5) Handover and Access Links
+### Handover and Access Links
 
 Collect and validate these onboarding links from repository evidence:
 - GitHub repository URL
@@ -164,7 +187,7 @@ In all wiring files, instruct the AI to:
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
 
-### 9.5) Create Confluence Project Documentation
+### Confluence Project Documentation
 
 After `.ai/` files and AI wiring are complete, create project documentation in Confluence.
 
@@ -462,7 +485,7 @@ Output after all files are written:
 ### MCP servers added
 [list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]
 
-### Project dev agent
+### Support agent
 [created / already present]
 
 ### Existing agentic setup found
