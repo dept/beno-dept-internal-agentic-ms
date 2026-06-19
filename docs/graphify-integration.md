@@ -22,17 +22,19 @@ In DEPT terms, the correct policy is:
 
 Based on the upstream Graphify repository (`safishamsi/graphify`, default branch `v8`):
 
-### Core output by default
-A normal run produces:
-- `graphify-out/graph.html`
-- `graphify-out/GRAPH_REPORT.md`
+### Core output in current CLI behavior
+The current CLI flow is effectively two-step:
+1. `graphify .`
+2. `graphify cluster-only .`
+
+The initial extraction writes:
 - `graphify-out/graph.json`
 
-### Additional output when using `--wiki`
-With `graphify . --wiki`, Graphify also generates:
-- `graphify-out/wiki/`
+The follow-up clustering/report step writes:
+- `graphify-out/GRAPH_REPORT.md`
+- `graphify-out/graph.html`
 
-That matters for DEPT because markdown wiki output is easier for Discovery agents to traverse than raw JSON alone.
+`graphify-out/cache/ast/` is expected cache output for AST extraction, especially on large repositories.
 
 ### Three-pass extraction model
 Upstream `docs/how-it-works.md` describes:
@@ -137,14 +139,14 @@ So the policy is:
 - prefer `uv` for install when Graphify is absent
 - fall back to `pipx` if `uv` is unavailable
 - fall back to `python3 -m pip install --user graphifyy` if neither `uv` nor `pipx` is available
+- create or update a root `.graphifyignore` when Graphify is used so obvious junk folders are excluded from the scan
 - continue migration if Graphify cannot be installed or run
 - ignore `graphify-out/` in Git by default unless a team explicitly chooses otherwise
 
 ### Discovery behavior
 When `graphify-out/` exists, Discovery should read in this order:
 1. `graphify-out/GRAPH_REPORT.md`
-2. `graphify-out/wiki/index.md` if present
-3. `graphify-out/graph.json` only when detailed structural verification is needed
+2. `graphify-out/graph.json` only when detailed structural verification is needed
 
 ### Verification rule
 Graphify output is:
@@ -190,6 +192,32 @@ graphify-out/
 ```
 
 That keeps generated graph artifacts out of normal client commits while still allowing ad hoc local use.
+
+## Graphify ignore hygiene
+
+Upstream supports a root `.graphifyignore` file using `.gitignore` syntax, layered on top of `.gitignore`.
+
+For DEPT migration, the bootstrap helper should ensure `.graphifyignore` exists when Graphify is used, with at least:
+
+```gitignore
+.history/
+.ai/
+graphify-out/
+node_modules/
+dist/
+build/
+.next/
+coverage/
+.turbo/
+.cache/
+.vercel/
+```
+
+Rationale:
+- `.history/` often contains editor/AI scratch material that adds no structural value
+- `.ai/` is DEPT-generated output and should not feed back into Graphify on reruns
+- `graphify-out/` avoids recursive ingestion of prior Graphify output
+- common build/cache directories reduce noise and runtime on large projects
 
 ---
 

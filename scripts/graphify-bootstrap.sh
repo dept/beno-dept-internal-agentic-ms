@@ -11,7 +11,7 @@ set -euo pipefail
 # Usage:
 #   ./scripts/graphify-bootstrap.sh /path/to/project
 #   ./scripts/graphify-bootstrap.sh . --update
-#   ./scripts/graphify-bootstrap.sh . --wiki
+#   ./scripts/graphify-bootstrap.sh .
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $(basename "$0") <project-dir> [graphify args...]"
@@ -25,6 +25,8 @@ if [[ ! -d "$PROJECT_DIR" ]]; then
   echo "ERROR: project directory not found: $PROJECT_DIR"
   exit 1
 fi
+
+PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
 
 GRAPHIFY_RUNNER=(graphify)
 
@@ -68,6 +70,54 @@ repo_has_semantic_files() {
       -iname '*.md' -o -iname '*.markdown' -o -iname '*.mdx' -o \
       -iname '*.pdf' -o -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.gif' \
     \) -print -quit | grep -q .
+}
+
+ensure_graphifyignore() {
+  local ignore_file entry added_any=0
+  ignore_file="$PROJECT_DIR/.graphifyignore"
+
+  if [[ ! -f "$ignore_file" ]]; then
+    cat > "$ignore_file" <<'EOF'
+# Additional Graphify excludes for DEPT migration pre-pass.
+# Graphify already respects .gitignore; this file narrows the scan further.
+.history/
+.ai/
+graphify-out/
+node_modules/
+dist/
+build/
+.next/
+coverage/
+.turbo/
+.cache/
+.vercel/
+EOF
+    echo "Created .graphifyignore with DEPT defaults"
+    return 0
+  fi
+
+  for entry in \
+    .history/ \
+    .ai/ \
+    graphify-out/ \
+    node_modules/ \
+    dist/ \
+    build/ \
+    .next/ \
+    coverage/ \
+    .turbo/ \
+    .cache/ \
+    .vercel/
+  do
+    if ! grep -qxF "$entry" "$ignore_file" 2>/dev/null; then
+      printf '%s\n' "$entry" >> "$ignore_file"
+      added_any=1
+    fi
+  done
+
+  if [[ $added_any -eq 1 ]]; then
+    echo "Updated .graphifyignore with missing DEPT defaults"
+  fi
 }
 
 ensure_graphify() {
@@ -201,15 +251,29 @@ fi
 
 cd "$PROJECT_DIR"
 
+ensure_graphifyignore
+
 EXTRA_ARGS=("$@")
-if [[ ${#EXTRA_ARGS[@]} -eq 0 ]]; then
-  EXTRA_ARGS=(--wiki)
-fi
 
 echo "Running Graphify in: $(pwd)"
-echo "Command: ${GRAPHIFY_RUNNER[*]} . ${EXTRA_ARGS[*]}"
+if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+  echo "Command: ${GRAPHIFY_RUNNER[*]} . ${EXTRA_ARGS[*]}"
+else
+  echo "Command: ${GRAPHIFY_RUNNER[*]} ."
+fi
 
-"${GRAPHIFY_RUNNER[@]}" . "${EXTRA_ARGS[@]}"
+if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+  "${GRAPHIFY_RUNNER[@]}" . "${EXTRA_ARGS[@]}"
+else
+  "${GRAPHIFY_RUNNER[@]}" .
+fi
+
+if [[ -f graphify-out/graph.json ]] && [[ ! -f graphify-out/GRAPH_REPORT.md ]]; then
+  echo ""
+  echo "Graphify extracted graph data but has not generated GRAPH_REPORT.md yet."
+  echo "Running cluster-only step to finalize GRAPH_REPORT.md and graph.html ..."
+  "${GRAPHIFY_RUNNER[@]}" cluster-only .
+fi
 
 if [[ -f .gitignore ]]; then
   if ! grep -qx 'graphify-out/' .gitignore 2>/dev/null; then
@@ -224,8 +288,10 @@ fi
 echo ""
 echo "Graphify completed. If successful, Discovery can now consume:"
 echo "  - graphify-out/GRAPH_REPORT.md"
-echo "  - graphify-out/wiki/index.md"
 echo "  - graphify-out/graph.json"
+if [[ -d graphify-out/cache/ast ]]; then
+  echo "  - graphify-out/cache/ast/ (expected AST cache, useful for incremental reruns)"
+fi
 echo ""
 echo "Next step: run Phase 2 Discovery"
 echo "  @workspace /02-discover"

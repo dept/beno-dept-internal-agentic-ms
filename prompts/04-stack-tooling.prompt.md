@@ -31,30 +31,30 @@ Read project manifest files and config to identify all technologies:
 
 ## Step 9: Install Skills from Public Registry
 
-For each detected technology, search GitHub for community skills using the `gh` CLI:
+For each detected technology, use the GitHub CLI skill workflow:
 
 ```bash
-# Search GitHub for SKILL.md files matching the technology
-gh search repos "SKILL.md <technology-name>" --sort stars --limit 5 --json fullName,url,stargazersCount
+# Search for matching skills on GitHub
+gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json repo,skillName,path,stars
 ```
 
-If a result looks authoritative (vendor org, high stars), fetch the SKILL.md directly:
+If a result looks authoritative (vendor org, relevant skill name/path), install it into the project:
 
 ```bash
-# Download the SKILL.md into the project skills folder
-curl -sL "https://raw.githubusercontent.com/<owner>/<repo>/main/SKILL.md" \
-  -o ".github/skills/<technology-name>/SKILL.md"
+# Install the skill into the project skills folder
+gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
 ```
 
 **Rules:**
 - Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`) — not individual accounts
 - Skip if a skill with that name already exists in `.github/skills/`
 - If no suitable match is found on GitHub, generate a minimal skill from `.ai/` evidence (see Fallback section below)
-- Record each result (downloaded / skipped / generated fallback)
+- There must be a resulting `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why the technology was skipped
+- Record each result (installed / skipped / generated fallback)
 
 **Fallback — generate skill from project evidence:**
 
-If `gh search` returns no suitable result, generate a minimal project-specific skill directly from what was found in the `.ai/` files:
+If `gh skill search` returns no suitable result, generate a minimal project-specific skill directly from what was found in the `.ai/` files:
 
 ```markdown
 ---
@@ -73,6 +73,8 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 ## Common Operations
 [most relevant operations for how this tech is actually used here — from .ai/ evidence only]
 ```
+
+**Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.github/skills/` — either vendor-fetched or evidence-generated fallback.
 
 ## Step 10: Find and Install MCP Servers
 
@@ -151,7 +153,7 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 
 ## Verification
 
-- [ ] Skills searched for all detected technologies
+- [ ] A skill file exists for every detected core technology (or an explicit skip reason is documented)
 - [ ] MCP servers installed (or documented why not)
 - [ ] MCP config written to all 3 IDE files
 - [ ] Project support agent created

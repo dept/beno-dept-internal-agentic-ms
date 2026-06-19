@@ -75,13 +75,23 @@ Then run each phase in your AI tool:
 `/ms-migration` now **attempts Graphify automatically before Discovery** so you do not need two different migration habits.
 
 Default behavior inside `/ms-migration`:
-- if `graphify` is installed, use it, and if a backend SDK is missing try to repair it with the matching extra (`graphifyy[openai]`, `graphifyy[gemini]`, `graphifyy[anthropic]`)
-- else if `uv` is available, run `uv tool install ...` and then `graphify . --wiki`
-- else if `pipx` is available, run `pipx install ... --force` and then `graphify . --wiki`
-- else if `python3` is available, install `pipx` first via `python3 -m pip install --user pipx`, try `python3 -m pipx install ... --force`, and only then fall back to `python3 -m pip install --user ...`
+- if `graphify` is installed, run `graphify .` and then `graphify cluster-only .`
+- else if `uv` is available, run `uv tool install graphifyy` and then `graphify .` and `graphify cluster-only .`
+- else if `pipx` is available, run `pipx install graphifyy` and then `graphify .` and `graphify cluster-only .`
+- else if `python3` is available, run `python3 -m pip install --user graphifyy` and then `python3 -m graphify .` and `python3 -m graphify cluster-only .`
 - else continue migration without blocking
 
+When Graphify is used, the bootstrap helper also ensures a root-level `.graphifyignore` exists. It starts with DEPT defaults such as:
+- `.history/`
+- `.ai/`
+- `graphify-out/`
+- `node_modules/`, `dist/`, `build/`, `.next/`, `coverage/`, `.turbo/`, `.cache/`, `.vercel/`
+
+This works with upstream Graphify behavior: `.gitignore` is still respected, and `.graphifyignore` adds extra exclusions for migration noise.
+
 **Important:** Graphify can run without an API key for code-only repositories, but doc-heavy repositories may fail with `error: no LLM API key found (... doc/paper/image file(s) need semantic extraction)`. In that case, set one of `GOOGLE_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `MOONSHOT_API_KEY`, or `DEEPSEEK_API_KEY` before running the migration, or let the migration continue without Graphify.
+
+The `graphify-out/cache/ast/` JSON files are expected AST cache output, not a failure by themselves. Graphify can also look idle after AST reaches 100% because the report-generation step still needs to run.
 
 Also install the matching Graphify backend dependency when needed:
 - OpenAI backend → `uv tool install "graphifyy[openai]" --force`

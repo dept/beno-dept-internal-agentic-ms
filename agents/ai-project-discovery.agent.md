@@ -48,8 +48,7 @@ If a `graphify-out/` directory exists in the repository, use it as the **first s
 
 Read in this order:
 1. `graphify-out/GRAPH_REPORT.md` — quick summary of central nodes, surprising links, and suggested questions
-2. `graphify-out/wiki/index.md` — navigable markdown knowledge base if present
-3. `graphify-out/graph.json` — only when you need to verify specific structural relationships at higher fidelity
+2. `graphify-out/graph.json` — only when you need to verify specific structural relationships at higher fidelity
 
 Use Graphify output to:
 - identify likely service boundaries faster
@@ -200,9 +199,16 @@ Rules:
 1. Ensure the `Projects` directory path exists. Create it if required.
 2. Create a project page under `Projects` if it does not exist.
 3. Make content readable for mixed roles (developer and client manager), focused on onboarding/handover.
-4. Include GitHub URL, environment URLs, and Keeper reference.
-5. Use subpages for readability when content is large.
-6. Do not add a dedicated Confluence page for coding standards unless explicitly requested.
+4. Standardize the Confluence layout so it matches other projects:
+   - Main page: `[Project Name]`
+   - Subpages: `Overview`, `Architecture & Package Map`, `Environments & Access`, `Onboarding & Handover`
+5. Sanitize titles before creating pages: decode HTML entities, never leave `&amp;` or `@amp;` in page titles, and prefer `and` instead of symbols if the title would otherwise be awkward.
+6. In `Overview`, include business capabilities and a clear inventory of apps/packages/features/campaigns when the project has multiple parts or brands. Add a short plain-language summary for each major area so a new developer understands what it is for, not just that it exists.
+7. In `Architecture & Package Map`, document what each major package/app/campaign does so a new developer can understand the landscape quickly. For monorepos or feature-heavy projects, include both a compact inventory table and a short summary paragraph or bullet list for each package/feature/campaign describing purpose, user/business role, and important integrations when known.
+8. If the repository has a `doc/` or `docs/` folder, use it as a primary Confluence input for wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
+9. Include GitHub URL, environment URLs, and Keeper reference.
+10. Use subpages for readability when content is large.
+11. Do not add a dedicated Confluence page for coding standards unless explicitly requested.
 
 ### 10) Stack-Aware Developer Setup
 
@@ -219,30 +225,30 @@ Use `config/stack-detection.yml` from this standards repository as detection hin
 
 #### Step B — Install skills from GitHub
 
-For each detected technology, search GitHub for community SKILL.md files using the `gh` CLI:
+For each detected technology, use the GitHub CLI skill workflow:
 
 ```bash
-# Search GitHub for SKILL.md files matching the technology
-gh search repos "SKILL.md <technology-name>" --sort stars --limit 5 --json fullName,url,stargazersCount
+# Search for matching skills on GitHub
+gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json repo,skillName,path,stars
 ```
 
-If a result looks authoritative (vendor org, high stars), fetch the SKILL.md:
+If a result looks authoritative (vendor org, relevant skill name/path), install it into the project:
 
 ```bash
-# Download into the project skills folder
-curl -sL "https://raw.githubusercontent.com/<owner>/<repo>/main/SKILL.md" \
-  -o ".github/skills/<technology-name>/SKILL.md"
+# Install into the project skills folder
+gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
 ```
 
 **Rules:**
 1. Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`) — not individual accounts.
 2. Skip if a skill with that name already exists in `.github/skills/`.
-3. If no suitable GitHub result is found, generate a minimal project-specific skill from `.ai/` evidence (see Fallback below).
-4. Record each result (downloaded / skipped / generated fallback) for the completion summary.
+3. If no suitable `gh skill search` result is found, generate a minimal project-specific skill from `.ai/` evidence (see Fallback below).
+4. There must be a resulting `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why the technology was skipped.
+5. Record each result (installed / skipped / generated fallback) for the completion summary.
 
 **Fallback — generate skill from project evidence:**
 
-When `gh search` returns no authoritative result, write a minimal skill file populated from what was actually found during analysis:
+When `gh skill search` returns no authoritative result, write a minimal skill file populated from what was actually found during analysis:
 
 ```markdown
 ---

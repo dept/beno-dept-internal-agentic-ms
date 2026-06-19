@@ -47,13 +47,23 @@ After wiring is complete, create handover documentation in Confluence.
 **Action steps:**
 1. Ensure `Projects` directory exists. Create if missing.
 2. Create a project page under `Projects` if not present.
-3. Make content readable for mixed roles (developer + client manager).
-4. Use subpages for readability:
-   - Overview (what the system is, key contacts)
-   - Environments and Access (GitHub, test/acc/prod URLs, Keeper reference)
-   - Onboarding and Handover (setup steps, troubleshooting, escalation)
-5. Include all 5 links collected in Phase 2 Step 4.
-6. Do NOT create a separate coding standards page unless explicitly requested.
+3. Sanitize the page title before creating it: decode HTML entities, never leave `&amp;` or `@amp;` in the title, and prefer `and` instead of symbols when needed for readability.
+4. Keep the layout consistent with other MS projects by using this fixed structure:
+   - Main page: `[Project Name]`
+   - Subpage: `Overview`
+   - Subpage: `Architecture & Package Map`
+   - Subpage: `Environments & Access`
+   - Subpage: `Onboarding & Handover`
+5. Make content readable for mixed roles (developer + client manager).
+6. In `Overview`, include what the system does, key contacts, and the main business capabilities. When the project has multiple packages, features, brands, or campaigns, add a short plain-language summary for each major area so a new developer can quickly understand what each one is for.
+7. In `Architecture & Package Map`, document each major app/package/feature/campaign and what it is responsible for. For monorepos or multi-brand/campaign projects, include both:
+   - an inventory table for quick scanning
+   - a short summary paragraph or bullet for each major package/feature/campaign explaining purpose, ownership/context, and notable dependencies or integrations when known
+8. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
+9. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
+10. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas.
+11. Include all 5 links collected in Phase 2 Step 4.
+12. Do NOT create a separate coding standards page unless explicitly requested.
 
 ## Verification
 

@@ -23,14 +23,15 @@ description: "Phase 2: Analyze the repository and generate complete .ai/ context
 
 **For monorepos:** Read `turbo.json`, `pnpm-workspace.yaml`, or root `package.json#workspaces` first. Map all packages before per-package analysis.
 
+**Documentation-first rule:** If the repository contains a `doc/` or `docs/` folder, read it early and treat it as primary context for onboarding, architecture explanations, package/campaign descriptions, and Confluence handover content — while still verifying important claims against code/config.
+
 ## Graphify Input (Expected When Available)
 
 If the repository contains a `graphify-out/` directory, use it as the **first structural input** before broad raw-source scanning.
 
 **Read in this order:**
 1. `graphify-out/GRAPH_REPORT.md`
-2. `graphify-out/wiki/index.md` (if present)
-3. `graphify-out/graph.json` (for detailed structural verification only)
+2. `graphify-out/graph.json` (for detailed structural verification only)
 
 **Use Graphify specifically for:**
 - probable service boundaries
@@ -38,6 +39,7 @@ If the repository contains a `graphify-out/` directory, use it as the **first st
 - import/dependency clusters
 - hotspots / highly connected nodes
 - prioritizing which raw files to inspect next
+- package/app/campaign boundaries in monorepos or multi-brand repositories
 
 **Verification rule:**
 - Treat Graphify output as **supplemental evidence**, not the source of truth

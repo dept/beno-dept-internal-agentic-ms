@@ -5,7 +5,7 @@
 # those are discovered live from public registries at runtime.
 #
 # RUNTIME BEHAVIOR:
-#   Skills:  gh skill search <technology-name>   → install best match
+#   Skills:  gh skill search <technology-name>   → choose vendor result, then gh skill install <owner>/<repo> <skill-name> --dir .github/skills
 #   MCP:     1) curl https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>
 #            2) fallback: curl https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/config/mcp-registry.yml
 #            → pick official/highest-quality result
@@ -14,7 +14,7 @@
 #   The agent reads package.json deps, config file presence, and
 #   language-specific manifest files (*.csproj, go.mod, pom.xml, etc.).
 #   When a detection rule matches, it uses the `name` as the search term
-#   for both `gh skill search` and the MCP registry query.
+#   for `gh skill search` and the MCP registry query.
 #
 # ADDING NEW TECHNOLOGIES:
 #   Add a detection rule here with at least one detection method.

@@ -111,16 +111,23 @@ Wire IDE tools to load `.ai/` context:
 - `CLAUDE.md` (create or append)
 - `.github/instructions/ai-context.instructions.md` (create)
 
-Optionally create Confluence pages under `MS/Projects`.
+Optionally create Confluence pages under `MS/Projects` using a consistent layout:
+- Main page: `[Project Name]`
+- Subpages: `Overview`, `Architecture & Package Map`, `Environments & Access`, `Onboarding & Handover`
+- Sanitize titles so encoded entities like `&amp;` or `@amp;` never appear in page names
+- Include packages,features, campaign} inventory when the project has multiple areas
+- For monorepos or multi-area projects, include both a quick table and a short plain-language summary for each package/feature/campaign so a new developer understands purpose, not just names
+- Prefer `doc/` or `docs/` as primary context for Confluence wording and onboarding details when those folders exist
 
 ### Step 10: Stack-Aware Developer Setup
 
 For each detected technology:
-1. Search GitHub for matching SKILL.md files (`gh search repos "SKILL.md <technology-name>"`) and download from vendor orgs only
-2. Check DEPT MCP registry for servers
-3. Fallback to public MCP registry
-4. Write MCP config to all three IDE files
-5. Generate support-agent with detected tools
+1. Search with `gh skill search <technology-name> --owner <vendor-org>` and install the selected vendor-owned skill with `gh skill install <owner>/<repo> <skill-name> --dir .github/skills`
+2. If no authoritative result exists, generate a local fallback skill so each detected core technology still ends with a `.github/skills/<technology-name>/SKILL.md`
+3. Check DEPT MCP registry for servers
+4. Fallback to public MCP registry
+5. Write MCP config to all three IDE files
+6. Generate support-agent with detected tools
 
 ## Quality Gates
 
@@ -128,7 +135,7 @@ Before declaring complete:
 - [ ] 9 `.ai/` files generated (no stubs)
 - [ ] `.meta.yml` created with standard version
 - [ ] AI wiring files created/updated
-- [ ] Skills searched for all detected technologies
+- [ ] Skill file exists for every detected core technology (or explicit skip reason recorded)
 - [ ] MCP servers installed where available
 - [ ] Support agent created
 - [ ] No secrets in any generated file

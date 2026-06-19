@@ -110,34 +110,43 @@ If no supported key is available, skip Graphify and continue the migration with 
 ```bash
 # from the target repository root
 if command -v graphify >/dev/null 2>&1; then
-  graphify . --wiki
+  graphify . && graphify cluster-only .
 elif command -v uv >/dev/null 2>&1; then
-  uv tool install graphifyy && graphify . --wiki || true
+  uv tool install graphifyy && graphify . && graphify cluster-only . || true
 elif command -v pipx >/dev/null 2>&1; then
-  pipx install graphifyy && graphify . --wiki || true
+  pipx install graphifyy && graphify . && graphify cluster-only . || true
 elif command -v python3 >/dev/null 2>&1; then
-  python3 -m pip install --user graphifyy && python3 -m graphify . --wiki || true
+  python3 -m pip install --user graphifyy && python3 -m graphify . && python3 -m graphify cluster-only . || true
 else
   echo "Graphify unavailable; continuing with raw-repo discovery"
 fi
 ```
 
-**Why `--wiki`?**
-It produces `graphify-out/wiki/index.md`, which is easier for Discovery to traverse than raw JSON alone.
+**Why the explicit two-step run?**
+Current Graphify CLI behavior writes `graphify-out/graph.json` on the initial extraction pass, then needs `graphify cluster-only .` to generate `GRAPH_REPORT.md` and `graph.html`. This is also clearer when AST reaches 100% but the terminal still appears active.
 
 **Why is `python3 -m pip` last?**
 Upstream warns plain `pip install` can create PATH/interpreter mismatches on some machines. DEPT only uses it as a fallback to keep `/ms-migration` as close as possible to a one-command workflow.
 
 ### After Graphify runs
 - Read `graphify-out/GRAPH_REPORT.md` first
-- Read `graphify-out/wiki/index.md` if present
 - Read `graphify-out/graph.json` only when needed for structural verification
+- Treat `graphify-out/cache/ast/` as expected cache output, not a failure signal
 - Treat `graphify-out/` as **supplemental evidence** — verify important claims against actual repo files before writing `.ai/`
 
 ### Git hygiene
 If `graphify-out/` was created, ensure it is ignored by default unless the team explicitly wants to commit it:
 - If `.gitignore` exists and does not already contain `graphify-out/`, append it
 - If `.gitignore` does not exist, create one with `graphify-out/`
+
+### Graphify ignore hygiene
+If Graphify is used, ensure a root `.graphifyignore` exists so the pre-pass skips obvious migration noise. At minimum include:
+- `.history/`
+- `.ai/`
+- `graphify-out/`
+- `node_modules/`, `dist/`, `build/`, `.next/`, `coverage/`, `.turbo/`, `.cache/`, `.vercel/`
+
+Keep `.graphifyignore` additive: Graphify already respects `.gitignore`, and `.graphifyignore` should only add extra exclusions that reduce junk in the structural scan.
 
 ## Phase Execution
 

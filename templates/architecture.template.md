@@ -5,6 +5,7 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 
 ## Required Sections
 - Component inventory
+- Package / feature / campaign summaries when the project has multiple areas
 - Runtime architecture diagram
 - Data flow and trust boundaries
 - External integrations
@@ -16,6 +17,7 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 
 ## Validation
 - Does every component map to real code or infra definitions?
+- Does every major package/feature/campaign have a short human-readable purpose summary?
 - Are trust boundaries and external calls clearly identified?
 
 ## Missing Information

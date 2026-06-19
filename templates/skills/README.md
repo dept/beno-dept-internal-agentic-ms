@@ -1,17 +1,16 @@
 # Skill Templates
 
-The Discovery Agent installs skills into the target project at runtime. Skills are fetched from **vendor GitHub repositories**, not from a central registry:
+The Discovery Agent installs skills into the target project at runtime using GitHub CLI skills:
 
 ```bash
-# Search for a vendor-maintained SKILL.md on GitHub
-gh search repos "SKILL.md <technology-name>" --sort stars --limit 5
+# Search for a vendor-maintained skill on GitHub
+gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json repo,skillName,path,stars
 
-# If a vendor org result is found, download it
-curl -sL "https://raw.githubusercontent.com/<owner>/<repo>/main/SKILL.md" \
-  -o ".github/skills/<technology-name>/SKILL.md"
+# If a vendor org result is found, install it into the project
+gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
 ```
 
-If no authoritative vendor-owned result is found, the agent generates a minimal project-specific skill from the `.ai/` evidence collected during discovery. These generated skills live in the target project's `.github/skills/` folder, not in this repo.
+If no authoritative vendor-owned `gh skill search` result is found, the agent generates a minimal project-specific fallback skill from the `.ai/` evidence collected during discovery so the detected technology still has a concrete `.github/skills/<technology-name>/SKILL.md`. These generated skills live in the target project's `.github/skills/` folder, not in this repo.
 
 No template skills are stored here. Skills for this standards repo itself (agents, prompts, scripts) live at the repo root under `agents/` and `prompts/`.
 
