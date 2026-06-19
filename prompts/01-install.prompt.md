@@ -15,20 +15,26 @@ description: "Phase 1: Install DEPT agents and superpowers skills into the targe
 
 Installs the DEPT agentic tooling into the target repository:
 - 2 agents (Discovery + Maintainer)
-- 1 bootstrap prompt (this workflow)
+- 5 prompts (bootstrap + 4 phase prompts)
+- 1 Graphify bootstrap helper script
 - 4 superpowers skills
 
 ## Step 1: Fetch and Install DEPT Agents
 
 Fetch these files from the DEPT Agentic Standards repository:
 
-| Agent | Source | Write to |
+| Artifact | Source | Write to |
 |---|---|---|
 | Discovery Agent | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md` | `.github/agents/ai-project-discovery.agent.md` |
 | Maintainer Agent | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-maintainer.agent.md` | `.github/agents/ai-project-maintainer.agent.md` |
 | Bootstrap Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md` | `.github/prompts/migrate.prompt.md` |
+| Phase 1 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/01-install.prompt.md` | `.github/prompts/01-install.prompt.md` |
+| Phase 2 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/02-discover.prompt.md` | `.github/prompts/02-discover.prompt.md` |
+| Phase 3 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/03-integrate.prompt.md` | `.github/prompts/03-integrate.prompt.md` |
+| Phase 4 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/04-stack-tooling.prompt.md` | `.github/prompts/04-stack-tooling.prompt.md` |
+| Graphify Bootstrap Helper | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/graphify-bootstrap.sh` | `scripts/graphify-bootstrap.sh` |
 
-**Action:** Create `.github/agents/` and `.github/prompts/` directories. Write each file. Skip if already exists.
+**Action:** Create `.github/agents/`, `.github/prompts/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh` is executable.
 
 ## Step 2: Install Superpowers Skills
 
@@ -47,7 +53,8 @@ Superpowers skills provide reusable discipline patterns that agents reference.
 
 Before proceeding to Phase 2, confirm:
 - [ ] `.github/agents/` contains 2 agent files
-- [ ] `.github/prompts/` contains the bootstrap prompt
+- [ ] `.github/prompts/` contains `migrate.prompt.md` and `01-04` phase prompts
+- [ ] `scripts/graphify-bootstrap.sh` exists and is executable
 - [ ] `.github/skills/` contains 4 skill directories
 
 ## Completion Signal

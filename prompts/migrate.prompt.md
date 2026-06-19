@@ -6,7 +6,7 @@ description: "Migrate any project into DEPT Managed Services standards. Runs a n
 
 # Migrate Project to DEPT Managed Services Standards
 
-You are running the **DEPT Managed Services Migration** workflow. This runs a non-blocking Graphify pre-pass plus 4 phases to transform any repository into an AI-ready Managed Services project.
+You are running the **DEPT Managed Services Migration** workflow. This installs the DEPT agents first, then runs a non-blocking Graphify pre-pass, then hands repository discovery to the **AI Project Discovery Agent** with the full local context it needs.
 
 ## What You'll Get
 
@@ -19,6 +19,7 @@ After this workflow completes:
 - ✓ Stack-specific skills and MCP servers installed
 - ✓ Support agent configured
 - ✓ Graphify structural pre-pass attempted before Discovery
+- ✓ AI Project Discovery Agent explicitly used for the discovery phase
 
 **Time estimate:** 15-30 minutes depending on repository complexity.
 
@@ -43,11 +44,13 @@ After this workflow completes:
 
 **Option A — One-liner bootstrap (any terminal):**
 ```bash
-mkdir -p .github/prompts && \
+mkdir -p .github/prompts .github/agents && \
   command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
-  -o ".github/prompts/migrate.prompt.md"
+  -o ".github/prompts/migrate.prompt.md" && \
+  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md" \
+  -o ".github/agents/ai-project-discovery.agent.md"
 ```
-Then invoke it in your AI tool:
+Then invoke it in your AI tool. This ensures the Discovery Agent is already present locally before the migration starts:
 ```
 # VS Code Copilot / Cursor
 @workspace /ms-migration
@@ -70,16 +73,15 @@ Paste the raw URL into the chat and ask Copilot to read and follow it.
 
 ---
 
-## Graphify Pre-Pass (Default, Non-Blocking)
+## Graphify Pre-Pass (After Phase 1, Default, Non-Blocking)
 
-Before Phase 1, **attempt to run Graphify automatically** in the target repository. This keeps `/ms-migration` as the single entry point while improving Discovery quality on large or legacy repos.
+After Phase 1 installs the local prompts, agents, and helper script, **attempt to run Graphify automatically** in the target repository. This keeps `/ms-migration` as the single entry point while ensuring the Discovery Agent starts with the best available structural context.
 
 ### Default behavior
-1. If `graphify` is already installed, run it first.
-2. If it is not installed, prefer `uv tool install graphifyy`.
-3. If `uv` is unavailable, try `pipx install graphifyy`.
-4. If neither is available but Python is present, try `python3 -m pip install --user graphifyy` and run Graphify via `python3 -m graphify`.
-5. If installation or execution fails, **continue the migration anyway** — Graphify is a strong accelerator, not a hard blocker.
+1. Phase 1 installs `scripts/graphify-bootstrap.sh` into the target repo.
+2. Prefer running that helper from the repository root: `bash scripts/graphify-bootstrap.sh .`
+3. If the helper is missing for some reason, fall back to the direct Graphify commands below.
+4. If installation or execution fails, **continue the migration anyway** — Graphify is a strong accelerator, not a hard blocker.
 
 ### Important Graphify prerequisite
 Graphify can analyze a **code-only corpus** without an LLM API key, but if the repository includes Markdown docs, PDFs, or images it may stop with an error like:
@@ -109,7 +111,9 @@ If no supported key is available, skip Graphify and continue the migration with 
 ### Command sequence
 ```bash
 # from the target repository root
-if command -v graphify >/dev/null 2>&1; then
+if [ -x scripts/graphify-bootstrap.sh ]; then
+  bash scripts/graphify-bootstrap.sh . || true
+elif command -v graphify >/dev/null 2>&1; then
   graphify . && graphify cluster-only .
 elif command -v uv >/dev/null 2>&1; then
   uv tool install graphifyy && graphify . && graphify cluster-only . || true
@@ -146,11 +150,13 @@ If Graphify is used, ensure a root `.graphifyignore` exists so the pre-pass skip
 - `graphify-out/`
 - `node_modules/`, `dist/`, `build/`, `.next/`, `coverage/`, `.turbo/`, `.cache/`, `.vercel/`
 
-Keep `.graphifyignore` additive: Graphify already respects `.gitignore`, and `.graphifyignore` should only add extra exclusions that reduce junk in the structural scan.
+Keep `.graphifyignore` additive: Graphify already respects `.gitignore`, and `.graphifyignore` should only add extra exclusions that reduce junk in the structural scan. 
 
 ## Phase Execution
 
-Execute each phase in order. Each phase is self-contained — if interrupted, restart from the last incomplete phase.
+Execute each phase in order. Each phase is self-contained — if interrupted, restart from the last incomplete phase. Try to execute all phases in one run for best results, but you can also run them individually if needed.
+
+**Important orchestration rule:** Phase 2 must be executed with the installed **AI Project Discovery Agent** (`.github/agents/ai-project-discovery.agent.md`). The migration prompt itself is the orchestrator; the Discovery Agent is the worker that performs the repository analysis and `.ai/` generation.
 
 **Base URL for GitHub-hosted prompts:**
 ```
@@ -159,12 +165,18 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs superpowers skills
-**Verify before continuing:** `.github/agents/` has 2 files, `.github/skills/` has 4 directories
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper, installs superpowers skills
+**Verify before continuing:** `.github/agents/` has 2 files, `.github/prompts/` has `migrate` + `01-04`, `scripts/graphify-bootstrap.sh` exists, `.github/skills/` has 4 directories
+
+### Graphify Context Preparation
+**Run after Phase 1, before Phase 2.**
+**Does:** Creates or updates `.graphifyignore`, attempts Graphify, preserves `graphify-out/` for the Discovery Agent when successful
+**Verify before continuing:** `.graphifyignore` exists when Graphify was attempted; if Graphify succeeded, `graphify-out/GRAPH_REPORT.md` or `graphify-out/graph.json` exists
 
 ### Phase 2: Discovery & Analysis
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/02-discover.prompt.md`
-**Does:** Scans agentic config, collects onboarding links, generates 9 `.ai/` files + `.meta.yml`
+**Agent:** `.github/agents/ai-project-discovery.agent.md`
+**Does:** The AI Project Discovery Agent scans agentic config, consumes `graphify-out/` when available, collects onboarding links, and generates 9 `.ai/` files + `.meta.yml`
 **Verify before continuing:** `.ai/` has 9 files + `.meta.yml`, no placeholder markers
 
 ### Phase 3: Integration

@@ -26,9 +26,11 @@ Then run the Discovery Agent to fill templates with real project data.
 
 **Step 1** — Bootstrap the prompt into your project (run once in terminal):
 ```bash
-mkdir -p .github/prompts && \
+mkdir -p .github/prompts .github/agents && \
   command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
-  -o ".github/prompts/migrate.prompt.md"
+  -o ".github/prompts/migrate.prompt.md" && \
+  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md" \
+  -o ".github/agents/ai-project-discovery.agent.md"
 ```
 
 **Step 2** — Run it in your AI tool:
@@ -43,10 +45,10 @@ Fetch https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/
 Read .github/prompts/migrate.prompt.md and follow the instructions.
 ```
 
-This orchestrates a Graphify pre-pass plus 4 phases:
-1. **Graphify pre-pass** — attempt structural graph generation (non-blocking)
-2. **Install** — agents + superpowers skills
-3. **Discover** — analyze repo, generate `.ai/` context
+This orchestrates a local agent-first migration flow:
+1. **Install** — agents, local phase prompts, Graphify helper, and superpowers skills
+2. **Graphify pre-pass** — attempt structural graph generation (non-blocking) and preserve `graphify-out/` for Discovery
+3. **Discover** — run the **AI Project Discovery Agent** to analyze the repo and generate `.ai/` context
 4. **Integrate** — wire AI tools, create Confluence docs
 5. **Stack Tooling** — install skills + MCP servers for detected tech
 
@@ -72,14 +74,14 @@ Then run each phase in your AI tool:
 
 ### Option D: Graphify-Assisted Discovery (Default inside `/ms-migration`)
 
-`/ms-migration` now **attempts Graphify automatically before Discovery** so you do not need two different migration habits.
+`/ms-migration` now installs the local migration artifacts first, then **attempts Graphify automatically before Discovery**, and then runs Phase 2 through the installed **AI Project Discovery Agent** so you do not need two different migration habits.
 
 Default behavior inside `/ms-migration`:
-- if `graphify` is installed, run `graphify .` and then `graphify cluster-only .`
-- else if `uv` is available, run `uv tool install graphifyy` and then `graphify .` and `graphify cluster-only .`
-- else if `pipx` is available, run `pipx install graphifyy` and then `graphify .` and `graphify cluster-only .`
-- else if `python3` is available, run `python3 -m pip install --user graphifyy` and then `python3 -m graphify .` and `python3 -m graphify cluster-only .`
-- else continue migration without blocking
+- Phase 1 installs `.github/agents/ai-project-discovery.agent.md`, local `01-04` phase prompts, and `scripts/graphify-bootstrap.sh`
+- then run `bash scripts/graphify-bootstrap.sh .` when available
+- if the helper is missing, fall back to direct `graphify` / `uv` / `pipx` / `python3 -m graphify` commands
+- then run Phase 2 with the installed **AI Project Discovery Agent** so Discovery starts with repo-local prompts, skills, and any `graphify-out/` evidence
+- else continue migration without blocking if Graphify cannot run
 
 When Graphify is used, the bootstrap helper also ensures a root-level `.graphifyignore` exists. It starts with DEPT defaults such as:
 - `.history/`
