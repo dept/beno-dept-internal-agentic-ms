@@ -24,14 +24,21 @@ Then run the Discovery Agent to fill templates with real project data.
 
 ### Option B: Full AI Migration (LLM-powered)
 
-**Step 1** — Bootstrap the prompt into your project (run once in terminal):
+**Step 1** — Install the migration bootstrap into your project (run once in terminal):
 ```bash
-mkdir -p .github/prompts .github/agents && \
-  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
-  -o ".github/prompts/migrate.prompt.md" && \
-  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md" \
-  -o ".github/agents/ai-project-discovery.agent.md"
+# If you cloned this standards repo locally:
+./scripts/install.sh /path/to/your/project
+
+# Or run directly from GitHub without cloning first:
+bash <(command curl -fsSL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/install.sh") /path/to/your/project
 ```
+
+This installs the local migration bundle into the target project:
+- `.github/prompts/migrate.prompt.md`
+- `.github/prompts/01-04/*.prompt.md`
+- `.github/agents/ai-project-discovery.agent.md`
+- `.github/agents/ai-project-maintainer.agent.md`
+- `scripts/graphify-bootstrap.sh`
 
 **Step 2** — Run it in your AI tool:
 ```

@@ -44,13 +44,9 @@ After this workflow completes:
 
 **Option A — One-liner bootstrap (any terminal):**
 ```bash
-mkdir -p .github/prompts .github/agents && \
-  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md" \
-  -o ".github/prompts/migrate.prompt.md" && \
-  command curl -sL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md" \
-  -o ".github/agents/ai-project-discovery.agent.md"
+bash <(command curl -fsSL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/install.sh") .
 ```
-Then invoke it in your AI tool. This ensures the Discovery Agent is already present locally before the migration starts:
+Then invoke it in your AI tool. This installs the local prompts, agents, and Graphify helper before the migration starts:
 ```
 # VS Code Copilot / Cursor
 @workspace /ms-migration
