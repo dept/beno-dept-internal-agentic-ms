@@ -133,6 +133,7 @@ Upstream warns plain `pip install` can create PATH/interpreter mismatches on som
 - Read `graphify-out/graph.json` only when needed for structural verification
 - Treat `graphify-out/cache/ast/` as expected cache output, not a failure signal
 - Treat `graphify-out/` as **supplemental evidence** — verify important claims against actual repo files before writing `.ai/`
+- Use `graphify-out/` as the Discovery Agent's short-term structural working context for this run, then translate verified findings into durable `.ai/` files so future sessions do not depend on the generated graph artifacts alone
 
 ### Git hygiene
 If `graphify-out/` was created, ensure it is ignored by default unless the team explicitly wants to commit it:

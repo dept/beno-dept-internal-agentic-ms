@@ -44,6 +44,12 @@ If the repository contains a `graphify-out/` directory, use it as the **first st
 - prioritizing which raw files to inspect next
 - package/app/campaign boundaries in monorepos or multi-brand repositories
 
+**How to use it in practice:**
+- Treat `GRAPH_REPORT.md` as short-term structural working context for this discovery run
+- Use it to decide which packages, features, apps, campaigns, and docs to inspect first
+- Convert the useful findings into durable `.ai/` memory/context files (`project-context.md`, `architecture.md`, `dependencies.md`, `agent-registry.md`) after verifying them against primary repository evidence
+- When Graphify highlights packages or feature areas, make sure the generated `.ai/` files explain what each one is for in plain language — not just its path or name
+
 **Verification rule:**
 - Treat Graphify output as **supplemental evidence**, not the source of truth
 - Any important claim written into `.ai/` must still be verified against actual repository files, config, CI/CD, infra, or other primary evidence

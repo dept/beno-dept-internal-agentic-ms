@@ -118,8 +118,10 @@ If Graphify says `the 'openai' package is required for this backend but is not i
 
 **Use Graphify as an accelerator, not a replacement for `.ai/`.**
 - `graphify-out/` helps with code structure, dependency shape, and cross-file relationships
-- `.ai/` still captures operational context, onboarding, environments, ownership, runbooks, and support constraints
+- Discovery uses `graphify-out/` as short-term structural working context, then converts verified findings into durable `.ai/` files
+- `.ai/` still captures operational context, onboarding, environments, ownership, runbooks, support constraints, and human-readable explanations of major packages/features/campaigns when a repo has multiple areas
 - Discovery treats `graphify-out/` as **supplemental evidence** and verifies important claims against the source repository
+- If a project has `doc/` or `docs/`, use those as primary wording/context sources for handover documentation and package/campaign descriptions, then verify against code/config when needed
 - `graphify-out/` should be ignored in Git by default unless a team explicitly chooses to commit it
 
 See [docs/graphify-integration.md](docs/graphify-integration.md) for the workflow and caveats.
@@ -132,8 +134,8 @@ After migration, your project has:
 your-project/
 ├── .ai/                           # AI context (the standard)
 │   ├── .meta.yml                  # Provenance & version tracking
-│   ├── project-context.md         # Business context, ownership, environments
-│   ├── architecture.md            # System topology, data flows, boundaries
+│   ├── project-context.md         # Business context, ownership, environments, major area summaries
+│   ├── architecture.md            # System topology, data flows, boundaries, package/feature purpose notes
 │   ├── runbooks.md                # Incident procedures, rollback, escalation
 │   ├── dependencies.md            # Vendor inventory, risk, upgrade paths
 │   ├── cms.md                     # CMS architecture, content lifecycle

@@ -54,6 +54,9 @@ Use Graphify output to:
 - identify likely service boundaries faster
 - spot cross-file call paths and dependency clusters
 - prioritize which raw files to inspect next
+- build a temporary structural mental model for this run before you write durable `.ai/` documentation
+
+When Graphify reveals packages, apps, features, brands, or campaigns, do not stop at path inventories. Carry those findings forward into `.ai/` files as plain-language summaries that explain what each area is for, who or what it serves, and how it connects to the rest of the repository when that can be verified.
 
 Do **not** treat Graphify as the source of truth. Important claims must still be verified against repository evidence before they are written into `.ai/` files.
 

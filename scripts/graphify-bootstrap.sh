@@ -293,5 +293,7 @@ if [[ -d graphify-out/cache/ast ]]; then
   echo "  - graphify-out/cache/ast/ (expected AST cache, useful for incremental reruns)"
 fi
 echo ""
+echo "Use these artifacts as Discovery's short-term structural context, then translate verified findings into durable .ai/ files."
+echo ""
 echo "Next step: run Phase 2 Discovery"
 echo "  @workspace /02-discover"

@@ -226,7 +226,7 @@ Rationale:
 This repository now reflects the following policy:
 - `README.md` explains that `/migrate` attempts Graphify automatically
 - `prompts/migrate.prompt.md` describes the non-blocking Graphify pre-pass
-- `prompts/02-discover.prompt.md` tells Discovery how to consume `graphify-out/`
+- `prompts/02-discover.prompt.md` tells Discovery how to consume `graphify-out/` as structural working context and convert verified findings into durable `.ai/` files
 - `agents/ai-project-discovery.agent.md` treats Graphify as structural input, not truth
 - `scripts/graphify-bootstrap.sh` provides a helper for running Graphify before Discovery
 

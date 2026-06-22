@@ -115,7 +115,7 @@ Optionally create Confluence pages under `MS/Projects` using a consistent layout
 - Main page: `[Project Name]`
 - Subpages: `Overview`, `Architecture & Package Map`, `Environments & Access`, `Onboarding & Handover`
 - Sanitize titles so encoded entities like `&amp;` or `@amp;` never appear in page names
-- Include packages,features, campaign} inventory when the project has multiple areas
+- Include package / feature / campaign inventory when the project has multiple areas
 - For monorepos or multi-area projects, include both a quick table and a short plain-language summary for each package/feature/campaign so a new developer understands purpose, not just names
 - Prefer `doc/` or `docs/` as primary context for Confluence wording and onboarding details when those folders exist
 
