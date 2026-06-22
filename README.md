@@ -149,6 +149,13 @@ your-project/
 │   ├── instructions/              # VS Code AI context
 │   ├── prompts/                   # Reusable prompts
 │   └── skills/                    # Superpowers skills
+├── _bmad/                         # BMAD installation (Phase 5)
+│   ├── config.toml                # BMAD project config (output → _bmad-output/)
+│   ├── dept-baseline/             # DEPT® delivery conventions (17 TOML overrides)
+│   └── custom/                    # Team/project overrides
+├── _bmad-output/                  # BMAD planning + implementation artefacts (gitignored)
+│   ├── planning-artifacts/
+│   └── implementation-artifacts/
 ├── CLAUDE.md                      # Claude → .ai/ wiring
 ├── .vscode/mcp.json               # MCP servers (VS Code)
 ├── .cursor/mcp.json               # MCP servers (Cursor)
@@ -198,11 +205,12 @@ dept-agentic-standards/
 │   ├── dotnet-api-example.md      # .NET 8 + Azure App Service
 │   └── python-monorepo-example.md # FastAPI + Celery + AWS
 ├── prompts/
-│   ├── migrate.prompt.md          # Orchestrator (chains 4 phases)
+│   ├── migrate.prompt.md          # Orchestrator (chains 5 phases)
 │   ├── 01-install.prompt.md       # Phase 1: Install agents + skills
 │   ├── 02-discover.prompt.md      # Phase 2: Analyze + generate .ai/
 │   ├── 03-integrate.prompt.md     # Phase 3: Wire tools + Confluence
-│   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + support agent
+│   ├── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + support agent
+│   └── 05-bmad.prompt.md          # Phase 5: Install BMAD + dept-baseline
 ├── scripts/
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
 │   └── validate.sh                # Quality gate for .ai/ compliance

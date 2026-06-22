@@ -96,6 +96,13 @@ Scan these locations:
 - `.mcp.json` (Claude Code, root)
 - Any `mcpServers` block in VS Code settings
 
+**BMAD Configuration**
+- `_bmad/config.toml` — project config (project name, output folder, installed modules, `[agents.*]` block with all 6 BMAD agents)
+- `_bmad/dept-baseline/` — DEPT® baseline module (customisation TOMLs if present)
+- `_bmad/dept-aem/`, `_bmad/dept-contentful/`, `_bmad/dept-ecommerce/` — stack modules if installed
+- `_bmad/custom/` — team/project-level TOML overrides
+- `_bmad-output/` — BMAD planning and implementation artefacts (primary evidence source — absorb into `.ai/` per the evidence table below)
+
 For each file found, record:
 - File path
 - Name / description (from frontmatter if present)
@@ -104,6 +111,8 @@ For each file found, record:
 - Summary of what it does
 
 Document all findings in `agent-registry.md` under a dedicated **Existing Agentic Setup** section.
+
+If `_bmad/config.toml` is present, extract the `[agents.*]` definitions and document them under a **BMAD Agents** section in `agent-registry.md`. Record for each: agent key, name, title, module, team. The standard BMAD v6.5+ agents are: Mary (Analyst), John (PM), Sally (UX Designer), Winston (System Architect), Amelia (Senior Software Engineer), Paige (Technical Writer). Note which DEPT® modules are installed (`dept-baseline`, and any stack modules found in `_bmad/`).
 
 ### 1) Repository Analysis
 - Start from the repository root. Read `package.json`, `turbo.json`, `nx.json`, `pnpm-workspace.yaml` first.

@@ -99,6 +99,7 @@ ARTIFACTS=(
   ".github/prompts/02-discover.prompt.md|prompts/02-discover.prompt.md"
   ".github/prompts/03-integrate.prompt.md|prompts/03-integrate.prompt.md"
   ".github/prompts/04-stack-tooling.prompt.md|prompts/04-stack-tooling.prompt.md"
+  ".github/prompts/05-bmad.prompt.md|prompts/05-bmad.prompt.md"
   ".github/agents/ai-project-discovery.agent.md|agents/ai-project-discovery.agent.md"
   ".github/agents/ai-project-maintainer.agent.md|agents/ai-project-maintainer.agent.md"
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
@@ -167,6 +168,7 @@ for required in \
   ".github/prompts/02-discover.prompt.md" \
   ".github/prompts/03-integrate.prompt.md" \
   ".github/prompts/04-stack-tooling.prompt.md" \
+  ".github/prompts/05-bmad.prompt.md" \
   ".github/agents/ai-project-discovery.agent.md" \
   ".github/agents/ai-project-maintainer.agent.md" \
   "scripts/graphify-bootstrap.sh"

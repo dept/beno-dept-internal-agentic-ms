@@ -148,7 +148,124 @@ Once `.ai/` is populated, proceed with the standard phases:
 
 # Phase 4: Detect stack, install skills and MCP servers, finalise support agent
 @workspace /04-stack-tooling
+
+# Phase 5: Install BMAD (if not already present — see below)
+@workspace /05-bmad
 ```
+
+---
+
+## Installing BMAD on Non-BMAD Projects (Phase 5)
+
+Phase 5 of the migration installs BMAD v6.5+ as a non-destructive overlay on any project that doesn't already have it. This section explains when to install, what gets installed, and how to roll back.
+
+### When to Install BMAD
+
+| Project type | Phase 5 |
+|---|---|
+| Long-lived Managed Services project | ✅ Install |
+| Active product development / agency delivery | ✅ Install |
+| Lightweight or short-lived migration | ⏭ Skip |
+| Infrastructure / tooling only repo | ⏭ Skip |
+| Standards / meta repos (like this one) | ⏭ Skip |
+| `_bmad/` directory already exists | ⏭ Skip (idempotent) |
+
+### What Gets Installed
+
+**1. BMAD core (`npx bmad-method@latest install`)**
+
+Creates the `_bmad/` directory in the project root:
+
+```
+_bmad/
+├── config.toml         # Project config (output folder, installed modules, agent definitions)
+├── config.user.toml    # Per-user config (gitignored)
+├── core/               # BMAD core config
+├── bmm/                # BMAD Method Module (PM, Analyst, Architect, Dev, UX, Tech Writer agents)
+├── scripts/            # resolve_config.py, resolve_customization.py
+└── custom/             # Team and project-level TOML overrides (never overwritten by installer)
+```
+
+**2. DEPT® `dept-baseline` module**
+
+Installed from `dept/hold-agent-studio` via `--custom-source`. Applies 11 DEPT® delivery principles as **17 sparse TOML overrides** — no new agents, no new workflows, purely additive customisation on top of the 6 BMAD agents (Mary/Analyst, John/PM, Sally/UX, Winston/Architect, Amelia/Dev, Paige/Tech Writer):
+
+| Principle | Agent / workflow |
+|---|---|
+| Outcomes over outputs | PM agent, PRD, epics, product-brief |
+| Reuse over bespoke | Architect agent, create-architecture |
+| Plain language over jargon | Analyst, Tech Writer, PRD |
+| Evidence over opinion | Analyst, PRD |
+| Decisions documented (ADRs) | Architect agent, create-architecture |
+| Right-size the solution | PM, product-brief, architecture |
+| Performance is a constraint | UX, Architect, Dev, code-review, story |
+| Accessibility is a constraint | UX, Dev, code-review, story |
+| Test-first discipline | Dev agent, dev-story, code-review |
+| Async-first communication | PM agent |
+| Trade-offs explicit | Architect agent, create-architecture |
+
+**3. Stack modules (auto-detected)**
+
+Phase 5 reads `.ai/project-context.md` and `.ai/architecture.md` (populated in Phase 2) to match stack:
+
+| Keyword detected | Module installed |
+|---|---|
+| `AEM`, `Adobe Experience Manager` | `dept-aem` |
+| `Contentful` | `dept-contentful` |
+| `Shopify`, `Centra`, `ecommerce` | `dept-ecommerce` |
+
+### What `_bmad-output/` Contains
+
+BMAD writes all planning and implementation artefacts to `_bmad-output/` (gitignored by default):
+
+```
+_bmad-output/
+├── planning-artifacts/        # PRDs, architecture docs, epics, stories
+├── implementation-artifacts/  # Technical design, runbooks, dev artefacts
+└── brainstorming/             # Ideation docs
+```
+
+This folder maps to `.ai/` exactly as documented in the **Discovery Agent evidence absorption table** above — re-running Phase 2 (`/02-discover`) after BMAD has generated artefacts will absorb `_bmad-output/` into `.ai/` automatically.
+
+### DEPT® Agent Studio (Web UI — Manual Setup)
+
+`npx @dept/agent-studio` provides a browser-based interface for managing BMAD configuration. It is a **local dev tool** that requires a GitHub Personal Access Token with `read:packages` scope (DEPT® GitHub Package Registry):
+
+```
+// ~/.npmrc
+//npm.pkg.github.com/:_authToken=YOUR_PAT
+@dept:registry=https://npm.pkg.github.com
+```
+
+Phase 5 documents its existence in `.ai/agent-registry.md` but does **not** auto-install it — PAT setup is a manual one-time step per developer.
+
+### Install Commands (What Phase 5 Runs)
+
+```bash
+# 1. Install BMAD core (interactive)
+npx bmad-method@latest install --tools claude-code
+
+# 2. Apply dept-baseline (select "dept-baseline" when prompted)
+npx bmad-method install \
+  --custom-source https://github.com/dept/hold-agent-studio \
+  --tools claude-code
+
+# 3. Apply stack module (example: Contentful project)
+npx bmad-method install \
+  --custom-source https://github.com/dept/hold-agent-studio \
+  --tools claude-code
+# (select dept-contentful when prompted)
+```
+
+### Rollback (BMAD Forward-Install)
+
+```bash
+rm -rf _bmad/ _bmad-output/ .bmad-dashboard/
+# Remove _bmad-output/ and .bmad-dashboard/ lines from .gitignore if added by Phase 5
+# Remove the "BMAD Agents" section from .ai/agent-registry.md
+```
+
+BMAD installation is purely additive — no existing project files are modified.
 
 ---
 
@@ -231,7 +348,7 @@ After BMAD-safe migration:
 - [ ] `.ai/project-context.md` reflects content from `_bmad-output/docs/prd.md`
 - [ ] `.ai/architecture.md` reflects content from `_bmad-output/architecture.md`
 - [ ] `.ai/runbooks.md` covers BMAD's operational procedures (or notes gaps)
-- [ ] `.ai/agent-registry.md` documents BMAD agents from `.bmad-core/`
+- [ ] `.ai/agent-registry.md` documents BMAD agents from `.bmad-core/` or `_bmad/config.toml`
 - [ ] Validation script passes: `./scripts/validate.sh .`
 - [ ] Support agent is present at `.github/agents/support-agent.md`
 

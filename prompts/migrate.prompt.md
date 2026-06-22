@@ -1,7 +1,7 @@
 ---
 name: "ms-migration"
 argument-hint: "Target project or migration context to use"
-description: "Migrate any project into DEPT Managed Services standards. Runs a non-blocking Graphify pre-pass plus 4 phases: install, discover, integrate, stack-tooling. Each phase is self-contained and idempotent."
+description: "Migrate any project into DEPT Managed Services standards. Runs a non-blocking Graphify pre-pass plus 5 phases: install, discover, integrate, stack-tooling, BMAD. Each phase is self-contained and idempotent."
 ---
 
 # Migrate Project to DEPT Managed Services Standards
@@ -20,6 +20,7 @@ After this workflow completes:
 - ✓ Support agent configured
 - ✓ Graphify structural pre-pass attempted before Discovery
 - ✓ AI Project Discovery Agent explicitly used for the discovery phase
+- ✓ BMAD installed with DEPT® delivery conventions (`dept-baseline` + stack modules)
 
 **Time estimate:** 15-30 minutes depending on repository complexity.
 
@@ -186,6 +187,12 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 **Does:** Detects tech stack, installs skills + MCP servers, creates support agent
 **Verify before continuing:** MCP config in all 3 IDEs, support-agent exists
 
+### Phase 5: BMAD Integration
+**Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/05-bmad.prompt.md`
+**Does:** Checks whether BMAD is already installed; if not, installs BMAD v6.5+ (`bmad-method@latest`) with the `dept-baseline` DEPT® delivery conventions module and any auto-detected stack modules (`dept-aem`, `dept-contentful`, `dept-ecommerce`); documents BMAD agents in `.ai/agent-registry.md`
+**Skip when:** `_bmad/` already exists, or project is explicitly lightweight/short-lived
+**Verify before continuing:** `_bmad/config.toml` exists OR explicit skip was logged in completion output
+
 ---
 
 ## Completion Summary
@@ -215,6 +222,12 @@ After all phases complete, output:
 - Skills installed: [list or "None matched"]
 - MCP servers added: [list or "None"]
 - Support agent: [created / present]
+
+### Phase 5: BMAD
+- BMAD status: [installed / already installed — skipped / skipped (lightweight project)]
+- dept-baseline: [installed / skipped]
+- Stack modules: [list installed modules, or "none matched"]
+- Agent registry: [updated with BMAD agents / skipped — already present]
 
 ### Validation
 Run: scripts/validate.sh .
