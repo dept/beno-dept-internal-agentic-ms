@@ -36,8 +36,8 @@ Never hallucinate project-specific facts.
 
 This repository supports:
 
-- AI Project Discovery (generating .ai folders in client projects)
-- AI Project Maintenance (keeping documentation in sync with reality)
+- Discovery Agent (generating .ai folders in client projects)
+- Maintainer Agent (keeping documentation in sync with reality)
 - Agent definition and orchestration
 - Managed Services standardization
 - Cross-project operational consistency

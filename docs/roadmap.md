@@ -20,8 +20,8 @@
 - ~~Prevent documentation rot through automated maintenance after each sprint or release.~~
 
 ### ~~Deliverables~~ (COMPLETED)
-- ~~`agents/ai-project-discovery.agent.md` — generates the `.ai` folder from scratch~~ ✓ Includes Confluence documentation creation
-- ~~`agents/ai-project-maintainer.agent.md` — keeps the `.ai` folder current as the project evolves~~ ✓ Includes Confluence sync rules
+- ~~`agents/discovery.agent.md` — generates the `.ai` folder from scratch~~ ✓ Includes Confluence documentation creation
+- ~~`agents/maintainer.agent.md` — keeps the `.ai` folder current as the project evolves~~ ✓ Includes Confluence sync rules
 - ~~Bootstrap prompt and templates~~ ✓ Updated with Confluence workflow
 
 ### ~~Success Metrics~~ (MET)

@@ -19,8 +19,8 @@ Phase 3 (Scale) rolls the standard across multiple Managed Services projects. Wi
 
 | Metric | How to Measure | Target | Action if Off-Track |
 |--------|---------------|--------|--------------------|
-| .ai/ staleness | % of files not updated in >30 days | <20% | Automate Maintainer triggers |
-| Maintainer signal-to-noise | % of Maintainer diffs accepted by team | >70% | Refine change impact matrix |
+| .ai/ staleness | % of files not updated in >30 days | <20% | Automate Maintainer Agent triggers |
+| Maintainer signal-to-noise | % of Maintainer Agent diffs accepted by team | >70% | Refine change impact matrix |
 | Incident MTTR | Mean time to resolve on migrated vs non-migrated | 20% improvement | Improve runbooks template |
 | Onboarding time | New engineer productive time (self-reported) | 50% faster | Enrich onboarding.md template |
 | Developer NPS on AI tooling | Quarterly survey (1-10 scale) | >7 | Iterate on pain points |
@@ -37,7 +37,7 @@ Phase 3 (Scale) rolls the standard across multiple Managed Services projects. Wi
 
 - **Developer survey**: 5-question form on AI tooling usefulness.
 - **Incident review**: Compare MTTR for incidents on migrated vs non-migrated projects.
-- **Maintainer review**: Sample 10 Maintainer PRs — count accepted vs rejected.
+- **Maintainer review**: Sample 10 Maintainer Agent PRs — count accepted vs rejected.
 
 ## Feedback Loop Process
 
@@ -55,7 +55,7 @@ Phase 3 (Scale) rolls the standard across multiple Managed Services projects. Wi
 - **Scaffold success rate drops below 70%**: Freeze migrations, fix root cause.
 - **>50% of .ai/ files stale after 30 days**: Maintainer Agent isn't running or isn't useful.
 - **Developer NPS below 5**: Fundamental UX problem — interview developers.
-- **Maintainer generates >30% noise diffs**: Tighten change impact matrix.
+- **Maintainer Agent generates >30% noise diffs**: Tighten change impact matrix.
 
 ## Dashboard
 
@@ -70,7 +70,7 @@ When at scale (>10 projects), consider a simple dashboard:
 │  Stale (>30d):          2 (17%)         │
 │  Avg Migration Time:    22 min          │
 │  Developer NPS:         7.4             │
-│  Maintainer Accept Rate: 78%            │
+│  Maintenance Accept Rate: 78%            │
 └──────────────────────────────────────────┘
 ```
 

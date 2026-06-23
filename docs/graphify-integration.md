@@ -227,7 +227,7 @@ This repository now reflects the following policy:
 - `README.md` explains that `/migrate` attempts Graphify automatically
 - `prompts/migrate.prompt.md` describes the non-blocking Graphify pre-pass
 - `prompts/02-discover.prompt.md` tells Discovery how to consume `graphify-out/` as structural working context and convert verified findings into durable `.ai/` files
-- `agents/ai-project-discovery.agent.md` treats Graphify as structural input, not truth
+- `agents/discovery.agent.md` treats Graphify as structural input, not truth
 - `scripts/graphify-bootstrap.sh` provides a helper for running Graphify before Discovery
 
 **Important:** DEPT uses Graphify as a terminal/CLI pre-pass. For migration itself, the critical requirement is that the `graphify` CLI runs successfully. Upstream `graphify install` registers assistant-specific slash-command skills, which is useful for ongoing interactive use but is **not required** for the DEPT migration pre-pass.

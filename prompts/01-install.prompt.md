@@ -14,7 +14,7 @@ description: "Phase 1: Install DEPT agents and superpowers skills into the targe
 ## What This Phase Does
 
 Installs the DEPT agentic tooling into the target repository:
-- 2 agents (Discovery + Maintainer)
+- 2 agents (Discovery + Maintenance)
 - 5 prompts (bootstrap + 4 phase prompts)
 - 1 Graphify bootstrap helper script
 - 4 superpowers skills
@@ -25,8 +25,8 @@ Fetch these files from the DEPT Agentic Standards repository:
 
 | Artifact | Source | Write to |
 |---|---|---|
-| Discovery Agent | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-discovery.agent.md` | `.github/agents/ai-project-discovery.agent.md` |
-| Maintainer Agent | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/ai-project-maintainer.agent.md` | `.github/agents/ai-project-maintainer.agent.md` |
+| Discovery Agent | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/discovery.agent.md` | `.github/agents/discovery.agent.md` |
+| Maintainer Agent | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/agents/maintainer.agent.md` | `.github/agents/maintainer.agent.md` |
 | Bootstrap Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md` | `.github/prompts/migrate.prompt.md` |
 | Phase 1 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/01-install.prompt.md` | `.github/prompts/01-install.prompt.md` |
 | Phase 2 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/02-discover.prompt.md` | `.github/prompts/02-discover.prompt.md` |

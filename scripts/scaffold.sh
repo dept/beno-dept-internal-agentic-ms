@@ -282,7 +282,7 @@ echo -e "${BLUE}═════════════════════�
 echo -e "  ${GREEN}${CREATED} files created${NC} | ${YELLOW}${SKIPPED} skipped${NC} (already existed)"
 echo ""
 echo -e "  ${BLUE}Next steps:${NC}"
-echo -e "  1. Run the ${GREEN}AI Project Discovery Agent${NC} to fill templates"
+echo -e "  1. Run the ${GREEN}Discovery Agent${NC} to fill templates"
 echo -e "     with real project data (architecture, dependencies, etc.)"
 echo -e "  2. Review and commit the generated .ai/ folder"
 echo -e "  3. Run ${GREEN}scripts/validate.sh ${PROJECT_DIR}${NC} to verify compliance"

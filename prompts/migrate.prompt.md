@@ -6,20 +6,20 @@ description: "Migrate any project into DEPT Managed Services standards. Runs a n
 
 # Migrate Project to DEPT Managed Services Standards
 
-You are running the **DEPT Managed Services Migration** workflow. This installs the DEPT agents first, then runs a non-blocking Graphify pre-pass, then hands repository discovery to the **AI Project Discovery Agent** with the full local context it needs.
+You are running the **DEPT Managed Services Migration** workflow. This installs the DEPT agents first, then runs a non-blocking Graphify pre-pass, then hands repository discovery to the **Discovery Agent** with the full local context it needs.
 
 ## What You'll Get
 
 After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ Discovery and Maintainer agents installed and ready to use
+- ✓ Discovery and Maintenance agents installed and ready to use
 - ✓ Superpowers skills available (evidence-first discipline, systematic debugging, verification, TDD)
 - ✓ All AI tools wired (Copilot, Claude, Cursor auto-load `.ai/` context)
 - ✓ Confluence handover pages created
 - ✓ Stack-specific skills and MCP servers installed
 - ✓ Support agent configured
 - ✓ Graphify structural pre-pass attempted before Discovery
-- ✓ AI Project Discovery Agent explicitly used for the discovery phase
+- ✓ Discovery Agent explicitly used for the discovery phase
 
 **Time estimate:** 15-30 minutes depending on repository complexity.
 
@@ -153,7 +153,7 @@ Keep `.graphifyignore` additive: Graphify already respects `.gitignore`, and `.g
 
 Execute each phase in order. Each phase is self-contained — if interrupted, restart from the last incomplete phase. Try to execute all phases in one run for best results, but you can also run them individually if needed.
 
-**Important orchestration rule:** Phase 2 must be executed with the installed **AI Project Discovery Agent** (`.github/agents/ai-project-discovery.agent.md`). The migration prompt itself is the orchestrator; the Discovery Agent is the worker that performs the repository analysis and `.ai/` generation.
+**Important orchestration rule:** Phase 2 must be executed with the installed **Discovery Agent** (`.github/agents/discovery.agent.md`). The migration prompt itself is the orchestrator; the Discovery Agent is the worker that performs the repository analysis and `.ai/` generation.
 
 **Base URL for GitHub-hosted prompts:**
 ```
@@ -172,8 +172,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 2: Discovery & Analysis
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/02-discover.prompt.md`
-**Agent:** `.github/agents/ai-project-discovery.agent.md`
-**Does:** The AI Project Discovery Agent scans agentic config, consumes `graphify-out/` when available, collects onboarding links, and generates 9 `.ai/` files + `.meta.yml`
+**Agent:** `.github/agents/discovery.agent.md`
+**Does:** The Discovery Agent scans agentic config, consumes `graphify-out/` when available, collects onboarding links, and generates 9 `.ai/` files + `.meta.yml`
 **Verify before continuing:** `.ai/` has 9 files + `.meta.yml`, no placeholder markers
 
 ### Phase 3: Integration
@@ -229,7 +229,7 @@ Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
 1. Review .ai/ files and resolve Validation Questions
 2. Commit changes to a feature branch
 3. Open a pull request for team review
-4. After merging, run AI Project Maintainer Agent after each sprint
+4. After merging, run Maintainer Agent after each sprint
 ```
 
 ---

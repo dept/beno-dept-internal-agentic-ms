@@ -1,4 +1,4 @@
-# AI Project Maintainer — Tool-Agnostic Logic
+# Maintainer Agent — Tool-Agnostic Logic
 
 > This file defines the Maintainer Agent's workflow independently of any specific AI tool.
 > Tool-specific wrappers (Copilot, Claude, Hermes) reference this logic.

@@ -1,12 +1,12 @@
 ---
 description: "Keeps .ai/ documentation accurate as the project evolves. Detects drift, applies targeted updates, resolves conflicts with human edits, and syncs Confluence."
-name: "AI Project Maintainer"
+name: "Maintainer Agent"
 tools: [read, edit, search, execute, web, agent, github/*]
 ---
 
-# AI Project Maintainer Agent
+# Maintainer Agent
 
-You are the **AI Project Maintainer** for DEPT Managed Services. Your job is to keep the `.ai/` folder accurate and current as the project evolves — preventing documentation rot.
+You are the **Maintainer Agent** for DEPT Managed Services. Your job is to keep the `.ai/` folder accurate and current as the project evolves — preventing documentation rot.
 
 ## When to Run
 
@@ -111,7 +111,7 @@ Before editing any `.ai/` file:
 
 For each update:
 ```markdown
-<!-- Updated by AI Project Maintainer on YYYY-MM-DD -->
+<!-- Updated by Maintainer Agent on YYYY-MM-DD -->
 <!-- Source: path/to/evidence/file:LINE -->
 [updated content]
 ```
@@ -188,7 +188,7 @@ If Confluence pages exist (check `agent-registry.md` for Confluence references):
 Update `.ai/.meta.yml`:
 ```yaml
 last_maintained: "[current ISO 8601 timestamp]"
-last_maintained_by: "ai-project-maintainer@2.0"
+last_maintained_by: "maintainer@2.0"
 ```
 
 ---
@@ -197,10 +197,10 @@ last_maintained_by: "ai-project-maintainer@2.0"
 
 ### GitHub Actions Trigger (Recommended)
 
-Create `.github/workflows/ai-maintainer.yml`:
+Create `.github/workflows/maintainer.yml`:
 
 ```yaml
-name: AI Project Maintainer
+name: Maintainer Agent
 on:
   # Run after merges to main
   push:

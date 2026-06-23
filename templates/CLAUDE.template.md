@@ -24,4 +24,4 @@ Read these files at the start of every session:
 2. Never invent service names, endpoints, team members, or environment details.
 3. If something is not found, say: `Unknown — not found in .ai/ or repository`.
 4. Use bullet points and tables. Avoid filler language.
-5. If you detect a contradiction between `.ai/` content and the codebase, flag it and recommend running the AI Project Maintainer Agent.
+5. If you detect a contradiction between `.ai/` content and the codebase, flag it and recommend running the Maintainer Agent.

@@ -39,8 +39,8 @@ Every AI-ready project must maintain:
 
 Two agents support the `.ai` lifecycle:
 
-- **AI Project Discovery Agent** (`agents/ai-project-discovery.agent.md`): generates the complete `.ai` folder for a new or previously undocumented project.
-- **AI Project Maintainer Agent** (`agents/ai-project-maintainer.agent.md`): keeps `.ai` files current as the project evolves. Run after each sprint, release, infrastructure change, or incident postmortem.
+- **Discovery Agent** (`agents/discovery.agent.md`): generates the complete `.ai` folder for a new or previously undocumented project.
+- **Maintainer Agent** (`agents/maintainer.agent.md`): keeps `.ai` files current as the project evolves. Run after each sprint, release, infrastructure change, or incident postmortem.
 
 Manual review of `.ai` files remains mandatory before merging changes. Agents produce drafts; human engineers validate and approve.
 

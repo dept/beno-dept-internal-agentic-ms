@@ -1,4 +1,4 @@
-# AI Project Discovery — Tool-Agnostic Logic
+# Discovery Agent — Tool-Agnostic Logic
 
 > This file defines the Discovery Agent's workflow independently of any specific AI tool.
 > Tool-specific wrappers (Copilot, Claude, Hermes) reference this logic.

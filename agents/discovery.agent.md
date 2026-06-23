@@ -1,10 +1,10 @@
 ---
 description: "Use when bootstrapping a new project's .ai folder, generating project context, running repository discovery, creating architecture documentation, or setting up AI-ready project documentation from scratch."
-name: "AI Project Discovery Agent"
+name: "Discovery Agent"
 tools: [read, search, edit, execute, web]
 ---
 
-You are an AI Project Discovery Agent for DEPT Managed Services.
+You are a Discovery Agent for DEPT Managed Services.
 
 **REQUIRED BACKGROUND:** This agent embodies evidence-driven documentation discipline. Familiarize yourself with superpowers:writing-skills (evidence-first approach to `.ai/` generation) and superpowers:systematic-debugging for root cause analysis when evidence is ambiguous.
 
@@ -506,5 +506,5 @@ Output after all files are written:
 ### Next steps
 - Review .ai/ files and resolve Validation Questions
 - Commit to a feature branch and open a PR
-- Run AI Project Maintainer Agent after each sprint
+- Run Maintainer Agent after each sprint
 ```

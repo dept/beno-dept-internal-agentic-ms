@@ -9,7 +9,7 @@
 #     critical = blocking (architecture change, new service, removed dependency)
 #     moderate = should update within sprint
 #     minor = update when convenient
-#   action: what the maintainer should do
+#   action: what the maintenance agent should do
 
 change_impact_rules:
 
@@ -196,7 +196,7 @@ conflict_resolution:
   rules:
     - "Sections marked with <!-- human-maintained --> are NEVER auto-updated"
     - "If file has been manually edited since last maintenance, show diff and ask for review"
-    - "Maintainer additions go at the end of sections, not inline"
+    - "Maintenance additions go at the end of sections, not inline"
     - "When in doubt, append a '## Updates (auto-generated)' section rather than modifying existing content"
     - "Never remove content — only add, update, or mark as potentially stale"
 

@@ -7,7 +7,7 @@
 A framework that transforms any repository into an AI-ready project by:
 
 1. **Defining a standard** — The `.ai/` folder structure (9 context files) that any AI tool can consume
-2. **Providing agents** — Discovery (bootstraps `.ai/`) and Maintainer (keeps it current)
+2. **Providing agents** — Discovery (bootstraps `.ai/`) and Maintenance (keeps it current)
 3. **Shipping tooling** — Scaffold script, validation script, and composable migration prompts
 4. **Curating registries** — Stack detection (77 technologies) and MCP server registry
 
@@ -36,8 +36,8 @@ bash <(command curl -fsSL "https://raw.githubusercontent.com/dept/beno-dept-inte
 This installs the local migration bundle into the target project:
 - `.github/prompts/migrate.prompt.md`
 - `.github/prompts/01-04/*.prompt.md`
-- `.github/agents/ai-project-discovery.agent.md`
-- `.github/agents/ai-project-maintainer.agent.md`
+- `.github/agents/discovery.agent.md`
+- `.github/agents/maintainer.agent.md`
 - `scripts/graphify-bootstrap.sh`
 
 **Step 2** — Run it in your AI tool:
@@ -55,7 +55,7 @@ Read .github/prompts/migrate.prompt.md and follow the instructions.
 This orchestrates a local agent-first migration flow:
 1. **Install** — agents, local phase prompts, Graphify helper, and superpowers skills
 2. **Graphify pre-pass** — attempt structural graph generation (non-blocking) and preserve `graphify-out/` for Discovery
-3. **Discover** — run the **AI Project Discovery Agent** to analyze the repo and generate `.ai/` context
+3. **Discover** — run the **Discovery Agent** to analyze the repo and generate `.ai/` context
 4. **Integrate** — wire AI tools, create Confluence docs
 5. **Stack Tooling** — install skills + MCP servers for detected tech
 
@@ -81,13 +81,13 @@ Then run each phase in your AI tool:
 
 ### Option D: Graphify-Assisted Discovery (Default inside `/ms-migration`)
 
-`/ms-migration` now installs the local migration artifacts first, then **attempts Graphify automatically before Discovery**, and then runs Phase 2 through the installed **AI Project Discovery Agent** so you do not need two different migration habits.
+`/ms-migration` now installs the local migration artifacts first, then **attempts Graphify automatically before Discovery**, and then runs Phase 2 through the installed **Discovery Agent** so you do not need two different migration habits.
 
 Default behavior inside `/ms-migration`:
-- Phase 1 installs `.github/agents/ai-project-discovery.agent.md`, local `01-04` phase prompts, and `scripts/graphify-bootstrap.sh`
+- Phase 1 installs `.github/agents/discovery.agent.md`, local `01-04` phase prompts, and `scripts/graphify-bootstrap.sh`
 - then run `bash scripts/graphify-bootstrap.sh .` when available
 - if the helper is missing, fall back to direct `graphify` / `uv` / `pipx` / `python3 -m graphify` commands
-- then run Phase 2 with the installed **AI Project Discovery Agent** so Discovery starts with repo-local prompts, skills, and any `graphify-out/` evidence
+- then run Phase 2 with the installed **Discovery Agent** so Discovery starts with repo-local prompts, skills, and any `graphify-out/` evidence
 - else continue migration without blocking if Graphify cannot run
 
 When Graphify is used, the bootstrap helper also ensures a root-level `.graphifyignore` exists. It starts with DEPT defaults such as:
@@ -169,8 +169,8 @@ Checks: required files present, content quality, placeholder detection, stalenes
 
 | Agent | Purpose | Logic |
 |-------|---------|-------|
-| [Discovery Agent](agents/ai-project-discovery.agent.md) | Bootstraps `.ai/` from scratch | [logic.md](agents/ai-project-discovery/logic.md) |
-| [Maintainer Agent](agents/ai-project-maintainer.agent.md) | Keeps `.ai/` current over time | [logic.md](agents/ai-project-maintainer/logic.md) |
+| [Discovery Agent](agents/discovery.agent.md) | Bootstraps `.ai/` from scratch | [logic.md](agents/discovery/logic.md) |
+| [Maintainer Agent](agents/maintainer.agent.md) | Keeps `.ai/` current over time | [logic.md](agents/maintainer/logic.md) |
 
 Agent logic is separated from tool-specific wiring — see `agents/*/logic.md` for portable workflow definitions.
 
@@ -179,10 +179,10 @@ Agent logic is separated from tool-specific wiring — see `agents/*/logic.md` f
 ```
 dept-agentic-standards/
 ├── agents/                        # Agent definitions (Copilot format)
-│   ├── ai-project-discovery.agent.md
-│   ├── ai-project-maintainer.agent.md
-│   ├── ai-project-discovery/logic.md    # Tool-agnostic workflow
-│   └── ai-project-maintainer/logic.md   # Tool-agnostic workflow
+│   ├── discovery.agent.md
+│   ├── maintainer.agent.md
+│   ├── discovery/logic.md    # Tool-agnostic workflow
+│   └── maintainer/logic.md   # Tool-agnostic workflow
 ├── config/
 │   ├── change-impact-matrix.yml   # Maps code changes → .ai/ updates
 │   ├── mcp-registry.yml           # Curated MCP servers (with staleness tracking)
@@ -246,7 +246,7 @@ dept-agentic-standards/
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1. Standard | ✅ Complete | Define `.ai/` baseline + templates |
-| 2. Agents | ✅ Complete | Discovery + Maintainer agents |
+| 2. Agents | ✅ Complete | Discovery + Maintenance agents |
 | 3. Scale | 🔄 In Progress | Roll out across Managed Services |
 | 4. Specialize | Planned | Incident, Release, QA agents |
 | 5. Commercial | Planned | Service proposition + pricing |

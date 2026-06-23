@@ -30,4 +30,4 @@ Load these files at the start of every session or when asked about the project:
 
 ## When context may be stale
 
-The `.ai/` folder reflects the state of the project at the time it was last updated. If you detect a contradiction between `.ai/` content and the current codebase, flag it explicitly and recommend running the AI Project Maintainer Agent.
+The `.ai/` folder reflects the state of the project at the time it was last updated. If you detect a contradiction between `.ai/` content and the current codebase, flag it explicitly and recommend running the Maintainer Agent.

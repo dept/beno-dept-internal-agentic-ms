@@ -1,13 +1,13 @@
 ---
 description: "Phase 2: Analyze the repository and generate complete .ai/ context files."
-agent: "AI Project Discovery Agent"
+agent: "Discovery Agent"
 ---
 
 # Phase 2: Discovery & Analysis
 
 > Self-contained phase. Requires Phase 1 (agents installed). Idempotent.
 
-**Execution mode:** run this prompt with the installed **AI Project Discovery Agent** from `.github/agents/ai-project-discovery.agent.md`. If your tool ignores the prompt frontmatter, explicitly select or invoke that agent before continuing. The agent must receive the local repository, any `graphify-out/` artifacts, and the installed `.github/skills/` context.
+**Execution mode:** run this prompt with the installed **Discovery Agent** from `.github/agents/discovery.agent.md`. If your tool ignores the prompt frontmatter, explicitly select or invoke that agent before continuing. The agent must receive the local repository, any `graphify-out/` artifacts, and the installed `.github/skills/` context.
 
 ## Prerequisites
 
@@ -111,7 +111,7 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 
 After generating all 9 files, create `.ai/.meta.yml` from the meta template:
 - `standard_version`: read from `config/standard-version.yml`
-- `generated_by`: `ai-project-discovery@2.0`
+- `generated_by`: `discovery@2.0`
 - `generated_at`: current ISO 8601 timestamp
 - `project_name`: repository name
 
