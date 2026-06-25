@@ -13,118 +13,62 @@ A framework that transforms any repository into an AI-ready project by:
 
 ## Quick Start
 
-### Option A: Deterministic Scaffold (No LLM)
+### Recommended: Full AI Migration
 
+Install the migration toolkit and run the Discovery Agent to auto-generate `.ai/` from your repo.
+
+**Step 1** — Install the migration bundle (run once):
 ```bash
-# Creates .ai/ folder structure + IDE wiring (templates only, no content)
-./scripts/scaffold.sh /path/to/your/project
-```
-
-Then run the Discovery Agent to fill templates with real project data.
-
-### Option B: Full AI Migration (LLM-powered)
-
-**Step 1** — Install the migration bootstrap into your project (run once in terminal):
-```bash
-# If you cloned this standards repo locally:
+# If you have this repo cloned locally:
 ./scripts/install.sh /path/to/your/project
 
-# Or run directly from GitHub without cloning first:
+# Or fetch directly from GitHub:
 bash <(command curl -fsSL "https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/install.sh") /path/to/your/project
 ```
 
-This installs the local migration bundle into the target project:
-- `.github/prompts/migrate.prompt.md`
-- `.github/prompts/01-04/*.prompt.md`
-- `.github/agents/discovery.agent.md`
-- `.github/agents/maintainer.agent.md`
-- `scripts/graphify-bootstrap.sh`
+This installs agents, prompts, and optional Graphify helper into `.github/` and `scripts/`.
 
-**Step 2** — Run it in your AI tool:
+**Step 2** — Run the migration in your AI tool:
 ```
-# VS Code Copilot / Cursor (after step 1)
+# VS Code Copilot / Cursor
 @workspace /ms-migration
 
-# Claude Code (can fetch directly without step 1)
-Fetch https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md and follow the instructions.
+# Claude Code
+Fetch https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/migrate.prompt.md and follow it
 
-# Any tool with file access (after step 1)
-Read .github/prompts/migrate.prompt.md and follow the instructions.
+# Any tool with file access
+Read .github/prompts/migrate.prompt.md and follow it
 ```
 
-This orchestrates a local agent-first migration flow:
-1. **Install** — agents, local phase prompts, Graphify helper, and superpowers skills
-2. **Graphify pre-pass** — attempt structural graph generation (non-blocking) and preserve `graphify-out/` for Discovery
-3. **Discover** — run the **Discovery Agent** to analyze the repo and generate `.ai/` context
-4. **Integrate** — wire AI tools, create Confluence docs
-5. **Stack Tooling** — install skills + MCP servers for detected tech
+This runs: Install → (optional Graphify) → Discover → Integrate → Stack Tooling.
 
-### Option C: Phase-by-Phase (Recommended for complex projects)
+### Alternative: Deterministic Scaffold (No LLM)
 
-Bootstrap all phase prompts first:
+If you prefer to control the process manually:
+
+```bash
+./scripts/scaffold.sh /path/to/your/project
+```
+
+Creates empty `.ai/` folder structure + IDE wiring templates. Then manually fill in content or use the Discovery Agent on this template.
+
+### Complex Projects: Phase-by-Phase Control
+
+For multi-team projects or staged rollouts, download and run each phase independently:
+
 ```bash
 mkdir -p .github/prompts
 BASE="https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts"
 for f in 01-install 02-discover 03-integrate 04-stack-tooling; do
-  command curl -sL "$BASE/$f.prompt.md" -o ".github/prompts/$f.prompt.md"
+  curl -sL "$BASE/$f.prompt.md" -o ".github/prompts/$f.prompt.md"
 done
 ```
 
-Then run each phase in your AI tool:
-```
-# VS Code Copilot / Cursor
-@workspace /01-install
-@workspace /02-discover
-@workspace /03-integrate
-@workspace /04-stack-tooling
-```
+Then run `@workspace /01-install`, `@workspace /02-discover`, etc. in your AI tool.
 
-### Option D: Graphify-Assisted Discovery (Default inside `/ms-migration`)
+### Optional: Graphify-Assisted Discovery
 
-`/ms-migration` now installs the local migration artifacts first, then **attempts Graphify automatically before Discovery**, and then runs Phase 2 through the installed **Discovery Agent** so you do not need two different migration habits.
-
-Default behavior inside `/ms-migration`:
-- Phase 1 installs `.github/agents/discovery.agent.md`, local `01-04` phase prompts, and `scripts/graphify-bootstrap.sh`
-- then run `bash scripts/graphify-bootstrap.sh .` when available
-- if the helper is missing, fall back to direct `graphify` / `uv` / `pipx` / `python3 -m graphify` commands
-- then run Phase 2 with the installed **Discovery Agent** so Discovery starts with repo-local prompts, skills, and any `graphify-out/` evidence
-- else continue migration without blocking if Graphify cannot run
-
-When Graphify is used, the bootstrap helper also ensures a root-level `.graphifyignore` exists. It starts with DEPT defaults such as:
-- `.history/`
-- `.ai/`
-- `graphify-out/`
-- `node_modules/`, `dist/`, `build/`, `.next/`, `coverage/`, `.turbo/`, `.cache/`, `.vercel/`
-
-This works with upstream Graphify behavior: `.gitignore` is still respected, and `.graphifyignore` adds extra exclusions for migration noise.
-
-**Important:** Graphify can run without an API key for code-only repositories, but doc-heavy repositories may fail with `error: no LLM API key found (... doc/paper/image file(s) need semantic extraction)`. In that case, set one of `GOOGLE_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `MOONSHOT_API_KEY`, or `DEEPSEEK_API_KEY` before running the migration, or let the migration continue without Graphify.
-
-The `graphify-out/cache/ast/` JSON files are expected AST cache output, not a failure by themselves. Graphify can also look idle after AST reaches 100% because the report-generation step still needs to run.
-
-Also install the matching Graphify backend dependency when needed:
-- OpenAI backend → `uv tool install "graphifyy[openai]" --force`
-- Gemini backend → `uv tool install "graphifyy[gemini]" --force`
-- Claude backend → `uv tool install "graphifyy[anthropic]" --force`
-- If `uv` is unavailable, prefer `pipx install "graphifyy[...]" --force`
-- If both `uv` and `pipx` are unavailable, install pipx first with `python3 -m pip install --user pipx` and then use `python3 -m pipx install "graphifyy[...]" --force`
-
-If Graphify says `the 'openai' package is required for this backend but is not installed`, it found your API key but the backend dependency is missing. If `graphify` is already on PATH, reinstall that same tool with the matching extra instead of only rerunning the base install.
-
-**Why this shape?**
-- one entry point for users (`/ms-migration`)
-- better structural discovery when Graphify is available
-- migration still succeeds on machines where Graphify cannot be installed
-
-**Use Graphify as an accelerator, not a replacement for `.ai/`.**
-- `graphify-out/` helps with code structure, dependency shape, and cross-file relationships
-- Discovery uses `graphify-out/` as short-term structural working context, then converts verified findings into durable `.ai/` files
-- `.ai/` still captures operational context, onboarding, environments, ownership, runbooks, support constraints, and human-readable explanations of major packages/features/campaigns when a repo has multiple areas
-- Discovery treats `graphify-out/` as **supplemental evidence** and verifies important claims against the source repository
-- If a project has `doc/` or `docs/`, use those as primary wording/context sources for handover documentation and package/campaign descriptions, then verify against code/config when needed
-- `graphify-out/` should be ignored in Git by default unless a team explicitly chooses to commit it
-
-See [docs/graphify-integration.md](docs/graphify-integration.md) for the workflow and caveats.
+The full migration can optionally pre-scan your repo with **Graphify** (structural analysis tool) before Discovery. This generates a code graph for better understanding of dependencies. See [docs/graphify-integration.md](docs/graphify-integration.md) for setup and troubleshooting.
 
 ## What Gets Created
 
@@ -154,6 +98,31 @@ your-project/
 ├── .cursor/mcp.json               # MCP servers (Cursor)
 └── .mcp.json                      # MCP servers (Claude Code)
 ```
+
+## After Migration
+
+Once Discovery completes, your `.ai/` folder is live. Next steps:
+
+1. **Validate** — Run the standard check:
+   ```bash
+   ./scripts/validate.sh /path/to/your/project
+   ```
+
+2. **Wire AI tools** — Copy or symlink the relevant tool files to your IDE:
+   - `CLAUDE.md` → Claude Code (`/ms-migration` step 3 handles this)
+   - `.github/copilot-instructions.md` → GitHub Copilot
+   - `.vscode/mcp.json` → VS Code + MCP servers
+   - `.cursor/mcp.json` → Cursor + MCP servers
+
+3. **Create Confluence docs** — Export summaries from `.ai/` files:
+   - `project-context.md` → "Project Overview" page
+   - `architecture.md` → "System Architecture" page
+   - `onboarding.md` → "Getting Started" page
+   - `runbooks.md` → "Incident Response" page
+
+4. **Distribute to team** — Check `.ai/` into Git and point developers to `CLAUDE.md` or `CLAUDE.code` (IDE extensions auto-load these).
+
+5. **Schedule Maintainer** — Set a monthly or quarterly reminder to run the **Maintainer Agent** (see agents below) to keep `.ai/` current as the codebase evolves.
 
 ## Validation
 
@@ -252,18 +221,6 @@ dept-agentic-standards/
 | 5. Commercial | Planned | Service proposition + pricing |
 
 See [docs/roadmap.md](docs/roadmap.md) for details.
-
-### Next Steps — Phase 3+ Tickets
-
-Ready-to-implement improvement tickets for Q3 2026+:
-- **MA-1:** Pilot Program — Bootstrap 5 reference projects
-- **MA-2:** Jira MCP integration
-- **MA-3:** Agent escalation workflows
-- **MA-4:** Adoption dashboard
-- **MA-5:** Troubleshooting guide
-- Plus 10+ additional tickets for Phase 4, 5, 6
-
-See [docs/phase3-plus-tickets.md](docs/phase3-plus-tickets.md) for full backlog (can be imported to Jira).
 
 ## Measuring Success
 
