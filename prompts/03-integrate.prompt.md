@@ -39,6 +39,11 @@ Create or update wiring files so every AI tool (Copilot, Claude, Cursor) automat
 
 After wiring is complete, create handover documentation in Confluence.
 
+**Canonical structure source:** `docs/confluence-page-standard.md`
+- Use it as the default page-layout and section-order source for every project.
+- Keep the base page names and section order the same unless a project-specific need clearly justifies a deviation.
+- If you deviate, keep the standard structure as intact as possible and explain the deviation in your final report.
+
 **Target location:**
 - Space: `MS`
 - Path: `Projects`
@@ -56,14 +61,16 @@ After wiring is complete, create handover documentation in Confluence.
    - Subpage: `Onboarding & Handover`
 5. Make content readable for mixed roles (developer + client manager).
 6. In `Overview`, include what the system does, key contacts, and the main business capabilities. When the project has multiple packages, features, brands, or campaigns, add a short plain-language summary for each major area so a new developer can quickly understand what each one is for.
-7. In `Architecture & Package Map`, document each major app/package/feature/campaign and what it is responsible for. For monorepos or multi-brand/campaign projects, include both:
+7. In `Architecture & Package Map`, document each major app/package/feature/campaign and what it is responsible for. For monorepos or multi-brand/campaign projects, include all of the following:
    - an inventory table for quick scanning
    - a short summary paragraph or bullet for each major package/feature/campaign explaining purpose, ownership/context, and notable dependencies or integrations when known
-8. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
-9. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
-10. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas.
-11. Include all 5 links collected in Phase 2 Step 4.
-12. Do NOT create a separate coding standards page unless explicitly requested.
+   - a **Mermaid diagram** at the top of the page that gives a quick structural overview of how the project works
+8. The Mermaid diagram must be a concise architecture overview, not an ASCII tree or screenshot-style code block. Prefer a simple `flowchart LR` or `flowchart TD` showing the main runtime path, major internal components, and key external systems/services.
+9. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
+10. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
+11. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas.
+12. Include all 5 links collected in Phase 2 Step 4.
+13. Do NOT create a separate coding standards page unless explicitly requested.
 
 ## Verification
 

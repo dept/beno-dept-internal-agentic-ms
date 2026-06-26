@@ -66,9 +66,27 @@ done
 
 Then run `@workspace /01-install`, `@workspace /02-discover`, etc. in your AI tool.
 
+### Confluence Documentation Standard
+
+To keep project handover pages consistent across repositories, use the canonical Confluence layout defined in [docs/confluence-page-standard.md](docs/confluence-page-standard.md).
+
+That standard fixes:
+- the page tree
+- the default section order per page
+- the requirement for a Mermaid overview on the architecture page
+- where customization is allowed versus where structure should stay stable
+
+The goal is: **same base structure everywhere, with only small project-specific additions when needed**.
+
 ### Optional: Graphify-Assisted Discovery
 
-The full migration can optionally pre-scan your repo with **Graphify** (structural analysis tool) before Discovery. This generates a code graph for better understanding of dependencies. See [docs/graphify-integration.md](docs/graphify-integration.md) for setup and troubleshooting.
+The full migration can pre-scan your repo with **Graphify** before Discovery. This generates structural context that the Discovery Agent can use to prioritize inspection.
+
+- If no LLM API key is available, the helper still runs Graphify in **code-only fallback mode**
+- If you want Graphify to include docs / papers / images, set a supported key (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `MOONSHOT_API_KEY`, or `DEEPSEEK_API_KEY`) in your shell or in `.env`, `.env.local`, `.env.graphify`, or `.env.graphify.local` before running the helper
+- If you reinstall or upgrade Graphify for a specific backend, refresh the assistant integration with `graphify install`
+
+See [docs/graphify-integration.md](docs/graphify-integration.md) for setup and troubleshooting.
 
 ## What Gets Created
 

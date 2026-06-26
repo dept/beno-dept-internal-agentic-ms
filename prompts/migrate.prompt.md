@@ -80,18 +80,36 @@ After Phase 1 installs the local prompts, agents, and helper script, **attempt t
 4. If installation or execution fails, **continue the migration anyway** — Graphify is a strong accelerator, not a hard blocker.
 
 ### Important Graphify prerequisite
-Graphify can analyze a **code-only corpus** without an LLM API key, but if the repository includes Markdown docs, PDFs, or images it may stop with an error like:
+Graphify now has **two supported migration modes** in this repo:
 
-```text
-error: no LLM API key found (... doc/paper/image file(s) need semantic extraction)
-```
+1. **No API key available** → the helper still runs Graphify in **code-only fallback mode**
+   - code extraction still runs
+   - docs / papers / images are excluded for that run only
+   - Discovery can still use `graphify-out/graph.json` and the follow-up `GRAPH_REPORT.md`
 
-To avoid that, set one supported key before running this prompt when doc-heavy repos are involved:
+2. **API key available** → the helper runs the full Graphify pass, including semantic extraction for docs / papers / images
+
+If you want the full semantic pass, set one supported key before running this prompt:
 - `GOOGLE_API_KEY` or `GEMINI_API_KEY`
 - `ANTHROPIC_API_KEY`
 - `OPENAI_API_KEY`
 - `MOONSHOT_API_KEY`
 - `DEEPSEEK_API_KEY`
+
+The helper script automatically attempts to load keys from these files in the target repo root before Graphify starts:
+- `.env`
+- `.env.local`
+- `.env.graphify`
+- `.env.graphify.local`
+
+So either export the key in your shell **or** add it to one of those files.
+
+**Example `.env` entries:**
+```bash
+OPENAI_API_KEY=your-openai-key
+# or
+GEMINI_API_KEY=your-gemini-key
+```
 
 Also install the matching Graphify backend dependency when needed:
 - OpenAI backend → `uv tool install "graphifyy[openai]" --force`
@@ -100,9 +118,14 @@ Also install the matching Graphify backend dependency when needed:
 - If `uv` is unavailable, prefer `pipx install "graphifyy[...]" --force`
 - If both `uv` and `pipx` are unavailable, install pipx first with `python3 -m pip install --user pipx` and then use `python3 -m pipx install "graphifyy[...]" --force`
 
-If Graphify says `the 'openai' package is required for this backend but is not installed`, it found your API key but the backend dependency is missing. If `graphify` is already on PATH, reinstall that same tool with the matching extra instead of only rerunning the base install.
+If Graphify says `the 'openai' package is required for this backend but is not installed`, it found your API key but the backend dependency is missing. Reinstall the existing Graphify tool with the matching extra instead of only rerunning the base install.
 
-If no supported key is available, skip Graphify and continue the migration with raw-repo discovery instead of blocking the full workflow.
+If Graphify warns that the installed slash-command skill is out of date after an upgrade or reinstall, run:
+```bash
+graphify install
+```
+
+That refreshes the tool integration for supported assistants while keeping the CLI available for the DEPT migration pre-pass.
 
 ### Command sequence
 ```bash

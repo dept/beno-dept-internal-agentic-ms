@@ -60,6 +60,22 @@ uv tool install graphifyy
 graphify install
 ```
 
+If you want semantic extraction through a specific backend, install the matching extra and then refresh the installed assistant integration:
+
+```bash
+# OpenAI
+uv tool install "graphifyy[openai]" --force
+graphify install
+
+# Gemini
+uv tool install "graphifyy[gemini]" --force
+graphify install
+
+# Claude / Anthropic
+uv tool install "graphifyy[anthropic]" --force
+graphify install
+```
+
 ### Alternatives
 ```bash
 pipx install graphifyy
@@ -140,8 +156,30 @@ So the policy is:
 - fall back to `pipx` if `uv` is unavailable
 - fall back to `python3 -m pip install --user graphifyy` if neither `uv` nor `pipx` is available
 - create or update a root `.graphifyignore` when Graphify is used so obvious junk folders are excluded from the scan
+- **auto-load Graphify keys from `.env`, `.env.local`, `.env.graphify`, or `.env.graphify.local` when those files exist in the target repo root**
+- **run in code-only fallback mode when no supported LLM key is available by temporarily excluding docs / papers / images for that run**
 - continue migration if Graphify cannot be installed or run
 - ignore `graphify-out/` in Git by default unless a team explicitly chooses otherwise
+
+### Full semantic extraction when a key is available
+If the user wants Graphify to include docs, papers, and images in addition to code, they should set one supported key before running the helper:
+- `GOOGLE_API_KEY` or `GEMINI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `OPENAI_API_KEY`
+- `MOONSHOT_API_KEY`
+- `DEEPSEEK_API_KEY`
+
+Either export the variable in the shell first, or add it to a repo-local env file that the helper auto-loads.
+
+Example:
+```bash
+cat > .env.graphify <<'EOF'
+OPENAI_API_KEY=your-openai-key
+EOF
+bash scripts/graphify-bootstrap.sh .
+```
+
+If the chosen backend needs extra packages, reinstall Graphify with the matching extra first (`graphifyy[openai]`, `graphifyy[gemini]`, or `graphifyy[anthropic]`).
 
 ### Discovery behavior
 When `graphify-out/` exists, Discovery should read in this order:

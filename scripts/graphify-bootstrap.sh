@@ -29,6 +29,34 @@ fi
 PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
 
 GRAPHIFY_RUNNER=(graphify)
+TEMP_GRAPHIFYIGNORE_MARKER_BEGIN="# --- DEPT graphify no-LLM fallback: begin ---"
+TEMP_GRAPHIFYIGNORE_MARKER_END="# --- DEPT graphify no-LLM fallback: end ---"
+NO_LLM_CODE_ONLY_MODE=0
+
+load_graphify_env() {
+  local env_file loaded_any=0
+
+  for env_file in \
+    "$PROJECT_DIR/.env" \
+    "$PROJECT_DIR/.env.local" \
+    "$PROJECT_DIR/.env.graphify" \
+    "$PROJECT_DIR/.env.graphify.local"
+  do
+    if [[ -f "$env_file" ]]; then
+      set -a
+      # shellcheck disable=SC1090
+      if source "$env_file"; then
+        echo "Loaded Graphify environment from ${env_file#$PROJECT_DIR/}"
+        loaded_any=1
+      else
+        echo "WARNING: failed to source ${env_file#$PROJECT_DIR/}; continuing with existing environment" >&2
+      fi
+      set +a
+    fi
+  done
+
+  return $loaded_any
+}
 
 graphify_package_spec() {
   if [[ -n "${OPENAI_API_KEY:-}" ]]; then
@@ -117,6 +145,71 @@ EOF
 
   if [[ $added_any -eq 1 ]]; then
     echo "Updated .graphifyignore with missing DEPT defaults"
+  fi
+}
+
+remove_temp_no_llm_exclusions() {
+  local ignore_file="$PROJECT_DIR/.graphifyignore"
+
+  [[ -f "$ignore_file" ]] || return 0
+  python3 - <<'PY' "$ignore_file" "$TEMP_GRAPHIFYIGNORE_MARKER_BEGIN" "$TEMP_GRAPHIFYIGNORE_MARKER_END"
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+begin = sys.argv[2]
+end = sys.argv[3]
+text = path.read_text(encoding='utf-8')
+marker_block = f"\n{begin}\n"
+start = text.find(marker_block)
+if start == -1:
+    if text.startswith(begin + "\n"):
+        start = 0
+    else:
+        raise SystemExit(0)
+end_idx = text.find("\n" + end, start)
+if end_idx == -1:
+    raise SystemExit(0)
+end_idx = text.find("\n", end_idx + 1)
+if end_idx == -1:
+    end_idx = len(text)
+updated = (text[:start] + text[end_idx:]).rstrip()
+if updated:
+    updated += "\n"
+path.write_text(updated, encoding='utf-8')
+PY
+}
+
+enable_no_llm_code_only_mode() {
+  local ignore_file="$PROJECT_DIR/.graphifyignore"
+
+  ensure_graphifyignore
+  remove_temp_no_llm_exclusions
+
+  cat >> "$ignore_file" <<EOF
+
+$TEMP_GRAPHIFYIGNORE_MARKER_BEGIN
+# Added temporarily by scripts/graphify-bootstrap.sh so Graphify can run
+# without an LLM API key. Remove this block (or rerun with a key) when you
+# want Graphify to include docs, papers, and images again.
+**/*.md
+**/*.markdown
+**/*.mdx
+**/*.pdf
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.gif
+$TEMP_GRAPHIFYIGNORE_MARKER_END
+EOF
+
+  NO_LLM_CODE_ONLY_MODE=1
+}
+
+cleanup_graphify_bootstrap() {
+  if [[ "$NO_LLM_CODE_ONLY_MODE" -eq 1 ]]; then
+    remove_temp_no_llm_exclusions
   fi
 }
 
@@ -230,28 +323,36 @@ PY
   fi
 }
 
+load_graphify_env || true
 ensure_graphify
 install_graphify_backend_dependency_if_needed
 
+cd "$PROJECT_DIR"
+
+ensure_graphifyignore
+
 if ! has_graphify_llm_key && repo_has_semantic_files; then
   cat <<'EOF'
-Skipping Graphify pre-pass: repository contains docs/PDFs/images, but no supported Graphify LLM API key is set.
+No supported Graphify LLM API key detected.
 
-Graphify can process code-only repositories without a key, but doc/paper/image extraction requires one of:
+Continuing in code-only fallback mode:
+- code extraction will still run
+- docs / papers / images will be excluded for this run only
+
+For full semantic extraction, set one of:
   GOOGLE_API_KEY or GEMINI_API_KEY
   ANTHROPIC_API_KEY
   OPENAI_API_KEY
   MOONSHOT_API_KEY
   DEEPSEEK_API_KEY
 
-Continuing without Graphify is expected for the DEPT migration flow.
+Tip: put the key in .env, .env.local, .env.graphify, or .env.graphify.local,
+or export it in your shell before running this helper.
 EOF
-  exit 0
+  enable_no_llm_code_only_mode
 fi
 
-cd "$PROJECT_DIR"
-
-ensure_graphifyignore
+trap cleanup_graphify_bootstrap EXIT
 
 EXTRA_ARGS=("$@")
 

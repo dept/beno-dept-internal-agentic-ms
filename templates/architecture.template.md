@@ -6,11 +6,18 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 ## Required Sections
 - Component inventory
 - Package / feature / campaign summaries when the project has multiple areas
+- Mermaid architecture overview (`flowchart LR` or `flowchart TD`) for quick orientation
 - Runtime architecture diagram
 - Data flow and trust boundaries
 - External integrations
 - Failure domains
 - Structural discovery notes when Graphify materially helped identify boundaries or hotspots
+
+## Diagram Guidance
+- Use Mermaid, not ASCII art or pasted screenshots
+- Keep it high level: main entrypoints, major internal services/packages, and key external systems
+- Optimize for quick orientation by a new engineer or client manager
+- Prefer one simple overview diagram before any detailed package notes
 
 ## Example Content
 - Components: Next.js web app, API routes, Azure Functions, Redis cache
