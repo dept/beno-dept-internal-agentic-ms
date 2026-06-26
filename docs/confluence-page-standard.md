@@ -8,7 +8,7 @@ This is the **canonical base layout** for DEPT Managed Services project document
 ## Fixed page tree
 Every project should use this structure under `MS / Projects`:
 
-- `[Project Name]`
+- `[Project Name]` ← landing page: Key facts, AI tooling status, Key contacts
   - `Overview`
   - `Architecture & Package Map`
   - `Environments & Access`
@@ -25,20 +25,91 @@ Every project should use this structure under `MS / Projects`:
 
 ---
 
+## Main / landing page — [Project Name]
+
+The `[Project Name]` page is the top-level Confluence entry point. It should let any reader instantly identify the project and know who to contact — without navigating into subpages.
+
+### Required sections
+1. Short intro paragraph (project type, client, agency)
+2. `## Key facts`
+3. `## Quick links`
+4. `## Documentation structure`
+5. `## AI tooling status`
+6. `## Key contacts`
+
+### Content rules
+- Keep it short and scannable — this is a landing page, not a deep dive.
+- `## Key contacts` must be the **last section**.
+- Include a warning panel in `## Key contacts` when contact details have not yet been confirmed.
+- Include a `## Key facts` table: repo, framework, package manager, CMS, hosting, database, monitoring. Use `[To fill in]` for unknowns.
+- Include a `## AI tooling status` section listing which DEPT agentic standard components are in place. Use a warning panel when setup has not yet been confirmed.
+
+### Example section skeleton
+```md
+## Key facts
+| Property | Value |
+| --- | --- |
+| GitHub repo | `org/repo-name` |
+| Package manager | [e.g. pnpm / bun / npm] |
+| Framework | [e.g. Next.js 15 / .NET 9] |
+| CMS | [To fill in] |
+| Hosting | [To fill in] |
+| Database | [To fill in] |
+| Monitoring | [To fill in] |
+
+## Quick links
+| Link | URL |
+| --- | --- |
+| GitHub | ... |
+| Test | ... |
+| Acceptance | ... |
+| Production | ... |
+| Secrets (Keeper) | ... |
+
+## Documentation structure
+- **Overview** — what the system does, business capabilities, key packages
+- **Architecture and Package Map** — service boundaries, external systems, packages
+- **Environments and Access** — environment URLs, CI/CD, env vars
+- **Onboarding and Handover** — local setup, troubleshooting, key contacts
+
+## AI tooling status
+> [!WARNING]
+> Fill in or remove this warning once AI tooling setup has been confirmed.
+
+- **Context files:** [e.g. `.ai/` directory with N context documents]
+- **Agents:** [e.g. Discovery, Maintainer, Support in `.github/agents/`]
+- **Skills:** [e.g. N skills in `.github/skills/`]
+- **Code graph:** [e.g. Graphify — X nodes, Y edges]
+- **MCP servers:** [e.g. list of configured integrations]
+- **Instructions:** [e.g. `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`]
+
+## Key contacts
+> [!WARNING]
+> Verify contact details with the project team before sharing this page.
+
+| Role | Name | Contact (email) |
+| --- | --- | --- |
+| Tech Lead | [To fill in] | [To fill in] |
+| Client Manager | [To fill in] | [To fill in] |
+| Project Manager | [To fill in] | [To fill in] |
+| DevOps Owner | [To fill in] | [To fill in] |
+| CMS Admin | [To fill in] | [To fill in] |
+```
+
+---
+
 ## Page 1 — Overview
 
 ### Required sections
 1. `## What this project does`
 2. `## Business capabilities`
 3. `## Major areas at a glance`
-4. `## Ownership and contacts`
-5. `## Key links`
+4. `## Key links`
 
 ### Content rules
 - Explain the system in plain language first.
 - Summarize the main business capabilities.
 - If the repository has multiple apps, packages, brands, campaigns, or major features, include a short explanation for each major area.
-- Include ownership, support contacts, and client-facing context when known.
 - Include the core project links collected during discovery.
 
 ### Example section skeleton
@@ -56,12 +127,6 @@ Short plain-language summary of the product/system.
 | --- | --- | --- |
 | apps/web | Main customer-facing web app | Uses CMS + backend APIs |
 | packages/design-system | Shared UI components | Used by all frontend apps |
-
-## Ownership and contacts
-- Delivery owner:
-- Technical owner:
-- Client manager:
-- Support path:
 
 ## Key links
 - GitHub:
@@ -194,6 +259,7 @@ Short explanation of the available environments and what they are used for.
 - Optimize for a new engineer joining the project.
 - Include setup prerequisites, local run/test commands, and known pitfalls.
 - Include support paths and escalation guidance.
+- Do **not** repeat a Key Contacts table here — contacts live on the main `[Project Name]` landing page. Link to it instead if readers need it.
 - Include project-specific handover notes that would otherwise be lost in code or chat history.
 
 ### Example section skeleton
@@ -251,6 +317,7 @@ When an agent creates Confluence documentation, it should:
 3. fill the standard sections in order
 4. add project-specific sections only when needed
 5. explain any structural deviation explicitly in its final report
+6. place Key facts, AI tooling status, and Key contacts **only on the main `[Project Name]` landing page** — never repeat them on Overview, Architecture, or Onboarding subpages
 
 ## Recommended implementation pattern in prompts and skills
 To reduce drift, prompts and skills should say:
