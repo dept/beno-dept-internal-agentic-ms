@@ -129,6 +129,23 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 
 **Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.github/skills/` — either vendor-fetched or evidence-generated fallback.
 
+## Step 9.5: Update agent-registry.md with Installed Skills
+
+After installing all skills, append a "Phase 4 Skills" section to `.ai/agent-registry.md`. Read the file first, merge, never overwrite existing content.
+
+```markdown
+### Phase 4 Skills (stack-specific, installed YYYY-MM-DD)
+
+| Skill | Source | Purpose |
+|---|---|---|
+| `<technology>/SKILL.md` | Vendor skill / Generated from project evidence | [one-line description from skill frontmatter] |
+```
+
+- Use the `description` field from each skill's YAML frontmatter as the Purpose
+- Source: "Vendor skill" if fetched via `gh skill install`, "Generated from project evidence" if fallback-generated
+- Include every skill installed or generated in this phase — no silent omissions
+- If a technology was skipped, add a row with "Skipped — [reason]" in Purpose column
+
 ## Step 10: Find and Install MCP Servers
 
 **Priority order (stop at first match per technology):**
@@ -159,6 +176,20 @@ curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-
 | Claude Code | `.mcp.json` | `mcpServers` |
 
 **Read first, merge, write back.** Never remove or overwrite existing entries.
+
+After writing MCP configs, update the `## MCP Servers` section in `.ai/agent-registry.md`:
+
+```markdown
+## MCP Servers
+
+Installed by Phase 4 (YYYY-MM-DD). Config in `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`.
+
+| Server key | Package | Transport | Purpose |
+|---|---|---|---|
+| `<key>` | `<npm-package>` | stdio / http | [what it provides] |
+```
+
+If the section already exists, merge new entries — never remove existing rows.
 
 ## Step 11: Generate Support Agent
 
@@ -209,8 +240,10 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 - [ ] A skill file exists for every detected core technology (or an explicit skip reason is documented)
 - [ ] Testing skill installed only if test files exist AND framework is detected — not otherwise
 - [ ] No generic `test-driven-development` skill installed (it's methodology-prescriptive, not evidence-based)
+- [ ] `.ai/agent-registry.md` has a "Phase 4 Skills" section listing every skill installed or skipped
 - [ ] MCP servers installed (or documented why not)
 - [ ] MCP config written to all 3 IDE files
+- [ ] `.ai/agent-registry.md` `## MCP Servers` section updated with installed servers
 - [ ] Project support agent created
 
 ## Completion Signal
