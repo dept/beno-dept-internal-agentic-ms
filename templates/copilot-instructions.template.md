@@ -4,19 +4,24 @@ This project contains a `.ai/` folder with structured context for AI assistants.
 
 ## What to read first
 
-Load these files at the start of every session or when asked about the project:
+Always load at the start of every session:
 
 | File | Contains |
 |------|----------|
 | `.ai/project-context.md` | Project overview, environments, team ownership |
 | `.ai/architecture.md` | System topology, service boundaries, integrations |
-| `.ai/dependencies.md` | Key dependencies, risk flags, upgrade notes |
-| `.ai/operational-context.md` | Deployment, monitoring, alerting, SLOs |
-| `.ai/runbooks.md` | Incident procedures and recovery steps |
 | `.ai/coding-standards.md` | Conventions, linting, testing, PR policy |
-| `.ai/cms.md` | CMS configuration, content models, webhooks |
-| `.ai/onboarding.md` | How to run the project locally |
-| `.ai/agent-registry.md` | Which agents are active and their scopes |
+
+Load additionally only when the task requires it:
+
+| File | Load when |
+|------|-----------|
+| `.ai/dependencies.md` | Dependency, upgrade, or security questions |
+| `.ai/operational-context.md` | Deployment, monitoring, or SLO questions |
+| `.ai/runbooks.md` | Incidents, recovery, or on-call questions |
+| `.ai/cms.md` | CMS content, content models, or webhook questions |
+| `.ai/onboarding.md` | Local dev setup questions |
+| `.ai/agent-registry.md` | Agent orchestration or MCP tool questions |
 
 ## Behaviour rules
 
