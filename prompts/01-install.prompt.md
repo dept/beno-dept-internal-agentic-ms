@@ -17,7 +17,7 @@ Installs the DEPT agentic tooling into the target repository:
 - 2 agents (Discovery + Maintenance)
 - 5 prompts (bootstrap + 4 phase prompts)
 - 1 Graphify bootstrap helper script
-- 4 superpowers skills
+- 3 superpowers skills (universal disciplines only)
 
 ## Step 1: Fetch and Install DEPT Agents
 
@@ -45,9 +45,10 @@ Superpowers skills provide reusable discipline patterns that agents reference.
 | writing-skills | Evidence-first documentation | `agents/writing-skills/SKILL.md` | `.github/skills/writing-skills/SKILL.md` |
 | systematic-debugging | Root-cause analysis patterns | `agents/systematic-debugging/SKILL.md` | `.github/skills/systematic-debugging/SKILL.md` |
 | verification-before-completion | Quality gates before declaring done | `agents/verification-before-completion/SKILL.md` | `.github/skills/verification-before-completion/SKILL.md` |
-| test-driven-development | TDD RED-GREEN-REFACTOR cycle | `agents/test-driven-development/SKILL.md` | `.github/skills/test-driven-development/SKILL.md` |
 
 **Action:** Create `.github/skills/` directory. Write each skill file. Skip if already exists.
+
+**Do NOT install testing or TDD skills here.** Testing discipline is stack-specific and only installed in Phase 4 when evidence of existing tests is found. Installing a generic TDD skill on a project that doesn't practice TDD introduces guidance that conflicts with the project's actual workflow.
 
 ## Verification
 
@@ -55,7 +56,7 @@ Before proceeding to Phase 2, confirm:
 - [ ] `.github/agents/` contains 2 agent files
 - [ ] `.github/prompts/` contains `migrate.prompt.md` and `01-04` phase prompts
 - [ ] `scripts/graphify-bootstrap.sh` exists and is executable
-- [ ] `.github/skills/` contains 4 skill directories
+- [ ] `.github/skills/` contains 3 skill directories (writing-skills, systematic-debugging, verification-before-completion)
 
 ## Completion Signal
 

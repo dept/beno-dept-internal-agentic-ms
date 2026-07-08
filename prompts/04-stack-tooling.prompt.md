@@ -11,6 +11,59 @@ description: "Phase 4: Install stack-specific skills and MCP servers for every d
 - Phase 2 completed (`.ai/` folder with `project-context.md` and tech stack identified)
 - Network access for registry queries
 
+## Step 7.5: Detect Existing Test Patterns (Before Stack Detection)
+
+Before detecting the tech stack, check whether the project already has tests:
+
+```bash
+# Look for test files
+find . -name "*.test.ts" -o -name "*.spec.ts" -o -name "*.test.tsx" -o -name "*.spec.tsx" \
+       -o -name "*.test.js" -o -name "*.test.py" -o -name "test_*.py" \
+       | grep -v node_modules | head -20
+```
+
+Also check `package.json` for test framework packages:
+- `vitest` → Vitest (TypeScript/JavaScript)
+- `jest` → Jest (TypeScript/JavaScript)
+- `@testing-library/*` → component testing
+- `pytest` in `pyproject.toml`/`requirements.txt` → pytest (Python)
+- `xunit`, `NUnit`, `MSTest` in `*.csproj` → .NET test frameworks
+
+**Decision rule:**
+- If test files exist AND a test framework is detected → generate a **testing skill** (see below) during Step 9
+- If no test files exist → skip testing skill entirely. Do not install `test-driven-development` or any generic testing skill.
+- Never install a generic or methodology-first TDD skill. Testing skills must reflect the framework and patterns already in use.
+
+**Generating a testing skill when tests exist:**
+
+```markdown
+---
+name: testing
+description: "Use when adding or modifying tests in [PROJECT_NAME]. Framework: [FRAMEWORK]."
+---
+
+# Testing in [PROJECT_NAME]
+
+## Test Framework
+[FRAMEWORK] — [version from package.json/pyproject.toml]
+
+## Existing Test Patterns
+[Describe what the existing tests actually test, e.g. "unit tests for donation/form mapping in src/lib/__tests__/"]
+
+## Key Test Files
+[List 3-5 representative test files found during detection]
+
+## Writing Tests Here
+- Follow existing file naming: `[pattern from existing files]`
+- Use existing test utilities if any (e.g. `src/test-utils.ts`)
+- Focus coverage on [most tested area from discovery], not on achieving arbitrary percentages
+
+## Running Tests
+[Command from package.json scripts or pyproject.toml]
+```
+
+---
+
 ## Step 8: Detect the Tech Stack
 
 Read project manifest files and config to identify all technologies:
@@ -154,6 +207,8 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 ## Verification
 
 - [ ] A skill file exists for every detected core technology (or an explicit skip reason is documented)
+- [ ] Testing skill installed only if test files exist AND framework is detected — not otherwise
+- [ ] No generic `test-driven-development` skill installed (it's methodology-prescriptive, not evidence-based)
 - [ ] MCP servers installed (or documented why not)
 - [ ] MCP config written to all 3 IDE files
 - [ ] Project support agent created
