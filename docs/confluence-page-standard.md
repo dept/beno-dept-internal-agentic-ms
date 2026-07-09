@@ -292,6 +292,50 @@ Short explanation of the available environments and what they are used for.
 
 ---
 
+## `.ai/` → Confluence page mapping (canonical)
+
+The `.ai/` folder has ~9 files; the Confluence tree has 4 subpages + a landing page. To stop agents guessing titles (and creating duplicates), the mapping is fixed and each page's real ID is recorded in `.ai/.meta.yml` after first creation.
+
+| `.ai/` file | Confluence page |
+| --- | --- |
+| `project-context.md` | Overview |
+| `architecture.md` | Architecture & Package Map |
+| `cms.md` | Architecture & Package Map |
+| `dependencies.md` | Architecture & Package Map |
+| `operational-context.md` | Environments & Access |
+| `runbooks.md` | Environments & Access |
+| `onboarding.md` | Onboarding & Handover |
+| `coding-standards.md` | Onboarding & Handover |
+| `agent-registry.md` | landing page → `## AI tooling status` section |
+
+### `.meta.yml` `confluence:` block (schema)
+
+Discovery writes this block on first Confluence creation; the Maintainer reads it every sync. `id` is empty until resolved — the agent looks the page up by `title` under the space and **writes the ID back**, so subsequent runs update in place instead of duplicating.
+
+```yaml
+confluence:
+  space: MS
+  base_url: https://dept-nl.atlassian.net/wiki/spaces/MS/Projects
+  pages:
+    landing:      { title: "[Project Name]", id: "" }
+    overview:     { title: "Overview", id: "" }
+    architecture: { title: "Architecture & Package Map", id: "" }
+    environments: { title: "Environments & Access", id: "" }
+    onboarding:   { title: "Onboarding & Handover", id: "" }
+  sync_map:
+    project-context.md: overview
+    architecture.md: architecture
+    cms.md: architecture
+    dependencies.md: architecture
+    operational-context.md: environments
+    runbooks.md: environments
+    onboarding.md: onboarding
+    coding-standards.md: onboarding
+    agent-registry.md: landing
+```
+
+`sync_map` entries for `.ai/` files that don't exist in a given project (e.g. `cms.md` on a non-CMS repo) are ignored.
+
 ## Allowed customization
 Customization is allowed, but the default should be:
 - same page names

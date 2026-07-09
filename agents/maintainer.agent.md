@@ -174,12 +174,13 @@ Generate a structured summary of all changes:
 
 ## Phase 7: Confluence Sync
 
-If Confluence pages exist (check `agent-registry.md` for Confluence references):
+Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`). It declares the space, the page tree with each page's recorded `id`, and the `sync_map` routing each `.ai/` file to a page.
 
-1. Compare `.ai/` content with Confluence page content
-2. Push critical/moderate updates to Confluence
-3. Do NOT push minor updates (avoid noise)
-4. Add a "Last synced from .ai/" timestamp to each Confluence page
+1. **Resolve page IDs.** For each page whose `id` is empty, find the existing page by `title` under the configured space/base URL and write the resolved `id` back into `.ai/.meta.yml`. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found.
+2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section.
+3. Push **critical/moderate** updates only. Skip minor (avoid noise).
+4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
+5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
 
 ---
 

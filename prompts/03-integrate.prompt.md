@@ -78,6 +78,7 @@ After wiring is complete, create handover documentation in Confluence.
 12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page.
 13. Include all 5 links collected in Phase 2 Step 4.
 14. Do NOT create a separate coding standards page unless explicitly requested.
+15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves and backfills it on first run.
 
 ## Verification
 
@@ -86,6 +87,7 @@ Before proceeding to Phase 4, confirm:
 - [ ] `CLAUDE.md` references `.ai/` folder
 - [ ] `.github/instructions/ai-context.instructions.md` exists
 - [ ] Confluence pages created (or report why not)
+- [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`
 
 ## Completion Signal
 

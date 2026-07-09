@@ -82,10 +82,13 @@ Generate structured summary with:
 
 ### Phase 7: Confluence Sync
 
-If Confluence pages exist:
-- Push critical/moderate updates
-- Skip minor updates (reduce noise)
-- Add "Last synced" timestamp
+Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`).
+
+- Resolve empty page `id`s by title under the space; write resolved IDs back to `.meta.yml` (prevents duplicates)
+- Route each changed `.ai/` file to its `sync_map` page; `agent-registry.md` → landing page `## AI tooling status`
+- Push critical/moderate updates only; skip minor (reduce noise)
+- Update in place — never delete a page/section unless its subject no longer exists in the repo
+- Add "Last synced from .ai/ — [timestamp]" to each touched page
 
 ### Phase 8: Metadata Update
 
