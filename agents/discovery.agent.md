@@ -226,37 +226,45 @@ Read `package.json` (all workspaces if monorepo) and config files at repository 
 
 Use `config/stack-detection.yml` from this standards repository as detection hints — it maps package names to human-readable technology names. If a package is not listed there, derive the technology name from the package itself (e.g. `@prisma/client` → `prisma`, `@shopify/shopify-api` → `shopify`).
 
-#### Step B — Install skills from GitHub
+#### Step B — Add a skill per technology (vendor-fetch first, else generate code-verified)
 
-For each detected technology, use the GitHub CLI skill workflow:
+For each detected technology, produce `.github/skills/<technology-name>/SKILL.md`.
 
-```bash
-# Search for matching skills on GitHub
-gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json repo,skillName,path,stars
-```
-
-If a result looks authoritative (vendor org, relevant skill name/path), install it into the project:
+**Step B1 — try a vendor skill via `gh skill`.** `gh skill` is a real, built-in (preview) GitHub CLI feature — use it when available:
 
 ```bash
-# Install into the project skills folder
+# Search public repos for a matching skill, scoped to a vendor org
+gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json name,repository,path
+
+# Install an authoritative result into the project skills folder
 gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
 ```
 
-**Rules:**
-1. Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`) — not individual accounts.
-2. Skip if a skill with that name already exists in `.github/skills/`.
-3. If no suitable `gh skill search` result is found, generate a minimal project-specific skill from `.ai/` evidence (see Fallback below).
-4. There must be a resulting `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why the technology was skipped.
-5. Record each result (installed / skipped / generated fallback) for the completion summary.
+Rules: only accept vendor-org results (e.g. `vercel/`, `shopify/`, `github/`), not individual accounts. `gh skill` is preview and may be absent on older `gh` — if `gh skill --help` fails, or search returns no authoritative match, fall through to Step B2. Do **not** fabricate a "vendor skill" source when the command didn't actually run.
 
-**Fallback — generate skill from project evidence:**
+**Step B2 — generate a code-verified skill (fallback for project-specific tech).** Most project-specific skills (how *this* repo wires a CMS, its fetch helpers, its routes) won't have a vendor match and must be generated. Generation MUST be code-verified: `.ai/` tells you *which* files and technologies to look at — it is NOT the source of code samples. Every concrete claim comes from the actual source, not from `.ai/` prose:
 
-When `gh skill search` returns no authoritative result, write a minimal skill file populated from what was actually found during analysis:
+1. **No invented symbols.** Before writing any import, function, hook, or export name, confirm it exists: `grep -rn "<symbol>" <path>` or read the package's `exports` in `package.json`. If you cannot find it, do not write it — describe the real helper the project uses. (This is the rule that stops `getOptimizelyClient()`-style fiction.)
+2. **Real paths only.** Confirm every path with `ls`/glob before writing it. Never infer a route/dir from framework convention (e.g. `app/[locale]/`) without checking it exists.
+3. **Copy code from real call sites.** Base each code sample on an actual usage found in the repo (`grep` the call, read the file).
+4. **No empty/stub sections.** Every heading has real content or is omitted.
+5. **No restated global constraints.** Rules already in `.ai/` or `copilot-instructions.md` (commits, `process.env`, deploy target) get a one-line pointer, not a re-documentation.
+6. **Scope matches frontmatter.** Don't add off-topic sections; the body must stay within the skill's declared scope.
+7. **Mark residual uncertainty honestly.** If something genuinely can't be verified, write `Assumption:` — never state an unverified guess as fact.
+
+**Verification is your process, not the skill's content.** Do the grep/`ls`/read to convince *yourself*, then write only the clean fact. The skill must NOT carry verification residue:
+- No line numbers anywhere (`file.ts:271`) — they rot on the next edit. Reference a file or directory by path only, and only when it's real guidance.
+- No "verified via" / "used in" evidence columns, no citations, no `grep`-proof.
+- No negative trivia ("there is no `getOptimizelyClient()`", "X does not exist") — just state what the project *does* use.
+- No meta-commentary about `.ai/` being wrong — if `.ai/` contradicts code, fix `.ai/`, don't narrate the conflict inside a skill.
+A skill reads as a clean set of facts a developer can act on, not an audit report.
+
+**Skeleton (fill only with verified facts):**
 
 ```markdown
 ---
 name: <technology-name>
-description: "Use when working with <technology> in [PROJECT_NAME]: [specific scenarios based on .ai/ files]."
+description: "Use when working with <technology> in [PROJECT_NAME]: [scenarios verified from the repo]."
 ---
 
 # <Technology Display Name>
@@ -265,13 +273,17 @@ description: "Use when working with <technology> in [PROJECT_NAME]: [specific sc
 Read `.ai/project-context.md` for how <technology> is used in this project.
 
 ## Key Files
-- [actual paths discovered during analysis]
+- [paths confirmed with `ls`/glob]
 
 ## Common Operations
-[most relevant operations for how this tech is actually used here — from .ai/ evidence only]
+[operations shown with code copied from real call sites — cite the source file]
 ```
 
-Populate from `.ai/` evidence only — no generic placeholders.
+**Rules:**
+1. Skip if a skill with that name already exists in `.github/skills/` (unless regenerating).
+2. There must be a `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
+3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary.
+4. **Self-check before finishing each skill:** re-grep every symbol and re-`ls` every path you wrote. A skill that references anything you could not locate fails the phase — fix or remove it.
 
 #### Step C — Find and add MCP servers
 

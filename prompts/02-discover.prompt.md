@@ -105,6 +105,15 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 - Cite source evidence (file paths, config names)
 - Redact secrets and privileged credentials
 
+**Single source of truth (avoid cross-file duplication):**
+Each fact/constraint has exactly ONE home file; other files cross-reference it instead of restating it. This prevents drift and the duplication reviewers flag.
+- Commit conventions, linting, testing, TypeScript/import rules → **only** `coding-standards.md`
+- Tech stack + monorepo layout → **only** `project-context.md`
+- Deploy pipeline, environments, env-var handling → **only** `operational-context.md`
+- CMS/content model/webhooks/ISR → **only** `cms.md`
+
+If another file needs to mention one of these, write a one-line pointer (e.g. "See `coding-standards.md` → Commit Conventions"), not a copy. `project-context.md` must NOT contain a standalone "Commit Convention" section — point to `coding-standards.md`.
+
 **Quality check:** No empty sections, no placeholders. Every section has content or an explicit unknown statement.
 
 ## Step 5b: Generate `.ai/.meta.yml`

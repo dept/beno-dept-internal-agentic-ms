@@ -12,6 +12,8 @@ gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
 
 If no authoritative vendor-owned `gh skill search` result is found, the agent generates a minimal project-specific fallback skill from the `.ai/` evidence collected during discovery so the detected technology still has a concrete `.github/skills/<technology-name>/SKILL.md`. These generated skills live in the target project's `.github/skills/` folder, not in this repo.
 
+**Fallback skills must be evidence-accurate** (see accuracy rules in `prompts/04-stack-tooling.prompt.md`): no invented APIs/symbols (grep them first), only real paths (`ls`-confirmed), code samples copied from real call sites, no empty sections, and no restatement of global constraints already in `.ai/`/`copilot-instructions.md` (pointer only).
+
 No template skills are stored here. Skills for this standards repo itself (agents, prompts, scripts) live at the repo root under `agents/` and `prompts/`.
 
 ## Adding a new technology

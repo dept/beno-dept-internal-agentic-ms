@@ -122,8 +122,8 @@ Optionally create Confluence pages under `MS/Projects` using a consistent layout
 ### Step 10: Stack-Aware Developer Setup
 
 For each detected technology:
-1. Search with `gh skill search <technology-name> --owner <vendor-org>` and install the selected vendor-owned skill with `gh skill install <owner>/<repo> <skill-name> --dir .github/skills`
-2. If no authoritative result exists, generate a local fallback skill so each detected core technology still ends with a `.github/skills/<technology-name>/SKILL.md`
+1. Try a vendor skill first via `gh skill search <technology-name> --owner <vendor-org>` then `gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force` — `gh skill` is a real, built-in (preview) GitHub CLI feature. If `gh skill` is unavailable (older `gh`) or returns no authoritative vendor-org match, fall through to generation. Never fabricate a vendor source when the command didn't run.
+2. Generate a code-verified skill so each detected core technology ends with a `.github/skills/<technology-name>/SKILL.md`. `.ai/` says which files to inspect; the skill's symbols/paths/code samples must be verified against actual source (`grep` symbols, `ls` paths, copy from real call sites) — never written from `.ai/` prose or framework convention. Mark anything unverifiable with `Assumption:`.
 3. Check DEPT MCP registry for servers
 4. Fallback to public MCP registry
 5. Write MCP config to all three IDE files
@@ -136,6 +136,7 @@ Before declaring complete:
 - [ ] `.meta.yml` created with standard version
 - [ ] AI wiring files created/updated
 - [ ] Skill file exists for every detected core technology (or explicit skip reason recorded)
+- [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] Support agent created
 - [ ] No secrets in any generated file

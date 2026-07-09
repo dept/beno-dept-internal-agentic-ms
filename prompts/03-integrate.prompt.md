@@ -17,8 +17,15 @@ Create or update wiring files so every AI tool (Copilot, Claude, Cursor) automat
 
 **Rule:** Check each file first. If it exists, append only. Never overwrite existing content.
 
+> **Wiring files are pointers, not a second source of truth.** `.ai/` is
+> authoritative. A wiring file may carry a SHORT summary of the always-on
+> constraints (so they load with the file), but it must be explicitly marked as a
+> summary of `.ai/coding-standards.md` — never a full restatement that can drift.
+> Keep the summary to terse one-liners (commits, env-var handling); push all
+> detail to `.ai/`. Do not copy whole sections out of `.ai/` into these files.
+
 ### File 1: `.github/copilot-instructions.md`
-- **Not present**: create with full `.ai/` reading instructions and behaviour rules
+- **Not present**: create with `.ai/` reading instructions + a short "Behaviour Rules (summary — full detail in `.ai/coding-standards.md`)" block of one-liners
 - **Already present**: append a `## AI Project Context (.ai/)` section
 
 ### File 2: `CLAUDE.md` (repository root)

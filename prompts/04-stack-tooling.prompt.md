@@ -127,6 +127,14 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 [most relevant operations for how this tech is actually used here — from .ai/ evidence only]
 ```
 
+**Accuracy rules for generated skills (non-negotiable — this is where hallucinated skills come from):**
+- **No invented APIs.** Every import, function, symbol, or hook name in a code sample must be verified to exist. Before writing it, `grep` the symbol in the repo (or confirm it in the package's `exports`). If you can't find it, don't write it — describe the real helper the project actually uses. (e.g. do not invent `getOptimizelyClient()` when the repo fetches via a `graphqlFetch` wrapper.)
+- **Real paths only.** Every path must be confirmed with `ls`/glob. Do not invent route segments like `app/[locale]/` unless that directory exists.
+- **Copy, don't imagine.** Base each code sample on a real call site found in the repo; cite the file you took it from.
+- **No empty sections.** Every heading has real content or is omitted. Do not emit stub headings.
+- **Don't restate global constraints.** Rules already in `.ai/` or `copilot-instructions.md` (commits, `process.env`, deploy target) are referenced with a one-line pointer, not re-documented per skill.
+- **State scope precisely.** A skill's frontmatter scope and body must match — don't add off-topic sections (e.g. Docker build steps inside a framework skill) unless the skill's stated scope covers them.
+
 **Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.github/skills/` — either vendor-fetched or evidence-generated fallback.
 
 ## Step 9.5: Update agent-registry.md with Installed Skills
@@ -238,6 +246,8 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 ## Verification
 
 - [ ] A skill file exists for every detected core technology (or an explicit skip reason is documented)
+- [ ] Every code sample in a generated skill uses only symbols/imports verified to exist (grep/exports), and every path was confirmed with `ls`/glob — no invented APIs or route segments
+- [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/`/`copilot-instructions.md` (pointer only)
 - [ ] Testing skill installed only if test files exist AND framework is detected — not otherwise
 - [ ] No generic `test-driven-development` skill installed (it's methodology-prescriptive, not evidence-based)
 - [ ] `.ai/agent-registry.md` has a "Phase 4 Skills" section listing every skill installed or skipped
