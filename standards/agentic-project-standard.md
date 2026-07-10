@@ -51,6 +51,7 @@ Manual review of `.ai` files remains mandatory before merging changes. Agents pr
 - **Security**: no secrets, tokens, or privileged data in `.ai` documents.
 - **Auditability**: changes are versioned and explainable.
 - **Operational fit**: documents must support run, support, and change workflows.
+- **Accessibility**: front-end changes target **WCAG 2.2 Level AA** as the DEPT baseline. Agents must respect a project's documented level (in `coding-standards.md`), avoid introducing regressions, and flag accessibility risks in proposed changes.
 
 ## Long-Term Vision
 

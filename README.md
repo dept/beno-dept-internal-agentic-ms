@@ -112,6 +112,7 @@ your-project/
 │   ├── prompts/                   # Reusable prompts
 │   └── skills/                    # Superpowers skills
 ├── CLAUDE.md                      # Claude → .ai/ wiring
+├── AGENTS.md                      # OpenAI Codex → .ai/ wiring
 ├── .vscode/mcp.json               # MCP servers (VS Code)
 ├── .cursor/mcp.json               # MCP servers (Cursor)
 └── .mcp.json                      # MCP servers (Claude Code)

@@ -36,6 +36,13 @@ Create or update wiring files so every AI tool (Copilot, Claude, Cursor) automat
 - **Not present**: create with `applyTo: "**"` frontmatter and concise loading instructions
 - **Already present**: leave unchanged (report as already present)
 
+### File 4: `AGENTS.md` (repository root)
+- For OpenAI Codex and any agent framework that reads `AGENTS.md` by convention
+- **Not present**: create from `templates/AGENTS.template.md` — same `.ai/` loading instructions as `CLAUDE.md`, adapted for Codex format
+- **Already present**: append a `## AI Project Context (.ai/)` section
+- Fill `[SETUP_COMMANDS]` with the relevant install/run commands from `.ai/onboarding.md`
+- Fill `[KEY_CONSTRAINTS_ONE_LINERS]` with terse one-liners from `.ai/coding-standards.md` (commit format, env var rules, type safety, etc.)
+
 ### All wiring files must instruct AI to:
 1. Read `.ai/` files at session start
 2. Cross-reference `.ai/` with agents/instructions/skills found in Phase 2
@@ -92,6 +99,7 @@ After wiring is complete, create handover documentation in Confluence.
 Before proceeding to Phase 4, confirm:
 - [ ] `.github/copilot-instructions.md` references `.ai/` folder
 - [ ] `CLAUDE.md` references `.ai/` folder
+- [ ] `AGENTS.md` references `.ai/` folder (OpenAI Codex wiring)
 - [ ] `.github/instructions/ai-context.instructions.md` exists
 - [ ] Confluence pages created (or report why not)
 - [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`

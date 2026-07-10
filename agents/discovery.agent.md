@@ -136,6 +136,7 @@ Document all findings in `agent-registry.md` under a dedicated **Existing Agenti
 ### 7) Coding Standards Discovery
 - Infer formatting, linting, testing, branching, and PR conventions.
 - Record quality gates and mandatory checks.
+- Detect the accessibility target (a11y tooling, `aria`/semantic patterns, contrast/lint rules, documented WCAG level). Record it in `coding-standards.md`; if none is documented, note the DEPT baseline of **WCAG 2.2 Level AA** as the assumed target.
 
 ### 8) `.ai` Folder Generation
 

@@ -79,6 +79,7 @@ Extract conventions from config:
 - Testing framework and coverage requirements
 - Git workflow (branching, PR process)
 - Type checking and build configuration
+- Accessibility target (a11y tooling, semantic/aria patterns, contrast rules; documented WCAG level, else DEPT baseline WCAG 2.2 Level AA)
 
 ### Step 8: .ai/ Folder Generation
 
