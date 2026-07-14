@@ -41,6 +41,7 @@ Keep the `.ai/` folder accurate and current as the project evolves. Detect drift
 2. Classify each changed file using `config/change-impact-matrix.yml`
 3. Map changes to affected `.ai/` files with severity levels
 4. Rank by priority: critical → moderate → minor
+5. **Early exit (cost control):** if no change maps to a documented area, report "no drift" and stop — skip Phases 3–8. Only read the `.ai/` files actually impacted, not all of them.
 
 ### Phase 3: Staleness Assessment
 
