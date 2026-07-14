@@ -27,16 +27,17 @@ Keep the `.ai/` folder accurate and current as the project evolves. Detect drift
 
 ### Phase 1: Baseline Read
 
-1. Read all `.ai/` files and `.ai/.meta.yml`
+1. Read `.ai/.meta.yml` first — do NOT read every `.ai/` file upfront; read only the impacted ones after Phase 2
 2. Record last maintenance date from `.meta.yml`
-3. Identify `<!-- human-maintained -->` sections (untouchable)
-4. Record current confidence scores
+3. Identify `<!-- human-maintained -->` sections (untouchable) in impacted files
+4. Record current confidence scores for impacted sections
 
 ### Phase 2: Change Detection
 
-1. Query git history since last maintenance:
+1. Query git history since last maintenance, then read DIFFS (not full files):
    ```bash
    git log --since="$last_maintained" --name-only --pretty=format: | sort -u
+   git diff "@{$last_maintained}" -- <changed-paths>   # diff-first; full read only if diff insufficient
    ```
 2. Classify each changed file using `config/change-impact-matrix.yml`
 3. Map changes to affected `.ai/` files with severity levels

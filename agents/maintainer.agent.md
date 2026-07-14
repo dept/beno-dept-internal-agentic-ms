@@ -30,16 +30,19 @@ Trigger this agent:
 
 ## Phase 1: Baseline Read
 
-Read all `.ai/` files and `.ai/.meta.yml` to understand:
-- Current documented state
+Read `.ai/.meta.yml` first. Do NOT read every `.ai/` file upfront — after Phase 2 identifies
+which areas changed, read only the impacted `.ai/` files. Keeps the run cheap.
+
+Understand from `.meta.yml` (and impacted files once known):
 - Last maintenance date
 - Standard version compliance
+- Current documented state (of impacted areas)
 - Human-maintained sections (marked with `<!-- human-maintained -->`)
 
 **Record:**
-- List of all `.ai/` files and their last-modified dates
-- Sections marked as human-maintained (skip these entirely)
-- Current confidence scores per section
+- Last-maintained timestamp
+- Human-maintained sections in impacted files (skip these entirely)
+- Current confidence scores for impacted sections
 
 ---
 
@@ -53,9 +56,15 @@ Determine what changed since last maintenance.
 # Get last maintenance date from .meta.yml
 last_maintained=$(grep 'last_maintained' .ai/.meta.yml | head -1)
 
-# Find all changes since then
+# List changed files since then
 git log --since="$last_maintained" --name-only --pretty=format: | sort -u
+
+# Read the DIFF, not full files — this is what drift detection needs and is far cheaper.
+git diff "@{$last_maintained}" -- <changed-paths>
 ```
+
+**Diff-first rule:** inspect changes via `git diff`. Only open a full file when the diff alone
+can't tell you whether/how docs must change. Never read the whole tree.
 
 ### 2b: Change Classification
 
