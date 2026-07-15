@@ -53,6 +53,15 @@ Create or update wiring files so every AI tool (Copilot, Claude, Cursor) automat
 
 After wiring is complete, create handover documentation in Confluence.
 
+> **If Confluence access is unavailable** (no Atlassian MCP/connector, or the
+> tool running this prompt cannot reach `dept-nl.atlassian.net`): do NOT skip the
+> work silently. Instead **stage the pages as local drafts** — write one Markdown
+> file per page (landing + the four subpages, following the structure below) into
+> `.ai/confluence/`, and write the `confluence:` block into `.ai/.meta.yml` with
+> `published: false` and empty `id`s. The Maintainer Agent (or a later run with
+> access) then publishes them and backfills the IDs. Report clearly in the
+> completion summary that Confluence was staged, not published.
+
 **Canonical structure source:** `docs/confluence-page-standard.md`
 - Use it as the default page-layout and section-order source for every project.
 - Keep the base page names and section order the same unless a project-specific need clearly justifies a deviation.
@@ -67,12 +76,16 @@ After wiring is complete, create handover documentation in Confluence.
 1. Ensure `Projects` directory exists. Create if missing.
 2. Create a project page under `Projects` if not present.
 3. Sanitize the page title before creating it: decode HTML entities, never leave `&amp;` or `@amp;` in the title, and prefer `and` instead of symbols when needed for readability.
-4. Keep the layout consistent with other MS projects by using this fixed structure:
-   - Main page: `[Project Name]`
-   - Subpage: `Overview`
-   - Subpage: `Architecture & Package Map`
-   - Subpage: `Environments & Access`
-   - Subpage: `Onboarding & Handover`
+4. Keep the layout consistent with other MS projects by using this fixed structure. **Titles must
+   follow the collision-safe rule** (see `docs/confluence-page-standard.md` → *Page titles*): the
+   landing page uses the human project name with **no suffix**; every subpage is suffixed
+   ` - <project_name>` where `<project_name>` is `meta.project_name` from `.ai/.meta.yml` (the repo
+   slug). The `MS` space is shared, so unsuffixed titles like `Overview` collide across projects.
+   - Main page: `[Project Name]`  (e.g. `DEPT Client Portal`)
+   - Subpage: `Overview - <project_name>`
+   - Subpage: `Architecture & Package Map - <project_name>`
+   - Subpage: `Environments & Access - <project_name>`
+   - Subpage: `Onboarding & Handover - <project_name>`
 5. On the **main `[Project Name]` page** (the landing page), include in order:
    - A short intro paragraph (project type, client, agency)
    - `## Key facts` table: repo, framework, package manager, CMS, hosting, database, monitoring — use `[To fill in]` for unknowns
@@ -92,7 +105,7 @@ After wiring is complete, create handover documentation in Confluence.
 12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page.
 13. Include all 5 links collected in Phase 2 Step 4.
 14. Do NOT create a separate coding standards page unless explicitly requested.
-15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves and backfills it on first run.
+15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's **full suffixed** `title`, its real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves it by the full title and backfills it on first run.
 
 ## Verification
 

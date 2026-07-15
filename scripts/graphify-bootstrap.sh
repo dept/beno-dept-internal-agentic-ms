@@ -356,6 +356,16 @@ trap cleanup_graphify_bootstrap EXIT
 
 EXTRA_ARGS=("$@")
 
+run_graphify() {
+  # Wrapped with `|| true` at call sites so a non-zero exit (e.g. a semantic
+  # backend failure) does not abort the script under `set -e` before salvage.
+  if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+    "${GRAPHIFY_RUNNER[@]}" . "${EXTRA_ARGS[@]}"
+  else
+    "${GRAPHIFY_RUNNER[@]}" .
+  fi
+}
+
 echo "Running Graphify in: $(pwd)"
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
   echo "Command: ${GRAPHIFY_RUNNER[*]} . ${EXTRA_ARGS[*]}"
@@ -363,10 +373,22 @@ else
   echo "Command: ${GRAPHIFY_RUNNER[*]} ."
 fi
 
-if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
-  "${GRAPHIFY_RUNNER[@]}" . "${EXTRA_ARGS[@]}"
-else
-  "${GRAPHIFY_RUNNER[@]}" .
+run_graphify || true
+
+# Salvage a semantic/LLM-backend failure. A present-but-broken API key (wrong
+# key, exhausted quota → HTTP 429, unreachable backend) is worse than no key:
+# it skips the code-only fallback above AND fails semantic extraction, so the
+# initial run can finish without writing graph.json — leaving Discovery with
+# nothing. If that happened, drop the keys, force code-only mode, and rerun so
+# the AST graph is still produced.
+if [[ ! -f graphify-out/graph.json ]] && [[ "$NO_LLM_CODE_ONLY_MODE" -eq 0 ]]; then
+  echo ""
+  echo "No graphify-out/graph.json after the initial run — likely a semantic/LLM"
+  echo "backend failure (bad key, exhausted quota, or unreachable provider)."
+  echo "Retrying in code-only fallback mode so the AST graph is still generated..."
+  unset OPENAI_API_KEY ANTHROPIC_API_KEY GOOGLE_API_KEY GEMINI_API_KEY MOONSHOT_API_KEY DEEPSEEK_API_KEY
+  enable_no_llm_code_only_mode
+  run_graphify || true
 fi
 
 if [[ -f graphify-out/graph.json ]] && [[ ! -f graphify-out/GRAPH_REPORT.md ]]; then

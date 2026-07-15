@@ -62,7 +62,7 @@ Apply changes with conflict resolution:
 2. **Diff-review** files manually edited since last maintenance
 3. **Append** new information (never delete unless provably wrong)
 4. **Low-confidence updates** go in `> ⚠️ Potential update:` blocks
-5. **Cite sources** for every change: `<!-- Source: path/to/file:LINE -->`
+5. **Cite sources** in the Phase 6 PR summary (date + `path/to/file:LINE`) — NOT as inline `<!-- ... -->` comments, which rot the files. Git blame + the PR are the audit trail.
 
 ### Phase 5: Gap Detection
 

@@ -12,11 +12,11 @@ You are running the **DEPT Managed Services Migration** workflow. This installs 
 
 After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ Discovery and Maintenance agents installed and ready to use
-- ✓ Superpowers skills available (evidence-first discipline, systematic debugging, verification, TDD)
-- ✓ All AI tools wired (Copilot, Claude, Cursor auto-load `.ai/` context)
-- ✓ Confluence handover pages created
-- ✓ Stack-specific skills and MCP servers installed
+- ✓ Discovery and Maintainer agents installed and ready to use
+- ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification) — referenced as agent guidance, not installed as files
+- ✓ All AI tools wired (Copilot, Claude, Cursor, Codex auto-load `.ai/` context)
+- ✓ Confluence handover pages created (or staged as drafts when Confluence access is unavailable)
+- ✓ Stack-specific skills (Phase 4) and MCP servers installed
 - ✓ Support agent configured
 - ✓ Graphify structural pre-pass attempted before Discovery
 - ✓ Discovery Agent explicitly used for the discovery phase
@@ -178,6 +178,8 @@ Execute each phase in order. Each phase is self-contained — if interrupted, re
 
 **Important orchestration rule:** Phase 2 must be executed with the installed **Discovery Agent** (`.github/agents/discovery.agent.md`). The migration prompt itself is the orchestrator; the Discovery Agent is the worker that performs the repository analysis and `.ai/` generation.
 
+**Parallel execution (optional — only for tools that support subagents):** The phase dependency graph is `1 → (graphify) → 2 → {3, 4}`. Phases 3 and 4 both depend only on Phase 2's `.ai/` output and are **independent of each other**, so an orchestrator with subagent/parallel support (e.g. Claude Code) MAY run them concurrently after Phase 2 completes. Within Phase 4, per-technology skill generation is also independent and MAY be fanned out one subagent per technology. This is purely a speed optimization: **tools without parallel execution should just run the phases sequentially 1→2→3→4** — the result is identical. Do not parallelize Phase 2's file generation itself (the 9 `.ai/` files share evidence and single-source-of-truth cross-references, so they must be produced coherently by one worker).
+
 **Base URL for GitHub-hosted prompts:**
 ```
 https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/
@@ -185,8 +187,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs local phase prompts, installs Graphify helper, installs superpowers skills
-**Verify before continuing:** `.github/agents/` has 2 files, `.github/prompts/` has `migrate` + `01-04`, `scripts/graphify-bootstrap.sh` exists, `.github/skills/` has 4 directories
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script (no skills — those are Phase 4)
+**Verify before continuing:** `.github/agents/` has 2 files, `.github/prompts/` has `migrate` + `01-04`, `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist. Do NOT expect `.github/skills/` yet — it is created in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**

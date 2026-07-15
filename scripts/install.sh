@@ -102,6 +102,7 @@ ARTIFACTS=(
   ".github/agents/discovery.agent.md|agents/discovery.agent.md"
   ".github/agents/maintainer.agent.md|agents/maintainer.agent.md"
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
+  "scripts/validate.sh|scripts/validate.sh"
 )
 
 copy_local() {
@@ -169,7 +170,8 @@ for required in \
   ".github/prompts/04-stack-tooling.prompt.md" \
   ".github/agents/discovery.agent.md" \
   ".github/agents/maintainer.agent.md" \
-  "scripts/graphify-bootstrap.sh"
+  "scripts/graphify-bootstrap.sh" \
+  "scripts/validate.sh"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
     echo -e "${RED}ERROR:${NC} missing required file after install: ${required}"

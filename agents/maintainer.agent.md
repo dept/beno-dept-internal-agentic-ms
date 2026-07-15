@@ -118,12 +118,10 @@ Before editing any `.ai/` file:
 
 ### 4b: Update Format
 
-For each update:
-```markdown
-<!-- Updated by Maintainer Agent on YYYY-MM-DD -->
-<!-- Source: path/to/evidence/file:LINE -->
-[updated content]
-```
+**Do NOT add inline `<!-- Updated by ... -->` or `<!-- Source: ... -->` comment stamps** — they
+accumulate and rot the files. The audit trail lives in git blame (who/when) and the Phase 6 PR
+summary (what/why/source). For each update: edit the content directly, and record the date +
+evidence source in the Phase 6 PR summary table instead of in the file.
 
 ### 4c: Confidence Re-scoring
 
@@ -185,7 +183,7 @@ Generate a structured summary of all changes:
 
 Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`). It declares the space, the page tree with each page's recorded `id`, and the `sync_map` routing each `.ai/` file to a page.
 
-1. **Resolve page IDs.** For each page whose `id` is empty, find the existing page by `title` under the configured space/base URL and write the resolved `id` back into `.ai/.meta.yml`. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found.
+1. **Resolve page IDs.** For each page whose `id` is empty, find the existing page by its `title` under the configured space/base URL and write the resolved `id` back into `.ai/.meta.yml`. Titles are the **full, collision-safe values** (subpages suffixed ` - <project_name>`; landing unsuffixed — see `docs/confluence-page-standard.md` → *Page titles*), so match the exact stored title. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found — and use the suffixed title when doing so.
 2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section.
 3. Push **critical/moderate** updates only. Skip minor (avoid noise).
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.

@@ -9,10 +9,22 @@ This is the **canonical base layout** for DEPT Managed Services project document
 Every project should use this structure under `MS / Projects`:
 
 - `[Project Name]` ← landing page: Key facts, AI tooling status, Key contacts
-  - `Overview`
-  - `Architecture & Package Map`
-  - `Environments & Access`
-  - `Onboarding & Handover`
+  - `Overview - [project_name]`
+  - `Architecture & Package Map - [project_name]`
+  - `Environments & Access - [project_name]`
+  - `Onboarding & Handover - [project_name]`
+
+### Page titles (collision-safe — required)
+The `MS` space is **shared across many projects**, so generic subpage titles like `Overview` and
+`Architecture & Package Map` collide and cause the Maintainer to resolve the wrong page. Therefore:
+
+- **Landing page:** use the human project name as-is, **no suffix** — e.g. `DEPT Client Portal`.
+- **All four subpages:** suffix the standard name with ` - <project_name>`, where `<project_name>`
+  is the `meta.project_name` value in `.ai/.meta.yml` (the repo slug) — e.g.
+  `Overview - dtnl-managed-services-dashboard`.
+
+Record the **full, suffixed** titles in the `.ai/.meta.yml` `confluence:` block, and always look
+pages up by that full title when creating or syncing.
 
 ## Standardization rules
 - Keep the same four subpages for every project when possible.
@@ -317,11 +329,13 @@ confluence:
   space: MS
   base_url: https://dept-nl.atlassian.net/wiki/spaces/MS/Projects
   pages:
+    # Landing: human project name, NO suffix. Subpages: suffixed " - <project_name>"
+    # (the meta.project_name slug) to stay unique in the shared MS space.
     landing:      { title: "[Project Name]", id: "" }
-    overview:     { title: "Overview", id: "" }
-    architecture: { title: "Architecture & Package Map", id: "" }
-    environments: { title: "Environments & Access", id: "" }
-    onboarding:   { title: "Onboarding & Handover", id: "" }
+    overview:     { title: "Overview - <project_name>", id: "" }
+    architecture: { title: "Architecture & Package Map - <project_name>", id: "" }
+    environments: { title: "Environments & Access - <project_name>", id: "" }
+    onboarding:   { title: "Onboarding & Handover - <project_name>", id: "" }
   sync_map:
     project-context.md: overview
     architecture.md: architecture
@@ -362,6 +376,7 @@ When an agent creates Confluence documentation, it should:
 4. add project-specific sections only when needed
 5. explain any structural deviation explicitly in its final report
 6. place Key facts, AI tooling status, and Key contacts **only on the main `[Project Name]` landing page** — never repeat them on Overview, Architecture, or Onboarding subpages
+7. title pages per the **Page titles (collision-safe)** rule above: landing = project name (no suffix), every subpage suffixed ` - <project_name>`; write the full titles into `.ai/.meta.yml` and resolve pages by them
 
 ## Recommended implementation pattern in prompts and skills
 To reduce drift, prompts and skills should say:
