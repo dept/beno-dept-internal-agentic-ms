@@ -114,9 +114,9 @@ Wire IDE tools to load `.ai/` context:
 
 Optionally create Confluence pages under `MS/Projects` using a consistent layout. Titles follow the
 collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): landing = project name
-(no suffix); subpages suffixed ` - <project_name>` (the `meta.project_name` slug):
+(no affix); subpages **prefixed with the landing title** — `<landing title> - <subpage>`:
 - Main page: `[Project Name]`
-- Subpages: `Overview - <project_name>`, `Architecture & Package Map - <project_name>`, `Environments & Access - <project_name>`, `Onboarding & Handover - <project_name>`
+- Subpages: `[Project Name] - Overview`, `[Project Name] - Architecture & Package Map`, `[Project Name] - Environments & Access`, `[Project Name] - Onboarding & Handover`
 - Sanitize titles so encoded entities like `&amp;` or `@amp;` never appear in page names
 - Include package / feature / campaign inventory when the project has multiple areas
 - For monorepos or multi-area projects, include both a quick table and a short plain-language summary for each package/feature/campaign so a new developer understands purpose, not just names

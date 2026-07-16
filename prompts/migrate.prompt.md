@@ -187,8 +187,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script (no skills — those are Phase 4)
-**Verify before continuing:** `.github/agents/` has 2 files, `.github/prompts/` has `migrate` + `01-04`, `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist. Do NOT expect `.github/skills/` yet — it is created in Phase 4.
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-cli` skill (stack-specific skills come in Phase 4)
+**Verify before continuing:** `.github/agents/` has 2 files, `.github/prompts/` has `migrate` + `01-04`, `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist, `.github/skills/confluence-cli/` exists. Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**

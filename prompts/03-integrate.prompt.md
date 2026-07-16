@@ -78,14 +78,14 @@ After wiring is complete, create handover documentation in Confluence.
 3. Sanitize the page title before creating it: decode HTML entities, never leave `&amp;` or `@amp;` in the title, and prefer `and` instead of symbols when needed for readability.
 4. Keep the layout consistent with other MS projects by using this fixed structure. **Titles must
    follow the collision-safe rule** (see `docs/confluence-page-standard.md` → *Page titles*): the
-   landing page uses the human project name with **no suffix**; every subpage is suffixed
-   ` - <project_name>` where `<project_name>` is `meta.project_name` from `.ai/.meta.yml` (the repo
-   slug). The `MS` space is shared, so unsuffixed titles like `Overview` collide across projects.
-   - Main page: `[Project Name]`  (e.g. `DEPT Client Portal`)
-   - Subpage: `Overview - <project_name>`
-   - Subpage: `Architecture & Package Map - <project_name>`
-   - Subpage: `Environments & Access - <project_name>`
-   - Subpage: `Onboarding & Handover - <project_name>`
+   landing page uses the human project name with **no affix**; every subpage is **prefixed with the
+   landing title** — `<landing title> - <subpage name>`. The `MS` space is shared, so bare titles
+   like `Overview` collide across projects.
+   - Main page: `[Project Name]`  (e.g. `DEPT Client Portal`)  ← this is the landing title
+   - Subpage: `[Project Name] - Overview`
+   - Subpage: `[Project Name] - Architecture & Package Map`
+   - Subpage: `[Project Name] - Environments & Access`
+   - Subpage: `[Project Name] - Onboarding & Handover`
 5. On the **main `[Project Name]` page** (the landing page), include in order:
    - A short intro paragraph (project type, client, agency)
    - `## Key facts` table: repo, framework, package manager, CMS, hosting, database, monitoring — use `[To fill in]` for unknowns
@@ -105,7 +105,7 @@ After wiring is complete, create handover documentation in Confluence.
 12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page.
 13. Include all 5 links collected in Phase 2 Step 4.
 14. Do NOT create a separate coding standards page unless explicitly requested.
-15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's **full suffixed** `title`, its real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves it by the full title and backfills it on first run.
+15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's **full prefixed** `title`, its real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves it by the full title and backfills it on first run.
 
 ## Verification
 

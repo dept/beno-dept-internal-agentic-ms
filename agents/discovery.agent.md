@@ -205,10 +205,10 @@ Rules:
 3. Make content readable for mixed roles (developer and client manager), focused on onboarding/handover.
 4. Standardize the Confluence layout so it matches other projects. **Titles follow the
    collision-safe rule** (see `docs/confluence-page-standard.md` → *Page titles*): the `MS` space is
-   shared, so the landing page uses the human project name with **no suffix**, and every subpage is
-   suffixed ` - <project_name>` (the `meta.project_name` slug from `.ai/.meta.yml`).
-   - Main page: `[Project Name]`  (e.g. `DEPT Client Portal`)
-   - Subpages: `Overview - <project_name>`, `Architecture & Package Map - <project_name>`, `Environments & Access - <project_name>`, `Onboarding & Handover - <project_name>`
+   shared, so the landing page uses the human project name with **no affix**, and every subpage is
+   **prefixed with the landing title** — `<landing title> - <subpage name>`.
+   - Main page: `[Project Name]`  (e.g. `DEPT Client Portal`)  ← the landing title
+   - Subpages: `[Project Name] - Overview`, `[Project Name] - Architecture & Package Map`, `[Project Name] - Environments & Access`, `[Project Name] - Onboarding & Handover`
 5. Sanitize titles before creating pages: decode HTML entities, never leave `&amp;` or `@amp;` in page titles, and prefer `and` instead of symbols if the title would otherwise be awkward.
 6. In `Overview`, include business capabilities and a clear inventory of apps/packages/features/campaigns when the project has multiple parts or brands. Add a short plain-language summary for each major area so a new developer understands what it is for, not just that it exists.
 7. In `Architecture & Package Map`, document what each major package/app/campaign does so a new developer can understand the landscape quickly. For monorepos or feature-heavy projects, include both a compact inventory table and a short summary paragraph or bullet list for each package/feature/campaign describing purpose, user/business role, and important integrations when known.

@@ -103,6 +103,9 @@ ARTIFACTS=(
   ".github/agents/maintainer.agent.md|agents/maintainer.agent.md"
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
   "scripts/validate.sh|scripts/validate.sh"
+  ".github/skills/confluence-cli/SKILL.md|templates/skills/confluence-cli/SKILL.md"
+  ".github/skills/confluence-cli/confluence.sh|templates/skills/confluence-cli/confluence.sh"
+  ".github/skills/confluence-cli/references/setup.md|templates/skills/confluence-cli/references/setup.md"
 )
 
 copy_local() {
@@ -140,7 +143,7 @@ install_one() {
     download_remote "$src_rel" "$dest"
   fi
 
-  if [[ "$dest_rel" == scripts/*.sh ]]; then
+  if [[ "$dest_rel" == *.sh ]]; then
     chmod +x "$dest"
   fi
 
@@ -171,7 +174,9 @@ for required in \
   ".github/agents/discovery.agent.md" \
   ".github/agents/maintainer.agent.md" \
   "scripts/graphify-bootstrap.sh" \
-  "scripts/validate.sh"
+  "scripts/validate.sh" \
+  ".github/skills/confluence-cli/SKILL.md" \
+  ".github/skills/confluence-cli/confluence.sh"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
     echo -e "${RED}ERROR:${NC} missing required file after install: ${required}"

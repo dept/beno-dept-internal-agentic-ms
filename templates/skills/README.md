@@ -14,7 +14,11 @@ If no authoritative vendor-owned `gh skill search` result is found, the agent ge
 
 **Fallback skills must be evidence-accurate** (see accuracy rules in `prompts/04-stack-tooling.prompt.md`): no invented APIs/symbols (grep them first), only real paths (`ls`-confirmed), code samples copied from real call sites, no empty sections, and no restatement of global constraints already in `.ai/`/`copilot-instructions.md` (pointer only).
 
-No template skills are stored here. Skills for this standards repo itself (agents, prompts, scripts) live at the repo root under `agents/` and `prompts/`.
+**Fixed DEPT skills** (used by every project regardless of stack) ARE stored here as templates and installed in **Phase 1**:
+
+- `confluence-cli/` — drive Confluence Cloud (handover pages) from the terminal via the REST API. Every DEPT MS project publishes handover pages to Confluence, so this ships with every migration. Phase 1 copies it to `.github/skills/confluence-cli/`.
+
+Only **stack-specific** skills are left to Phase 4 (vendor-fetched via `gh skill` or generated from `.ai/` evidence) and are NOT stored here — they live in the target project's `.github/skills/`.
 
 ## Adding a new technology
 
