@@ -44,6 +44,21 @@ Two agents support the `.ai` lifecycle:
 
 Manual review of `.ai` files remains mandatory before merging changes. Agents produce drafts; human engineers validate and approve.
 
+## Multi-Client Support
+
+`.ai/` is the **single shared source of truth** — the one folder every AI client reads. No IDE reads another's config folder, so the standard writes a thin *pointer* file per client (each redirects into `.ai/`) rather than duplicating context. The supported clients and where each artifact lives:
+
+| Artifact | GitHub Copilot | Claude Code | OpenAI Codex | Cursor |
+|---|---|---|---|---|
+| Context (source of truth) | `.ai/` | `.ai/` | `.ai/` | `.ai/` |
+| Context wiring (pointer) | `.github/copilot-instructions.md`, `.github/instructions/` | `CLAUDE.md` | `AGENTS.md` | `.cursor/rules/ai-context.mdc` (+ `AGENTS.md`) |
+| Agents / subagents | `.github/agents/` | `.claude/agents/` | — (no concept) | — (no concept) |
+| Skills | `.github/skills/` | `.claude/skills/` | — (no concept) | — (no concept) |
+| Slash commands / prompts | `.github/prompts/` | `.claude/commands/` | reads `AGENTS.md` / prompt file | `.cursor/commands/` |
+| MCP servers | `.vscode/mcp.json` (`servers`) | `.mcp.json` (`mcpServers`) | user-level `~/.codex/config.toml` | `.cursor/mcp.json` (`mcpServers`) |
+
+Rules: `.github/*` is the source of truth for agents/skills/prompts (Copilot's native home); the `.claude/*` and `.cursor/*` copies are exact mirrors, re-copied on change and never hand-edited. `AGENTS.md` is the nearest-to-universal pointer (Codex, Cursor, and Copilot's coding agent all honor it). Codex has no project-level agent/skill/command folders and its MCP config is user-level, so it is wired via `AGENTS.md` only.
+
 ## Governance Principles
 
 - **Ownership**: each `.ai` document has a named owner (team, not individual).

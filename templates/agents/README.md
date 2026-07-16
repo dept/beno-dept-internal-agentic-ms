@@ -15,6 +15,7 @@ During Step 10 of the Discovery Agent workflow, templates in this directory are:
 1. Copied into the target project's `.github/agents/` directory
 2. Placeholders (`[PROJECT_NAME]`, `[TECH_STACK]`, `[SKILL_LIST]`) are replaced with discovered values
 3. The resulting agent is immediately usable in GitHub Copilot Chat
+4. Mirrored to `.claude/agents/support-agent.md` — same body, Claude Code frontmatter (`name`/`description`, no `tools:` restriction since Claude Code subagents inherit all available tools by default). `.github/agents/` isn't read by Claude Code, so without this mirror the generated support agent is invisible there.
 
 ## Adding New Agent Templates
 

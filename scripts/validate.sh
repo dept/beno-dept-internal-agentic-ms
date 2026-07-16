@@ -188,6 +188,71 @@ fi
 
 echo ""
 
+# ── 5. Multi-Client Wiring ─────────────────────────────────
+# .ai/ is the shared source; each IDE needs its own pointer + mirror.
+# All warning-level (△): a project may legitimately target a subset of IDEs.
+echo -e "${BLUE}── Multi-Client Wiring ──${NC}"
+
+# Context pointers (one per supported IDE)
+declare -a WIRING=(
+  ".github/copilot-instructions.md|Copilot"
+  "CLAUDE.md|Claude Code"
+  "AGENTS.md|Codex + Cursor"
+)
+for entry in "${WIRING[@]}"; do
+  path="${entry%%|*}"; label="${entry##*|}"
+  if [ -f "${PROJECT_DIR}/${path}" ]; then
+    echo -e "  ${GREEN}✓${NC} ${path} (${label})"
+    ((PASSED++))
+  else
+    echo -e "  ${YELLOW}△${NC} ${path} — missing (${label} won't auto-load .ai/)"
+    ((WARNED++))
+  fi
+done
+
+# Cursor native rule (any .mdc under .cursor/rules/)
+if ls "${PROJECT_DIR}"/.cursor/rules/*.mdc >/dev/null 2>&1; then
+  echo -e "  ${GREEN}✓${NC} .cursor/rules/*.mdc (Cursor)"
+  ((PASSED++))
+else
+  echo -e "  ${YELLOW}△${NC} .cursor/rules/*.mdc — missing (Cursor won't auto-load .ai/)"
+  ((WARNED++))
+fi
+
+# Mirror parity: .github/* is the source; .claude/* and .cursor/* must mirror it.
+# fn: warn if source dir has entries but a mirror is empty/absent.
+# kind = "md" (count *.md files) or "dir" (count subdirs). Predicate is hardcoded
+# per-kind so no glob pattern passes through word-splitting (which would expand vs cwd).
+count_entries() {
+  local dir="$1" kind="$2"
+  # Missing dir → 0. Guard prevents find's exit-1 aborting the $(...) under set -e + pipefail.
+  if [ ! -d "$dir" ]; then echo 0; return; fi
+  case "$kind" in
+    md)  find "$dir" -maxdepth 1 -mindepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ' ;;
+    dir) find "$dir" -maxdepth 1 -mindepth 1 -type d      2>/dev/null | wc -l | tr -d ' ' ;;
+  esac
+}
+check_mirror() {
+  local src="$1" mirror="$2" kind="$3" what="$4"
+  local src_n mir_n
+  src_n=$(count_entries "${PROJECT_DIR}/${src}" "$kind")
+  if [ "${src_n:-0}" -eq 0 ]; then return; fi  # nothing to mirror (if-guard: safe under set -e)
+  mir_n=$(count_entries "${PROJECT_DIR}/${mirror}" "$kind")
+  if [ "${mir_n:-0}" -ge "$src_n" ]; then
+    echo -e "  ${GREEN}✓${NC} ${what}: ${src} (${src_n}) → ${mirror} (${mir_n})"
+    ((PASSED++))
+  else
+    echo -e "  ${YELLOW}△${NC} ${what}: ${src} has ${src_n} but ${mirror} has ${mir_n:-0} — mirror out of sync"
+    ((WARNED++))
+  fi
+}
+check_mirror ".github/agents"  ".claude/agents"   md   "Agents"
+check_mirror ".github/skills"  ".claude/skills"   dir  "Skills (Claude)"
+check_mirror ".github/prompts" ".claude/commands" md   "Commands (Claude)"
+check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
+
+echo ""
+
 # ── Summary ────────────────────────────────────────────────
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 TOTAL=$((PASSED + WARNED + FAILED))

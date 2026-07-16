@@ -20,6 +20,8 @@ If no authoritative vendor-owned `gh skill search` result is found, the agent ge
 
 Only **stack-specific** skills are left to Phase 4 (vendor-fetched via `gh skill` or generated from `.ai/` evidence) and are NOT stored here — they live in the target project's `.github/skills/`.
 
+**Multi-client mirroring:** `.github/skills/` is Copilot-only — Claude Code, Continue, and Kilocode don't read it. Every skill installed to `.github/skills/` (Phase 1's `confluence-cli` and Phase 4's stack-specific skills alike) is also copied verbatim to `.claude/skills/`. SKILL.md's frontmatter format is identical across clients, so this is a plain copy, not a rewrite. `.github/skills/` remains the single source of truth; re-copy on change, never hand-edit the mirror.
+
 ## Adding a new technology
 
 1. Add an entry to `config/stack-detection.yml` with detection patterns

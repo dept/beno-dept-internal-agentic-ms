@@ -137,6 +137,15 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 
 **Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.github/skills/` — either vendor-fetched or evidence-generated fallback.
 
+## Step 9.4: Mirror Skills to Other Clients
+
+`.github/skills/` is read by GitHub Copilot. It is not auto-discovered by Claude Code (`.claude/skills/`) or Continue/Kilocode-style clients (`.continue/skills/`, `.kilocode/skills/`). SKILL.md's `name`/`description` frontmatter is the same format across all of these — no translation needed, just a copy.
+
+For every skill installed or generated in Step 9 (vendor-fetched or fallback), copy the whole skill directory verbatim to:
+- `.claude/skills/<technology-name>/`
+
+**Rule:** `.github/skills/` stays the single source of truth for content. Mirrors are exact copies, re-copied whenever the source changes — never hand-edited independently. If a skill directory already exists at the mirror path with identical content, skip.
+
 ## Step 9.5: Update agent-registry.md with Installed Skills
 
 After installing all skills, append a "Phase 4 Skills" section to `.ai/agent-registry.md`. Read the file first, merge, never overwrite existing content.
@@ -243,6 +252,19 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 - Agent references `.ai/` context files explicitly
 - Behaviour rules emphasize evidence-first and MCP tool usage
 
+### Mirror to Claude Code
+
+`.github/agents/` is Copilot's agent format and isn't read by Claude Code (`.claude/agents/`). Create `.claude/agents/support-agent.md` with the same body (Project Context, Installed Skills, MCP Servers, Behaviour Rules, Tech Stack, Constraints, Escalation) but Claude Code frontmatter instead of Copilot's:
+
+```markdown
+---
+name: support-agent
+description: "Support & development agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [TECH_STACK_SUMMARY] project."
+---
+```
+
+Omit a `tools:` restriction — Claude Code subagents inherit all available tools (file, search, bash, and every configured MCP server) by default, which already covers everything the Copilot `tools:` list enumerates explicitly (`read`/`edit`/`search`/`run_in_terminal`/`github/*`/MCP keys). Don't attempt to translate the Copilot tool-name list into Claude Code tool names — it's unnecessary and drifts out of sync.
+
 ## Verification
 
 - [ ] A skill file exists for every detected core technology (or an explicit skip reason is documented)
@@ -255,6 +277,8 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 - [ ] MCP config written to all 3 IDE files
 - [ ] `.ai/agent-registry.md` `## MCP Servers` section updated with installed servers
 - [ ] Project support agent created
+- [ ] Every skill from Step 9 mirrored into `.claude/skills/`
+- [ ] `.claude/agents/support-agent.md` created, mirroring `.github/agents/support-agent.agent.md`'s body
 
 ## Completion Signal
 

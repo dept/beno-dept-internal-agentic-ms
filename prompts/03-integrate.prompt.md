@@ -13,7 +13,18 @@ description: "Phase 3: Wire AI tools to load .ai/ context and create Confluence 
 
 ## Step 6: Wire AI Tools
 
-Create or update wiring files so every AI tool (Copilot, Claude, Cursor) automatically reads `.ai/` context at session start.
+Create or update wiring files so every AI tool automatically reads `.ai/` context at session start. **`.ai/` is the single shared source of truth**; each file below is a thin *pointer* into it, one per client that only auto-loads its own dotfile.
+
+Coverage target — the four supported IDEs:
+
+| IDE | Wiring file it auto-loads |
+|---|---|
+| GitHub Copilot | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md` |
+| Claude Code | `CLAUDE.md` |
+| OpenAI Codex | `AGENTS.md` |
+| Cursor | `.cursor/rules/*.mdc` (also honors `AGENTS.md`) |
+
+`AGENTS.md` is the nearest-to-universal pointer (Codex, Cursor, and Copilot's coding agent all read it) — but each client's own dotfile is the reliable always-on path, so write all of them.
 
 **Rule:** Check each file first. If it exists, append only. Never overwrite existing content.
 
@@ -37,11 +48,25 @@ Create or update wiring files so every AI tool (Copilot, Claude, Cursor) automat
 - **Already present**: leave unchanged (report as already present)
 
 ### File 4: `AGENTS.md` (repository root)
-- For OpenAI Codex and any agent framework that reads `AGENTS.md` by convention
+- For OpenAI Codex, Cursor, and any agent framework that reads `AGENTS.md` by convention (the nearest to a cross-tool standard)
 - **Not present**: create from `templates/AGENTS.template.md` — same `.ai/` loading instructions as `CLAUDE.md`, adapted for Codex format
 - **Already present**: append a `## AI Project Context (.ai/)` section
 - Fill `[SETUP_COMMANDS]` with the relevant install/run commands from `.ai/onboarding.md`
 - Fill `[KEY_CONSTRAINTS_ONE_LINERS]` with terse one-liners from `.ai/coding-standards.md` (commit format, env var rules, type safety, etc.)
+
+### File 5: `.cursor/rules/ai-context.mdc` (Cursor native rules)
+- Cursor's always-on rule format. `AGENTS.md` also works, but a `.mdc` with `alwaysApply: true` is the reliable native path.
+- **Not present**: create with this frontmatter + a short pointer body (do NOT restate `.ai/` content — point to it):
+  ```
+  ---
+  description: Load .ai/ project context before any task
+  alwaysApply: true
+  ---
+  This project keeps machine-readable context in `.ai/`. Read `.ai/project-context.md`,
+  `.ai/architecture.md`, and `.ai/coding-standards.md` at the start of every task; consult the
+  other `.ai/` files as the task requires. Flag contradictions between `.ai/` and the codebase.
+  ```
+- **Already present**: leave unchanged (report as already present)
 
 ### All wiring files must instruct AI to:
 1. Read `.ai/` files at session start
@@ -110,10 +135,11 @@ After wiring is complete, create handover documentation in Confluence.
 ## Verification
 
 Before proceeding to Phase 4, confirm:
-- [ ] `.github/copilot-instructions.md` references `.ai/` folder
-- [ ] `CLAUDE.md` references `.ai/` folder
-- [ ] `AGENTS.md` references `.ai/` folder (OpenAI Codex wiring)
-- [ ] `.github/instructions/ai-context.instructions.md` exists
+- [ ] `.github/copilot-instructions.md` references `.ai/` folder (Copilot)
+- [ ] `CLAUDE.md` references `.ai/` folder (Claude Code)
+- [ ] `AGENTS.md` references `.ai/` folder (Codex + Cursor + universal)
+- [ ] `.github/instructions/ai-context.instructions.md` exists (Copilot path-scoped)
+- [ ] `.cursor/rules/ai-context.mdc` exists (Cursor native, `alwaysApply: true`)
 - [ ] Confluence pages created (or report why not)
 - [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`
 

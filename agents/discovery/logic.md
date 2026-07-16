@@ -107,10 +107,12 @@ Generate all 9 required files + .meta.yml:
 
 ### Step 9: AI Context Wiring + Confluence
 
-Wire IDE tools to load `.ai/` context:
-- `.github/copilot-instructions.md` (create or append)
-- `CLAUDE.md` (create or append)
-- `.github/instructions/ai-context.instructions.md` (create)
+Wire all four IDEs to load `.ai/` context (`.ai/` is the shared source; each file is a thin pointer):
+- `.github/copilot-instructions.md` (Copilot — create or append)
+- `CLAUDE.md` (Claude Code — create or append)
+- `AGENTS.md` (Codex + Cursor + universal — create or append)
+- `.github/instructions/ai-context.instructions.md` (Copilot path-scoped — create)
+- `.cursor/rules/ai-context.mdc` (Cursor native, `alwaysApply: true` — create)
 
 Optionally create Confluence pages under `MS/Projects` using a consistent layout. Titles follow the
 collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): landing = project name
@@ -131,6 +133,7 @@ For each detected technology:
 4. Fallback to public MCP registry
 5. Write MCP config to all three IDE files
 6. Generate support-agent with detected tools
+7. Mirror every generated/installed skill from `.github/skills/` into `.claude/skills/` (verbatim — same SKILL.md format), and mirror the support agent from `.github/agents/support-agent.agent.md` into `.claude/agents/support-agent.md` (same body, Claude Code frontmatter, no `tools:` restriction). `.github/` is Copilot-only; Claude Code never reads it, so without this mirror generated skills/agents are invisible there.
 
 ## Quality Gates
 
@@ -142,4 +145,5 @@ Before declaring complete:
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] Support agent created
+- [ ] All skills mirrored to `.claude/skills/`; support agent mirrored to `.claude/agents/support-agent.md`
 - [ ] No secrets in any generated file

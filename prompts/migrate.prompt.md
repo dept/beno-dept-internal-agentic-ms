@@ -12,9 +12,10 @@ You are running the **DEPT Managed Services Migration** workflow. This installs 
 
 After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ Discovery and Maintainer agents installed and ready to use
+- ✓ Discovery and Maintainer agents installed and ready to use, in both Copilot (`.github/agents/`) and Claude Code (`.claude/agents/`) formats
+- ✓ Migration slash commands installed for Copilot (`@workspace /ms-migration`), Claude Code + Cursor (`/ms-migration` from `.claude/commands/` + `.cursor/commands/`); Codex runs it by reading the prompt file referenced in `AGENTS.md`
 - ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification) — referenced as agent guidance, not installed as files
-- ✓ All AI tools wired (Copilot, Claude, Cursor, Codex auto-load `.ai/` context)
+- ✓ All four IDEs wired to auto-load `.ai/` context: Copilot (`.github/copilot-instructions.md`), Claude (`CLAUDE.md`), Codex (`AGENTS.md`), Cursor (`.cursor/rules/ai-context.mdc`)
 - ✓ Confluence handover pages created (or staged as drafts when Confluence access is unavailable)
 - ✓ Stack-specific skills (Phase 4) and MCP servers installed
 - ✓ Support agent configured
@@ -48,13 +49,13 @@ bash <(command curl -fsSL "https://raw.githubusercontent.com/dept/beno-dept-inte
 ```
 Then invoke it in your AI tool. This installs the local prompts, agents, and Graphify helper before the migration starts:
 ```
-# VS Code Copilot / Cursor
+# VS Code Copilot
 @workspace /ms-migration
 
-# Claude Code
-claude --prompt .github/prompts/migrate.prompt.md
+# Claude Code (mirror: .claude/commands/ms-migration.md) and Cursor (mirror: .cursor/commands/ms-migration.md)
+/ms-migration
 
-# Any tool with file access
+# OpenAI Codex, or any tool with file access
 Read .github/prompts/migrate.prompt.md and follow the instructions.
 ```
 
@@ -187,8 +188,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-cli` skill (stack-specific skills come in Phase 4)
-**Verify before continuing:** `.github/agents/` has 2 files, `.github/prompts/` has `migrate` + `01-04`, `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist, `.github/skills/confluence-cli/` exists. Other (stack) skills are added in Phase 4.
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-cli` skill (stack-specific skills come in Phase 4). Mirrors agents/prompts/skill to Claude Code (`.claude/agents/`, `.claude/commands/`, `.claude/skills/`) so both Copilot and Claude Code auto-load them.
+**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist, `.github/skills/confluence-cli/` exists (mirrored in `.claude/skills/`). Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
@@ -203,13 +204,13 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 3: Integration
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/03-integrate.prompt.md`
-**Does:** Wires AI tools (Copilot, Claude, Cursor), creates Confluence documentation
-**Verify before continuing:** Wiring files reference `.ai/`, Confluence pages exist
+**Does:** Wires all four IDEs (Copilot, Claude, Codex, Cursor) to auto-load `.ai/`, creates Confluence documentation
+**Verify before continuing:** `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/ai-context.mdc` all reference `.ai/`; Confluence pages exist
 
 ### Phase 4: Stack-Aware Tooling
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/04-stack-tooling.prompt.md`
-**Does:** Detects tech stack, installs skills + MCP servers, creates support agent
-**Verify before continuing:** MCP config in all 3 IDEs, support-agent exists
+**Does:** Detects tech stack, installs skills + MCP servers, creates support agent. Mirrors every skill to `.claude/skills/` and the support agent to `.claude/agents/support-agent.md`.
+**Verify before continuing:** MCP config in all 3 IDEs, support-agent exists (mirrored in `.claude/agents/`), skills mirrored in `.claude/skills/`
 
 ---
 
@@ -221,8 +222,9 @@ After all phases complete, output:
 ## Migration Complete ✓
 
 ### Phase 1: Installation
-- Agents: [installed / already present]
-- Skills: [installed / already present]
+- Agents: [installed / already present] (mirrored to .claude/agents/)
+- Prompts: [installed / already present] (mirrored to .claude/commands/)
+- Skills: [installed / already present] (mirrored to .claude/skills/)
 
 ### Phase 2: Discovery
 - .ai/ files: 9/9 generated
@@ -230,16 +232,17 @@ After all phases complete, output:
 - Confidence: [average % across files]
 
 ### Phase 3: Integration
-- Copilot wiring: [created / appended / present]
-- Claude wiring: [created / appended / present]
-- VS Code wiring: [created / present]
+- Copilot wiring (.github/copilot-instructions.md): [created / appended / present]
+- Claude wiring (CLAUDE.md): [created / appended / present]
+- Codex wiring (AGENTS.md): [created / appended / present]
+- Cursor wiring (.cursor/rules/ai-context.mdc): [created / present]
 - Confluence: [created / skipped]
 
 ### Phase 4: Stack-Aware Tooling
 - Technologies detected: [count]
-- Skills installed: [list or "None matched"]
+- Skills installed: [list or "None matched"] (each mirrored to .claude/skills/)
 - MCP servers added: [list or "None"]
-- Support agent: [created / present]
+- Support agent: [created / present] (mirrored to .claude/agents/support-agent.md)
 
 ### Validation
 Run: scripts/validate.sh .

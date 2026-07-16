@@ -171,18 +171,27 @@ If any GitHub/environment/Keeper link cannot be verified, prompt the user for th
 
 ### 9) AI Context Wiring
 
-After generating `.ai/`, create or update wiring files so every AI tool automatically reads the project context. **Check if each file exists first** — if it does, append; never overwrite.
+After generating `.ai/`, create or update wiring files so every supported IDE (Copilot, Claude Code, Codex, Cursor) automatically reads the project context. `.ai/` is the single shared source; each file below is a thin pointer into it. **Check if each file exists first** — if it does, append; never overwrite.
 
-**`.github/copilot-instructions.md`**
+**`.github/copilot-instructions.md`** (Copilot)
 - Not present: create with full `.ai/` reading instructions and behaviour rules.
 - Already present: append a `## AI Project Context (.ai/)` section at the end.
 
-**`CLAUDE.md`** (repository root)
+**`CLAUDE.md`** (Claude Code, repository root)
 - Same append-or-create logic as above.
 
-**`.github/instructions/ai-context.instructions.md`**
+**`AGENTS.md`** (Codex + Cursor + universal, repository root)
+- Nearest-to-universal pointer — Codex, Cursor, and Copilot's coding agent read it.
+- Not present: create from `templates/AGENTS.template.md`, filling setup commands + key-constraint one-liners from `.ai/`.
+- Already present: append a `## AI Project Context (.ai/)` section.
+
+**`.github/instructions/ai-context.instructions.md`** (Copilot path-scoped)
 - Not present: create with `applyTo: "**"` frontmatter and concise `.ai/` loading instructions.
 - Already present: leave unchanged — report as already present in the completion summary.
+
+**`.cursor/rules/ai-context.mdc`** (Cursor native rules)
+- Not present: create with `alwaysApply: true` frontmatter + a short pointer body (do NOT restate `.ai/` — point to it).
+- Already present: leave unchanged — report as already present.
 
 In all wiring files, instruct the AI to:
 1. Read `.ai/` files at the start of every session
@@ -288,6 +297,7 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 2. There must be a `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
 3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary.
 4. **Self-check before finishing each skill:** re-grep every symbol and re-`ls` every path you wrote. A skill that references anything you could not locate fails the phase — fix or remove it.
+5. **Mirror to Claude Code:** copy the finished skill directory verbatim to `.claude/skills/<technology-name>/`. `.github/skills/` is Copilot-only — Claude Code reads `.claude/skills/` and won't see anything left only in `.github/`. SKILL.md's frontmatter format is identical across both, so this is a plain copy, not a rewrite. `.github/skills/` stays the source of truth; re-copy the mirror whenever the source changes.
 
 #### Step C — Find and add MCP servers
 
@@ -474,6 +484,8 @@ tools: [read, edit, search, execute, web, agent, github/*, contentful/*, vercel/
 ---
 ```
 
+**Mirror to Claude Code:** create `.claude/agents/support-agent.md` with the same body (Before Each Task, Available Skills, Available MCP Integrations, Behaviour Rules) but Claude Code frontmatter — `name`/`description` only, no `tools:` line. Claude Code subagents inherit all available tools (files, search, bash, every configured MCP server) by default, so omitting `tools:` already covers everything the Copilot `tools:` list enumerates explicitly. `.github/agents/` isn't read by Claude Code — without this mirror the support agent is invisible there.
+
 ## Output Format
 
 - Use stable headings and bullet points for machine readability.
@@ -487,10 +499,11 @@ Before finalising, verify:
 2. Every major claim cites a source file path or config reference.
 3. Unknowns are listed as questions, not silent omissions.
 4. No secrets are included.
-5. All three AI wiring files have been created or updated.
+5. All wiring files created/updated for the four IDEs — `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.github/instructions/ai-context.instructions.md`, `.cursor/rules/ai-context.mdc`.
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
 8. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
+9. Every skill mirrored to `.claude/skills/`; `.claude/agents/support-agent.md` created mirroring the Copilot support agent's body.
 
 ## Completion Summary
 
@@ -506,12 +519,14 @@ Output after all files are written:
 
 ### Skills installed
 [list each .github/skills/<name>/SKILL.md created, or "None matched"]
+[note: each mirrored to .claude/skills/<name>/]
 
 ### MCP servers added
 [list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]
 
 ### Support agent
 [created / already present]
+[.claude/agents/support-agent.md mirrored]
 
 ### Existing agentic setup found
 [list files found in step 0, or "None"]
