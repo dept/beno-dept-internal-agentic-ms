@@ -47,9 +47,11 @@ Fetch these files from the DEPT Agentic Standards repository:
 
 **Action:** Create `.github/agents/`, `.github/prompts/`, `.github/skills/confluence-cli/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh`, `scripts/validate.sh`, and `.github/skills/confluence-cli/confluence.sh` are executable.
 
-**Mirror Discovery + Maintainer agents to Claude Code:** `.github/agents/*.agent.md` is Copilot-only — Claude Code auto-loads subagents from `.claude/agents/*.md` instead, with different frontmatter (`name`, `description`; no `tools:` list — Claude Code subagents inherit all available tools by default, so drop the Copilot `tools: [...]` line entirely). Write:
+**Mirror Discovery + Maintainer agents to Claude Code:** Claude Code auto-loads subagents from `.claude/agents/*.md`, with different frontmatter (`name`, `description`; no `tools:` list — Claude Code subagents inherit all available tools by default, so drop the Copilot `tools: [...]` line entirely). Write:
 - `.claude/agents/discovery.md` — mirrors `.github/agents/discovery.agent.md`'s body verbatim
 - `.claude/agents/maintainer.md` — mirrors `.github/agents/maintainer.agent.md`'s body verbatim
+
+**Keep the `name:` value identical to the source** (e.g. `name: "Discovery Agent"`, not `discovery-agent`). VS Code Copilot default-scans BOTH `.github/agents/` and `.claude/agents/`, so each agent shows **twice** in its picker; matching the `name:` makes the two rows carry the same label (clearly one agent) rather than looking like two different agents. This duplication is expected and cannot be disabled (no setting un-scans a VS Code default location) — a developer can hide the extra row via the eye icon in VS Code's *Agent Customizations* editor if desired.
 
 Body prose is tool-agnostic already (references `.ai/`, evidence rules, workflow steps) — only the frontmatter changes. `.github/agents/` stays the source; re-copy the body on any future edit.
 

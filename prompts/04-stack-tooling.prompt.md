@@ -254,16 +254,16 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 
 ### Mirror to Claude Code
 
-`.github/agents/` is Copilot's agent format and isn't read by Claude Code (`.claude/agents/`). Create `.claude/agents/support-agent.md` with the same body (Project Context, Installed Skills, MCP Servers, Behaviour Rules, Tech Stack, Constraints, Escalation) but Claude Code frontmatter instead of Copilot's:
+Claude Code auto-loads subagents from `.claude/agents/`. Create `.claude/agents/support-agent.md` with the same body (Project Context, Installed Skills, MCP Servers, Behaviour Rules, Tech Stack, Constraints, Escalation) but Claude Code frontmatter instead of Copilot's:
 
 ```markdown
 ---
-name: support-agent
+name: "Support Agent"
 description: "Support & development agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [TECH_STACK_SUMMARY] project."
 ---
 ```
 
-Omit a `tools:` restriction — Claude Code subagents inherit all available tools (file, search, bash, and every configured MCP server) by default, which already covers everything the Copilot `tools:` list enumerates explicitly (`read`/`edit`/`search`/`run_in_terminal`/`github/*`/MCP keys). Don't attempt to translate the Copilot tool-name list into Claude Code tool names — it's unnecessary and drifts out of sync.
+Keep `name:` **identical to the `.github/agents/support-agent.agent.md` source** (`"Support Agent"`) — VS Code Copilot default-scans both folders and shows the agent twice, so matching names makes the two picker rows read as one agent rather than two. Omit a `tools:` restriction — Claude Code subagents inherit all available tools (file, search, bash, and every configured MCP server) by default, which already covers everything the Copilot `tools:` list enumerates explicitly. Don't translate the Copilot tool-name list into Claude Code tool names — unnecessary and drifts out of sync.
 
 ## Verification
 

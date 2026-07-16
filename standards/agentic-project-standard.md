@@ -59,6 +59,8 @@ Manual review of `.ai` files remains mandatory before merging changes. Agents pr
 
 Rules: `.github/*` is the source of truth for agents/skills/prompts (Copilot's native home); the `.claude/*` and `.cursor/*` copies are exact mirrors, re-copied on change and never hand-edited. `AGENTS.md` is the nearest-to-universal pointer (Codex, Cursor, and Copilot's coding agent all honor it). Codex has no project-level agent/skill/command folders and its MCP config is user-level, so it is wired via `AGENTS.md` only.
 
+**Known duplication — agents in VS Code:** VS Code Copilot default-scans **both** `.github/agents/` and `.claude/agents/`, so every agent appears **twice** in its agent picker. This is intentional and unavoidable — `.github/agents/` serves the github.com cloud Copilot coding agent, `.claude/agents/` serves Claude Code, and VS Code happens to read both. There is no setting to un-scan a default location. To mitigate: (1) each `.claude/agents/*.md` mirror keeps the **same `name:` frontmatter** as its `.github/agents/*.agent.md` source, so the two picker rows carry the identical label (clearly one agent, not two); (2) a developer bothered by the duplicate can hide one row via the eye icon in VS Code's *Agent Customizations* editor (gear icon in the Chat view). Prompt-commands (`.claude/commands/`) and skills (`.claude/skills/`) do **not** duplicate — VS Code does not default-scan those Claude folders.
+
 ## Governance Principles
 
 - **Ownership**: each `.ai` document has a named owner (team, not individual).

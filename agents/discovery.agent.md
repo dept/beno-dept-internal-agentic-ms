@@ -484,7 +484,7 @@ tools: [read, edit, search, execute, web, agent, github/*, contentful/*, vercel/
 ---
 ```
 
-**Mirror to Claude Code:** create `.claude/agents/support-agent.md` with the same body (Before Each Task, Available Skills, Available MCP Integrations, Behaviour Rules) but Claude Code frontmatter — `name`/`description` only, no `tools:` line. Claude Code subagents inherit all available tools (files, search, bash, every configured MCP server) by default, so omitting `tools:` already covers everything the Copilot `tools:` list enumerates explicitly. `.github/agents/` isn't read by Claude Code — without this mirror the support agent is invisible there.
+**Mirror to Claude Code:** create `.claude/agents/support-agent.md` with the same body (Before Each Task, Available Skills, Available MCP Integrations, Behaviour Rules) but Claude Code frontmatter — `name`/`description` only, no `tools:` line. Claude Code subagents inherit all available tools (files, search, bash, every configured MCP server) by default, so omitting `tools:` already covers everything the Copilot `tools:` list enumerates explicitly. Keep `name:` identical to the source (`"Support Agent"`) — VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/` and lists the agent twice, so matching names makes the two picker rows read as one agent. This duplication is expected (both folders serve different clients) and can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
 
 ## Output Format
 
