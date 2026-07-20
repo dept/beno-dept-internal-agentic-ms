@@ -78,14 +78,21 @@ Coverage target — the four supported IDEs:
 
 After wiring is complete, create handover documentation in Confluence.
 
-> **If Confluence access is unavailable** (no Atlassian MCP/connector, or the
-> tool running this prompt cannot reach `dept-nl.atlassian.net`): do NOT skip the
+**Publish path — use the `atlassian-axi` skill (primary).** It is installed in Phase 1 at `.github/skills/atlassian-axi/` and drives the `atlassian-axi` npm CLI (`npx -y atlassian-axi confluence ...`), which wraps the Confluence Cloud REST API. Do NOT rely on the Atlassian MCP here: the MCP is only configured in Phase 4, and an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads — so during a single migration run the MCP is not a usable publish path for this step. Verify access first (`npx -y atlassian-axi confluence space list` → lists spaces), then create the landing page, capture its id, and create the four subpages under it with `--parent <landingId>`. When updating existing pages, resolve subpages by walking the landing page's children (`npx -y atlassian-axi confluence page children <landingId>`) — never a bare title search, because the shared `MS` space collides across projects. `page update` bumps the version automatically (no 409 handling).
+
+> **If Confluence access is unavailable** (the `atlassian-axi confluence space list` preflight
+> failed — not authed, or the site is unreachable): do NOT skip the
 > work silently. Instead **stage the pages as local drafts** — write one Markdown
 > file per page (landing + the four subpages, following the structure below) into
 > `.ai/confluence/`, and write the `confluence:` block into `.ai/.meta.yml` with
 > `published: false` and empty `id`s. The Maintainer Agent (or a later run with
 > access) then publishes them and backfills the IDs. Report clearly in the
 > completion summary that Confluence was staged, not published.
+>
+> **Drafts are transient.** Once the pages are published and their real ids are
+> written into `.ai/.meta.yml`, the `.ai/confluence/` drafts are no longer needed
+> — the Maintainer syncs from the `.ai/` files via `sync_map`, never from the
+> drafts. Phase 5 (cleanup) removes them.
 
 **Canonical structure source:** `docs/confluence-page-standard.md`
 - Use it as the default page-layout and section-order source for every project.
@@ -119,7 +126,7 @@ After wiring is complete, create handover documentation in Confluence.
    - `## AI tooling status` — list context files, agents, skills, code graph, MCP servers, instructions; add a warning panel if not yet confirmed
    - `## Key contacts` table (last section) — columns `Role`, `Name`, `Contact (email)`; add a warning panel asking the team to verify before sharing
 6. Make content readable for mixed roles (developer + client manager).
-7. In `Overview`, include what the system does and the main business capabilities. When the project has multiple packages, features, brands, or campaigns, add a short plain-language summary for each major area so a new developer can quickly understand what each one is for.
+7. In `Overview`, include what the system does and the main business capabilities. When the project has multiple packages, features, brands, or campaigns, add a short plain-language summary for each major area so a new developer can quickly understand what each one is for. Also include a `## Key Features (Monitored)` section copied from `.ai/project-context.md` → *Key Features* (the Datadog Synthetic tests fetched in Phase 2 Step 4b). Use the canonical schema — **Public ID** (link → `https://app.datadoghq.<region>/synthetics/details/<public_id>`) · **Type** (Browser/API) · **Name** (exact test name) · **Description** (factual, from the config) — sorted Browser first, API second, with a one-line note on the split (e.g. "5 browser tests + 2 API uptime tests"). Keep it in sync with `.ai/project-context.md`; do not invent columns or details. If Datadog access was unavailable at migration time, keep the section with a `[To fill in]` note — do not omit it.
 8. In `Architecture & Package Map`, document each major app/package/feature/campaign and what it is responsible for. For monorepos or multi-brand/campaign projects, include all of the following:
    - an inventory table for quick scanning
    - a short summary paragraph or bullet for each major package/feature/campaign explaining purpose, ownership/context, and notable dependencies or integrations when known

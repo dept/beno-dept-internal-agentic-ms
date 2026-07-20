@@ -192,15 +192,21 @@ $TEMP_GRAPHIFYIGNORE_MARKER_BEGIN
 # Added temporarily by scripts/graphify-bootstrap.sh so Graphify can run
 # without an LLM API key. Remove this block (or rerun with a key) when you
 # want Graphify to include docs, papers, and images again.
-**/*.md
-**/*.markdown
-**/*.mdx
-**/*.pdf
-**/*.png
-**/*.jpg
-**/*.jpeg
-**/*.webp
-**/*.gif
+#
+# NOTE: patterns are unanchored (no leading '**/'). Graphify's .gitignore
+# matcher does NOT expand '**/' to zero directories, so '**/*.md' misses
+# root-level files (e.g. README.md) and Graphify then aborts with
+# "no LLM API key found (... doc/paper/image file(s) need semantic
+# extraction)". Bare '*.md' matches at every depth and is the reliable form.
+*.md
+*.markdown
+*.mdx
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
 $TEMP_GRAPHIFYIGNORE_MARKER_END
 EOF
 
@@ -395,7 +401,20 @@ if [[ -f graphify-out/graph.json ]] && [[ ! -f graphify-out/GRAPH_REPORT.md ]]; 
   echo ""
   echo "Graphify extracted graph data but has not generated GRAPH_REPORT.md yet."
   echo "Running cluster-only step to finalize GRAPH_REPORT.md and graph.html ..."
-  "${GRAPHIFY_RUNNER[@]}" cluster-only .
+  # `|| true`: a cluster-only failure must not abort the script under `set -e`
+  # before .gitignore hygiene runs — graph.json alone is still usable.
+  "${GRAPHIFY_RUNNER[@]}" cluster-only . || true
+fi
+
+# Final backstop: if we STILL have no graph.json (e.g. code-only mode also
+# failed), say so loudly but do NOT fail — Graphify is a non-blocking
+# accelerator and Discovery falls back to raw-repository scanning.
+if [[ ! -f graphify-out/graph.json ]]; then
+  echo ""
+  echo "WARNING: Graphify produced no graphify-out/graph.json."
+  echo "Discovery will proceed with raw-repository scanning (no structural graph)."
+  echo "To get a graph: set an LLM API key (OPENAI_API_KEY / GEMINI_API_KEY / ...)"
+  echo "and rerun 'bash scripts/graphify-bootstrap.sh .'."
 fi
 
 if [[ -f .gitignore ]]; then

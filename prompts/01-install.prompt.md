@@ -17,10 +17,12 @@ Installs the DEPT agentic tooling into the target repository:
 - 2 agents (Discovery + Maintainer)
 - 5 prompts (bootstrap + 4 phase prompts)
 - 2 helper scripts (Graphify bootstrap + validator)
-- 1 fixed skill: `confluence-cli` (always installed — every DEPT project uses Confluence for handover)
+- 1 fixed skill: `atlassian-axi` (Confluence handover pages, via the `atlassian-axi` npm CLI)
 
 **Note on skills:** Only **fixed DEPT skills** are installed in Phase 1 — currently
-just `confluence-cli` (a shipped template, not stack-detected). Superpowers
+just `atlassian-axi` (a shipped template, not stack-detected). Datadog "key features"
+are fetched via the **Datadog MCP** (browser OAuth), which is configured in Phase 4 —
+there is no Datadog skill to install. Superpowers
 disciplines (evidence-first, systematic-debugging, verification) are referenced by
 the agents as *background guidance* and need no local files. **Stack-specific**
 skills (React, Next.js, CMS, etc.) are installed later in **Phase 4**
@@ -41,11 +43,11 @@ Fetch these files from the DEPT Agentic Standards repository:
 | Phase 4 Prompt | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/prompts/04-stack-tooling.prompt.md` | `.github/prompts/04-stack-tooling.prompt.md` |
 | Graphify Bootstrap Helper | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/graphify-bootstrap.sh` | `scripts/graphify-bootstrap.sh` |
 | Validator | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/validate.sh` | `scripts/validate.sh` |
-| Confluence skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-cli/SKILL.md` | `.github/skills/confluence-cli/SKILL.md` |
-| Confluence skill helper | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-cli/confluence.sh` | `.github/skills/confluence-cli/confluence.sh` |
-| Confluence skill setup | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-cli/references/setup.md` | `.github/skills/confluence-cli/references/setup.md` |
+| Standard version | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/config/standard-version.yml` | `config/standard-version.yml` |
+| Atlassian skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/atlassian-axi/SKILL.md` | `.github/skills/atlassian-axi/SKILL.md` |
+| Atlassian skill setup | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/atlassian-axi/references/setup.md` | `.github/skills/atlassian-axi/references/setup.md` |
 
-**Action:** Create `.github/agents/`, `.github/prompts/`, `.github/skills/confluence-cli/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh`, `scripts/validate.sh`, and `.github/skills/confluence-cli/confluence.sh` are executable.
+**Action:** Create `.github/agents/`, `.github/prompts/`, `.github/skills/atlassian-axi/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` are executable. (The `atlassian-axi` skill bundles no script — it drives the `atlassian-axi` npm CLI via `npx`, so nothing to chmod.)
 
 **Mirror Discovery + Maintainer agents to Claude Code:** Claude Code auto-loads subagents from `.claude/agents/*.md`, with different frontmatter (`name`, `description`; no `tools:` list — Claude Code subagents inherit all available tools by default, so drop the Copilot `tools: [...]` line entirely). Write:
 - `.claude/agents/discovery.md` — mirrors `.github/agents/discovery.agent.md`'s body verbatim
@@ -55,7 +57,7 @@ Fetch these files from the DEPT Agentic Standards repository:
 
 Body prose is tool-agnostic already (references `.ai/`, evidence rules, workflow steps) — only the frontmatter changes. `.github/agents/` stays the source; re-copy the body on any future edit.
 
-**Mirror to Claude Code:** Copy the `confluence-cli` skill verbatim (SKILL.md unchanged — Claude Code uses the same `name`/`description` frontmatter format) to `.claude/skills/confluence-cli/`. Same files, same executable bit on `confluence.sh`. This keeps Claude Code's skill auto-discovery (`.claude/skills/`) in sync with Copilot's (`.github/skills/`) without a second source of truth — one install, two locations.
+**Mirror to Claude Code:** Copy the `atlassian-axi` skill verbatim (SKILL.md unchanged — Claude Code uses the same `name`/`description` frontmatter format) to `.claude/skills/atlassian-axi/`. This keeps Claude Code's skill auto-discovery (`.claude/skills/`) in sync with Copilot's (`.github/skills/`) without a second source of truth — one install, two locations.
 
 **Mirror prompts as slash commands for Claude Code + Cursor:** `.github/prompts/*.prompt.md` is Copilot's `@workspace /name` format. Claude Code auto-loads slash commands from `.claude/commands/<name>.md`, and Cursor from `.cursor/commands/<name>.md` — same trigger UX (`/ms-migration`, `/ms-install`, ...), different folder + frontmatter. For each installed prompt, write both mirrors:
 
@@ -82,8 +84,8 @@ Before proceeding to Phase 2, confirm:
 - [ ] `.claude/commands/` and `.cursor/commands/` each contain the 5 mirrored slash commands (`ms-migration`, `ms-install`, `ms-discover`, `ms-integrate`, `ms-stack-tooling`)
 - [ ] `scripts/graphify-bootstrap.sh` exists and is executable
 - [ ] `scripts/validate.sh` exists and is executable
-- [ ] `.github/skills/confluence-cli/` exists (SKILL.md + confluence.sh + references/setup.md); `confluence.sh` is executable
-- [ ] `.claude/skills/confluence-cli/` mirrors the same files (Claude Code auto-load)
+- [ ] `.github/skills/atlassian-axi/` exists (SKILL.md + references/setup.md; no bundled script — it wraps the `atlassian-axi` npm CLI)
+- [ ] `.claude/skills/atlassian-axi/` mirrors the same files (Claude Code auto-load)
 - [ ] No other skills yet — stack-specific skills are added in Phase 4
 
 ## Completion Signal

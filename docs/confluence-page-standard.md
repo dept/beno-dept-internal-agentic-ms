@@ -117,12 +117,14 @@ The `[Project Name]` page is the top-level Confluence entry point. It should let
 ### Required sections
 1. `## What this project does`
 2. `## Business capabilities`
-3. `## Major areas at a glance`
-4. `## Key links`
+3. `## Key Features (Monitored)`
+4. `## Major areas at a glance`
+5. `## Key links`
 
 ### Content rules
 - Explain the system in plain language first.
 - Summarize the main business capabilities.
+- `## Key Features (Monitored)` lists the live Datadog Synthetic tests for this client (fetched in discovery via the **Datadog MCP** — browser OAuth, no keys — `get_synthetics_tests` filtered by the `client:<name>` tag). Columns: **Public ID** (link), **Type** (Browser/API), **Name** (exact test name), **Description** (factual, derived from the config — do not invent). Sort **Browser first, API second**, and add a one-line note on the split (e.g. "5 browser tests + 2 API uptime tests"). This is sourced from `.ai/project-context.md` and must stay in sync with it. If the Datadog MCP was not yet reachable, keep the heading with a `[To fill in]` note rather than dropping it.
 - If the repository has multiple apps, packages, brands, campaigns, or major features, include a short explanation for each major area.
 - Include the core project links collected during discovery.
 
@@ -135,6 +137,15 @@ Short plain-language summary of the product/system.
 - Capability 1
 - Capability 2
 - Capability 3
+
+## Key Features (Monitored)
+Monitored via Datadog Synthetics — 5 browser tests + 2 API uptime tests.
+
+| Public ID | Type | Name | Description |
+| --- | --- | --- | --- |
+| [uzp-sne-bce](https://app.datadoghq.eu/synthetics/details/uzp-sne-bce) | Browser | Home Page Content & Search | Validates homepage content, header navigation, and search |
+| [hxq-m2k-rak](https://app.datadoghq.eu/synthetics/details/hxq-m2k-rak) | Browser | Donation & Support Options | Exercises the donation and support flows |
+| [wbs-ifz-bcg](https://app.datadoghq.eu/synthetics/details/wbs-ifz-bcg) | API | Homepage availability | Uptime check on the homepage endpoint |
 
 ## Major areas at a glance
 | Area | Purpose | Notes |

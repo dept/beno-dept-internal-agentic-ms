@@ -143,6 +143,31 @@ Once Discovery completes, your `.ai/` folder is live. Next steps:
 
 5. **Schedule Maintainer** — Set a monthly or quarterly reminder to run the **Maintainer Agent** (see agents below) to keep `.ai/` current as the codebase evolves.
 
+6. **Clean up (Phase 5)** — Remove one-time migration artifacts so the repo keeps only what has ongoing value. See the table below. Migrate prompt's Phase 5 automates this (asks first).
+
+### What to keep vs. remove after migration
+
+The migration installs **runtime** artifacts (used forever) and **install-time** artifacts (used once). After a successful, verified migration you can prune the latter.
+
+| Artifact | Keep? | Why |
+|---|---|---|
+| `.ai/` (9 files + `.meta.yml`) | **Keep** | Single source of truth |
+| Maintainer agent (`.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md`) | **Keep** | Ongoing drift maintenance |
+| Support agent (`support-agent.agent.md` + `.claude/agents/support-agent.md`) | **Keep** | Day-to-day dev/support |
+| Wiring (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.github/instructions/`, `.cursor/rules/`) | **Keep** | IDEs auto-load `.ai/` |
+| Stack skills (`.github/skills/` + `.claude/skills/`, incl. `atlassian-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `atlassian-axi` |
+| MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
+| MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
+| `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
+| `.claude/commands/ms-migration.md` + `.cursor/commands/ms-migration.md` | **Keep** | Single entry point for a full re-run |
+| `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
+| Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
+| Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
+| `scripts/graphify-bootstrap.sh` | **Remove** (optional) | One-time pre-pass; keep if re-graphing planned |
+| `graphify-out/` | **Remove** | Ephemeral (already gitignored) |
+
+> **Remove symmetrically.** `validate.sh` compares file counts between each `.github/*` source and its `.claude/*` / `.cursor/*` mirror. Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged.
+
 ## Validation
 
 Verify any project's `.ai/` folder meets the standard:

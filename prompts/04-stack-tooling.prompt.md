@@ -194,6 +194,12 @@ curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=<technology-
 
 **Read first, merge, write back.** Never remove or overwrite existing entries.
 
+> **Reload note:** MCP servers written here become callable only after the
+> tool/IDE reloads its MCP connections — they are **not** available later in the
+> same migration run. In particular, do not expect to use an `atlassian` MCP for
+> Confluence: that publishing already happened in Phase 3 via the `atlassian-axi`
+> skill. The config written here is for the developer's next session.
+
 After writing MCP configs, update the `## MCP Servers` section in `.ai/agent-registry.md`:
 
 ```markdown

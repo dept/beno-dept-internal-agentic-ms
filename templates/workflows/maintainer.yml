@@ -1,0 +1,46 @@
+name: Maintainer Agent
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Every Monday 09:00 UTC (schedule always runs on default branch)
+  workflow_dispatch: {}   # Manual run — bypasses the cost gate
+
+permissions:
+  contents: write         # commit .ai/ updates to a branch
+  pull-requests: write    # open the maintenance PR
+  id-token: write         # required by claude-code-action for OIDC auth
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for git log drift analysis
+
+      - name: Check for drift since last maintenance   # cost gate
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          last=$(grep -oE 'last_maintained:[[:space:]]*"[^"]*"' .ai/.meta.yml | head -1 | sed -E 's/.*"(.*)"/\1/')
+          if [ -z "$last" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          changed=$(git log --since="$last" --name-only --pretty=format: -- . ':(exclude).ai/**' | sort -u | grep -c . || true)
+          if [ "$changed" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Run Maintainer Agent
+        if: steps.gate.outputs.run == 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Follow .github/agents/maintainer.agent.md. FIRST run the Phase 2 git check; if no
+            change since last_maintained affects a documented area, report "no drift" and stop.
+            Otherwise run the pass, read only impacted .ai/ files, and open a PR (never push to main).
+          claude_args: |
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*)"
+            --model claude-sonnet-5
+            --max-turns 100

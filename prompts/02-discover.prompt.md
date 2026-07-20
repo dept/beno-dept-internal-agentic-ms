@@ -82,12 +82,35 @@ Gather these 5 links from repository evidence (config files, CI/CD, README, GitH
 
 **Note:** Do NOT ask for Confluence URL. All pages are created under: `https://dept-nl.atlassian.net/wiki/spaces/MS/Projects`
 
+## Step 4b: Fetch Client Key Features (Datadog Synthetics)
+
+The project's **key features** are the Datadog Synthetic tests that monitor its critical user flows (browser tests) and availability (API/uptime tests). Fetch them so they land in `.ai/` and, from there, on the Confluence **Overview** page.
+
+**Fetch via the Datadog MCP** (`datadog` server, browser OAuth — **no API keys**). The connector URL must enable the synthetics toolset: `?toolsets=core,synthetics` (default is `core` only — without it there are no Synthetics tools).
+
+1. **Determine the client tag.** Tests are tagged `client:<name>` (e.g. `client:unicef`). Infer `<name>` from the repository/project name; if the exact tag is unknown, fetch the live configs and infer the project tag from the returned test tags. If ambiguous, ask the user.
+2. **Is the Datadog MCP callable in this session?** It is configured in Phase 4, but a freshly-added MCP is not callable until the tool/IDE reloads — and OAuth must be completed. So:
+   - **If the `datadog` MCP is present and authed** (a re-run in an already-reloaded session, or a repo set up earlier): call **`get_synthetics_tests`** with `mode: "configs"`, `test_state: "live"`, `summary: false` (full config, active tests only — not event aggregation). Filter to the project by its `client:<name>` tag; add `type:browser` / `type:api` or a domain/path filter only when needed to disambiguate. Keep both Browser and API tests; drop inactive tests and unrelated domains/projects even if they share the org. Verify the final list by its public IDs and names.
+   - **If it is not yet callable** (first migration run, not reloaded, or not authed): do **not** block. Write the Key Features section with a single `[To fill in — fetch via the Datadog MCP after IDE reload + OAuth]` line so the structure exists; the developer (or the Maintainer on its next run) backfills it. This matches the non-blocking Confluence/Graphify pattern (see Preflight in `migrate.prompt.md`).
+3. **If the MCP is callable but no tests are found**: record `No Synthetic tests tagged client:<name>` — the tag convention may differ; note it as a Validation Question rather than inventing tests (evidence-first).
+
+**Table schema** (used in `project-context.md` and on the Confluence Overview page), sorted **Browser tests first, API tests second**:
+
+| Column | Value |
+|---|---|
+| Public ID | markdown link → `https://app.datadoghq.<region>/synthetics/details/<public_id>` (use the org's region, e.g. `eu`) |
+| Type | `Browser` or `API` |
+| Name | exact Datadog test name |
+| Description | short, factual summary of what the test verifies — derived from the visible config (steps, URL, assertions). **Do not invent details.** |
+
+Feed any fetched tests into `project-context.md` in Step 5 (see file 1 below).
+
 ## Step 5: Generate `.ai/` Context Files
 
 Generate all 9 context files and write to `.ai/` directory in repository root.
 
 **Files to create:**
-1. `project-context.md` — what the system is, key services, monorepo structure, tech stack
+1. `project-context.md` — what the system is, key services, monorepo structure, tech stack, and a `## Key Features (Monitored)` section built from the Step 4b Datadog fetch. Use the Step 4b table schema — **Public ID** (link) · **Type** (Browser/API) · **Name** · **Description** — sorted Browser first, API second, with a one-line note on the split (e.g. "5 browser + 2 API uptime"). This is the single home for key features — it syncs to the Confluence Overview page via `sync_map`. Monitoring *tooling* (that Datadog is the monitor) still belongs in `operational-context.md`; cross-reference, don't duplicate.
 2. `architecture.md` — service boundaries, runtime topology, data flows, external systems
 3. `runbooks.md` — operational procedures, incident response, common issues and fixes
 4. `dependencies.md` — critical vendors, lock-in risks, upgrade paths
@@ -108,7 +131,7 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 **Single source of truth (avoid cross-file duplication):**
 Each fact/constraint has exactly ONE home file; other files cross-reference it instead of restating it. This prevents drift and the duplication reviewers flag.
 - Commit conventions, linting, testing, TypeScript/import rules → **only** `coding-standards.md`
-- Tech stack + monorepo layout → **only** `project-context.md`
+- Tech stack + monorepo layout, and Key Features (monitored Synthetic flows) → **only** `project-context.md`
 - Deploy pipeline, environments, env-var handling → **only** `operational-context.md`
 - CMS/content model/webhooks/ISR → **only** `cms.md`
 
@@ -119,7 +142,7 @@ If another file needs to mention one of these, write a one-line pointer (e.g. "S
 ## Step 5b: Generate `.ai/.meta.yml`
 
 After generating all 9 files, create `.ai/.meta.yml` from the meta template:
-- `standard_version`: read from `config/standard-version.yml`
+- `standard_version`: read the `standard.version` value from `config/standard-version.yml` (Phase 1 installs this file into the target repo). If the file is missing for any reason, default to `"1.0.0"` — do not block.
 - `generated_by`: `discovery@2.0`
 - `generated_at`: current ISO 8601 timestamp
 - `project_name`: repository name

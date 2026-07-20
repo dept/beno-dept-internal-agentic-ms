@@ -170,6 +170,18 @@ servers:
 
   # ─── Observability ────────────────────────────────────────────────────────
 
+  datadog:
+    display: "Datadog"
+    source: "Official — https://docs.datadoghq.com/mcp_server/setup/"
+    detect: ["dd-trace", "@datadog/browser-rum", "@datadog/browser-logs", "datadog-api-client"]
+    protocol: http
+    vscode_config:
+      type: "http"
+      url: "https://mcp.datadoghq.eu/api/unstable/mcp-server/mcp?toolsets=core,synthetics"
+    auth: "OAuth (browser flow on first connect)"
+    note: "Remote server, browser OAuth (no API keys). EU URL shown (DEPT default); US1 orgs use mcp.datadoghq.com. The `?toolsets=core,synthetics` query param is REQUIRED — the MCP loads only the `core` toolset by default, and Synthetics (the 'key features' source, by client:<name> tag) lives in the opt-in `synthetics` toolset. Without it, synthetic tests are not reachable and you would fall back to the Synthetics REST API. A freshly-added MCP is callable only after the tool/IDE reloads + OAuth, so first-run migrations stage the Key Features section as [To fill in] and backfill once authed."
+    last_verified: "2026-07-20"
+
   sentry:
     display: "Sentry"
     source: "Official — https://docs.sentry.io/product/sentry-mcp/"

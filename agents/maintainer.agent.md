@@ -189,6 +189,8 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
 5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
 
+**Refresh key features.** The `## Key Features (Monitored)` section lives in `project-context.md` (syncs to the Overview page). If the **Datadog MCP** (`datadog` server, browser OAuth) is reachable, call its Synthetics tool for the `client:<name>` tag and update the section when the test set has changed (added/removed/renamed/status flip). If the MCP is not reachable/authed, leave the existing content untouched — never blank it.
+
 ---
 
 ## Phase 8: Metadata Update
@@ -203,81 +205,9 @@ last_maintained_by: "maintainer@2.0"
 
 ## CI/CD Integration
 
-### GitHub Actions Trigger (Recommended)
+Automated triggering runs this agent via a **cost-gated GitHub Actions workflow**: a cheap `git log` step skips the paid agent run in any week where nothing outside `.ai/**` changed, and the agent opens a PR (never pushes to `main`). Triggers: weekly `schedule` + manual `workflow_dispatch`.
 
-Uses `anthropics/claude-code-action`. **Cost matters** — a full pass is a paid multi-turn
-agent run (~$2–3 on Sonnet). Two guards keep steady-state cost near zero:
-
-1. **Workflow-level cost gate** — a cheap bash step checks `git log` since `last_maintained`.
-   If nothing outside `.ai/**` changed, the agent step is skipped entirely (most weeks → ~$0).
-2. **In-prompt early exit** — if commits exist but none affect a documented area, the agent
-   reports "no drift" and stops before reading files / touching Confluence / opening a PR.
-
-Also: pick a cost-appropriate model (`claude-sonnet-5` is the effective mid-tier; drop to
-`claude-haiku-4-5` if drift is usually trivial), read only the impacted `.ai/` files, and
-keep `--max-turns` as a ceiling (real cost = actual turns, which the gate minimizes).
-
-```yaml
-name: Maintainer Agent
-on:
-  schedule:
-    - cron: '0 9 * * 1'   # Every Monday 09:00 UTC (schedule always runs on default branch)
-  workflow_dispatch: {}   # Manual run — bypasses the cost gate
-
-permissions:
-  contents: write         # commit .ai/ updates to a branch
-  pull-requests: write    # open the maintenance PR
-  id-token: write         # required by claude-code-action for OIDC auth
-
-jobs:
-  maintain:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # full history for git log drift analysis
-
-      - name: Check for drift since last maintenance   # cost gate
-        id: gate
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          last=$(grep -oE 'last_maintained:[[:space:]]*"[^"]*"' .ai/.meta.yml | head -1 | sed -E 's/.*"(.*)"/\1/')
-          if [ -z "$last" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          changed=$(git log --since="$last" --name-only --pretty=format: -- . ':(exclude).ai/**' | sort -u | grep -c . || true)
-          if [ "$changed" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
-
-      - name: Run Maintainer Agent
-        if: steps.gate.outputs.run == 'true'
-        uses: anthropics/claude-code-action@v1
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Follow .github/agents/maintainer.agent.md. FIRST run the Phase 2 git check; if no
-            change since last_maintained affects a documented area, report "no drift" and stop.
-            Otherwise run the pass, read only impacted .ai/ files, and open a PR (never push to main).
-          claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*)"
-            --model claude-sonnet-5
-            --max-turns 100
-```
-
-> For Confluence sync, add an Atlassian MCP server via `--mcp-config` (community
-> `sooperset/mcp-atlassian`, API-token auth) and add `mcp__atlassian` to `--allowedTools`.
-
-### Trigger Conditions
-
-| Event | Severity Filter | Action |
-|-------|----------------|--------|
-| PR merged to main | Critical only | Run immediately, create review PR |
-| Weekly schedule | All severities | Gated pass — skipped when no non-doc changes since `last_maintained` |
-| Manual dispatch | All severities | Full maintenance pass (bypasses cost gate) |
-| Post-incident | Runbooks focus | Update runbooks + operational-context |
-| Post-release | Deployment focus | Update operational-context + dependencies |
+Setup is not part of this agent's runtime job — the full workflow (permissions, cost-gate step, model choice, and the Atlassian-MCP-for-Confluence note) lives in `templates/workflows/maintainer.yml`. Copy it to `.github/workflows/maintainer.yml` to enable automation; a repo may already have its own.
 
 ---
 
