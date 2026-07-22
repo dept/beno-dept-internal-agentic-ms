@@ -155,7 +155,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | Maintainer agent (`.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md`) | **Keep** | Ongoing drift maintenance |
 | Support agent (`support-agent.agent.md` + `.claude/agents/support-agent.md`) | **Keep** | Day-to-day dev/support |
 | Wiring (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.github/instructions/`, `.cursor/rules/`) | **Keep** | IDEs auto-load `.ai/` |
-| Stack skills (`.github/skills/` + `.claude/skills/`, incl. `atlassian-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `atlassian-axi` |
+| Stack skills (`.github/skills/` + `.claude/skills/`, incl. `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
 | MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |

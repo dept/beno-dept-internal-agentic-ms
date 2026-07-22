@@ -105,8 +105,8 @@ ARTIFACTS=(
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
   "scripts/validate.sh|scripts/validate.sh"
   "config/standard-version.yml|config/standard-version.yml"
-  ".github/skills/atlassian-axi/SKILL.md|templates/skills/atlassian-axi/SKILL.md"
-  ".github/skills/atlassian-axi/references/setup.md|templates/skills/atlassian-axi/references/setup.md"
+  ".github/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
+  ".github/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
 )
 
 copy_local() {
@@ -164,6 +164,45 @@ for artifact in "${ARTIFACTS[@]}"; do
   install_one "$dest_rel" "$src_rel"
 done
 
+# Mirror agents to Claude Code (.claude/agents/) so they are registered as
+# invokable subagents at the NEXT Claude Code session start. Installing them here
+# — before the migration session runs — is what lets Phase 2 dispatch a real
+# Discovery subagent on the first run instead of falling back to the main thread.
+#
+# Claude Code subagent frontmatter is `name` + `description` only; the Copilot
+# `tools:` line is dropped (Claude Code subagents inherit all tools). We transform
+# the just-installed .github source (single source of truth) rather than shipping a
+# duplicate body that could drift.
+mirror_claude_agent() {
+  local github_rel="$1"   # e.g. .github/agents/discovery.agent.md
+  local claude_rel="$2"   # e.g. .claude/agents/discovery.md
+  local github_dest="${TARGET_DIR}/${github_rel}"
+  local claude_dest="${TARGET_DIR}/${claude_rel}"
+
+  [[ -f "$github_dest" ]] || return 0
+
+  if [[ -e "$claude_dest" && $UPDATE -ne 1 ]]; then
+    echo -e "  ${YELLOW}⊘${NC} ${claude_rel} — already exists, skipping"
+    SKIPPED=$((SKIPPED + 1))
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$claude_dest")"
+  # Strip the Copilot-only `tools:` frontmatter line; keep name + description body.
+  sed '/^tools:[[:space:]]*\[/d' "$github_dest" > "$claude_dest"
+
+  if [[ $UPDATE -eq 1 ]]; then
+    echo -e "  ${GREEN}↻${NC} ${claude_rel} (mirrored)"
+    UPDATED=$((UPDATED + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} ${claude_rel} (mirrored)"
+    CREATED=$((CREATED + 1))
+  fi
+}
+
+mirror_claude_agent ".github/agents/discovery.agent.md" ".claude/agents/discovery.md"
+mirror_claude_agent ".github/agents/maintainer.agent.md" ".claude/agents/maintainer.md"
+
 echo ""
 echo -e "${BLUE}── Verification ──${NC}"
 for required in \
@@ -175,9 +214,11 @@ for required in \
   ".claude/commands/ms-migration.md" \
   ".github/agents/discovery.agent.md" \
   ".github/agents/maintainer.agent.md" \
+  ".claude/agents/discovery.md" \
+  ".claude/agents/maintainer.md" \
   "scripts/graphify-bootstrap.sh" \
   "scripts/validate.sh" \
-  ".github/skills/atlassian-axi/SKILL.md"
+  ".github/skills/confluence-axi/SKILL.md"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
     echo -e "${RED}ERROR:${NC} missing required file after install: ${required}"

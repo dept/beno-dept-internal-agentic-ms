@@ -16,13 +16,13 @@ If no authoritative vendor-owned `gh skill search` result is found, the agent ge
 
 **Fixed DEPT skills** (used by every project regardless of stack) ARE stored here as templates and installed in **Phase 1**:
 
-- `atlassian-axi/` — drive Confluence Cloud (handover pages) from the terminal via the `atlassian-axi` npm CLI (`npx`, no bundled script). Every DEPT MS project publishes handover pages to Confluence, so this ships with every migration. Phase 1 copies it to `.github/skills/atlassian-axi/`.
+- `confluence-axi/` — drive Confluence Cloud (handover pages) from the terminal via the `confluence-axi` npm CLI (`npx`, no bundled script). Every DEPT MS project publishes handover pages to Confluence, so this ships with every migration. Phase 1 copies it to `.github/skills/confluence-axi/`.
 
 Datadog "key features" have **no skill** — they are fetched via the **Datadog MCP** (browser OAuth), configured in Phase 4.
 
 Only **stack-specific** skills are left to Phase 4 (vendor-fetched via `gh skill` or generated from `.ai/` evidence) and are NOT stored here — they live in the target project's `.github/skills/`.
 
-**Multi-client mirroring:** `.github/skills/` is Copilot-only — Claude Code, Continue, and Kilocode don't read it. Every skill installed to `.github/skills/` (Phase 1's `atlassian-axi` and Phase 4's stack-specific skills alike) is also copied verbatim to `.claude/skills/`. SKILL.md's frontmatter format is identical across clients, so this is a plain copy, not a rewrite. `.github/skills/` remains the single source of truth; re-copy on change, never hand-edit the mirror.
+**Multi-client mirroring:** `.github/skills/` is Copilot-only — Claude Code, Continue, and Kilocode don't read it. Every skill installed to `.github/skills/` (Phase 1's `confluence-axi` and Phase 4's stack-specific skills alike) is also copied verbatim to `.claude/skills/`. SKILL.md's frontmatter format is identical across clients, so this is a plain copy, not a rewrite. `.github/skills/` remains the single source of truth; re-copy on change, never hand-edit the mirror.
 
 ## Adding a new technology
 

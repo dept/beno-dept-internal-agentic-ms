@@ -84,16 +84,16 @@ Graphify only produces its richest graph when an LLM API key is present. Without
 
 ### 2. Confluence access (for Phase 3 handover pages)
 
-Phase 3 publishes handover pages. The **primary path is the `atlassian-axi` skill**, which drives the `atlassian-axi` npm CLI (`npx`) against the Confluence Cloud REST API. It needs an authed session (`atlassian-axi auth login`) or the `ATLASSIAN_SITE`/`ATLASSIAN_EMAIL`/`ATLASSIAN_API_TOKEN` env vars. Verify **before** reaching Phase 3:
+Phase 3 publishes handover pages. The **primary path is the `confluence-axi` skill**, which drives the `confluence-axi` npm CLI (`npx`) against the Confluence Cloud REST API. It needs an API-token login (`echo -n "$TOKEN" | confluence-axi auth login --token --site <site> --email <email>`, or the `ATLASSIAN_API_TOKEN` env var) or a browser-OAuth session (`confluence-axi auth login`, which needs your own registered 3LO app). Verify **before** reaching Phase 3:
 
 ```bash
-npx -y atlassian-axi confluence space list   # lists spaces if authed, errors otherwise
-# auth via `atlassian-axi auth login` (OAuth) or ATLASSIAN_* env vars (see the skill's references/setup.md)
+npx -y confluence-axi space list   # lists spaces if authed, errors otherwise
+# auth via API token (recommended) or browser OAuth — see the skill's references/setup.md
 ```
 
 - If it lists spaces (incl. `MS`) → Phase 3 can publish directly.
 - If it errors (not authed) → point the user at `references/setup.md` to log in or mint a token, or tell them Phase 3 will **stage drafts** to `.ai/confluence/` for later publishing.
-- **Note on the Atlassian MCP:** the remote Atlassian MCP is a valid alternative to `atlassian-axi`, but (a) it is only configured in **Phase 4**, so it is not available during Phase 3, and (b) an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads its MCP connections. For a single-run migration, prefer `atlassian-axi` for publishing. Do not block Phase 3 waiting on the MCP.
+- **Note on the Atlassian MCP:** the remote Atlassian MCP is a valid alternative to `confluence-axi`, but (a) it is only configured in **Phase 4**, so it is not available during Phase 3, and (b) an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads its MCP connections. For a single-run migration, prefer `confluence-axi` for publishing. Do not block Phase 3 waiting on the MCP.
 
 ### 3. Datadog access (for Phase 2 "key features")
 
@@ -223,8 +223,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `atlassian-axi` skill (stack-specific skills come in Phase 4). Mirrors agents/prompts/skill to Claude Code (`.claude/agents/`, `.claude/commands/`, `.claude/skills/`) so both Copilot and Claude Code auto-load them.
-**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist, `.github/skills/atlassian-axi/` exists (mirrored in `.claude/skills/`). Other (stack) skills are added in Phase 4.
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Mirrors agents/prompts/skill to Claude Code (`.claude/agents/`, `.claude/commands/`, `.claude/skills/`) so both Copilot and Claude Code auto-load them.
+**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist, `.github/skills/confluence-axi/` exists (mirrored in `.claude/skills/`). Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
@@ -240,7 +240,7 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 ### Phase 3: Integration
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/03-integrate.prompt.md`
 **Does:** Wires all four IDEs (Copilot, Claude, Codex, Cursor) to auto-load `.ai/`, creates Confluence documentation
-**Verify before continuing:** `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/ai-context.mdc` all reference `.ai/`; Confluence pages published via the `atlassian-axi` skill (or staged as `.ai/confluence/` drafts if access was unavailable — see Preflight)
+**Verify before continuing:** `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/ai-context.mdc` all reference `.ai/`; Confluence pages published via the `confluence-axi` skill (or staged as `.ai/confluence/` drafts if access was unavailable — see Preflight)
 
 ### Phase 4: Stack-Aware Tooling
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/04-stack-tooling.prompt.md`
@@ -257,7 +257,7 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - `.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md` — ongoing drift maintenance
 - `.github/agents/support-agent.agent.md` + `.claude/agents/support-agent.md`
 - Wiring: `.github/copilot-instructions.md`, `.github/instructions/`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/ai-context.mdc`
-- Stack skills under `.github/skills/` + `.claude/skills/` (incl. `atlassian-axi`, used by the Maintainer to re-sync Confluence)
+- Stack skills under `.github/skills/` + `.claude/skills/` (incl. `confluence-axi`, used by the Maintainer to re-sync Confluence)
 - Datadog MCP (in the MCP configs) — used to fetch/refresh key features via browser OAuth
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
@@ -340,7 +340,7 @@ Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
 |-------|-----------|
 | Phase fails partway through | Re-run that phase only — each is idempotent |
 | Network error fetching agents | Check GitHub access; try manual download |
-| Confluence access denied | `atlassian-axi confluence space list` failed — Phase 3 stages `.ai/confluence/` drafts; authenticate (`atlassian-axi auth login`) and publish later (do not delete drafts in Phase 5 until published) |
+| Confluence access denied | `confluence-axi space list` failed — Phase 3 stages `.ai/confluence/` drafts; authenticate (`confluence-axi auth login`) and publish later (do not delete drafts in Phase 5 until published) |
 | Datadog MCP not callable / no key features | Expected on a first run — MCP is callable only after IDE reload + browser OAuth. Phase 2 writes Key Features as `[To fill in]`; complete OAuth on the `datadog` MCP and let the Maintainer backfill. If the MCP is reachable but returns nothing: the `client:<name>` tag differs — check Datadog's Synthetics list |
 | Graphify produced no graph.json | Set an LLM key (`OPENAI_API_KEY` etc.) and rerun `scripts/graphify-bootstrap.sh .`; code-only fallback still needs the bootstrap's fixed `.graphifyignore` (bare `*.md`, not `**/*.md`) |
 | MCP tools not callable after Phase 4 | MCP config loads only on tool/IDE restart; expected — it's for the next session |
