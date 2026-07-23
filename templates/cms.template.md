@@ -9,6 +9,7 @@ Describe CMS architecture, content lifecycle, and operational dependencies.
 - Delivery and preview flow
 - Publishing and webhook behavior
 - Cache invalidation strategy
+- CMS admin/console link — cross-reference `onboarding.md` → Platform Access Links (single home for URLs); use `[Fill in]` there if the exact space/console URL is unconfirmed
 - If the repository has multiple brands, campaigns, or content surfaces, a short explanation of which CMS areas feed which package/app/feature
 
 ## Example Content

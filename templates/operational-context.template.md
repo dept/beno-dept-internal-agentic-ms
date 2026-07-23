@@ -9,6 +9,7 @@ Document runtime operations, observability, service levels, and support responsi
 - Alerting and on-call model
 - SLO/SLA indicators
 - Backup and recovery notes
+- Cloud / hosting platform console link (e.g. Azure Portal, AWS/GCP console, Vercel) — cross-reference `onboarding.md` → Platform Access Links (single home for URLs); use `[Fill in]` there if the exact portal/resource-group URL is unconfirmed
 - Operational notes for major packages / apps / features when support expectations differ across repository areas
 
 ## Example Content

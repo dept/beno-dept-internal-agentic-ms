@@ -10,6 +10,7 @@ Enable rapid and consistent onboarding for engineers and AI agents to project de
 - Deployment and release orientation
 - Support and escalation orientation
 - Quick orientation to the major apps / packages / features / campaigns a new developer will encounter
+- **Platform Access Links** — the single home for platform console URLs: GitHub, environment URLs (test/acceptance/prod), Keeper, plus a link for each detected CMS (e.g. Contentful space), cloud/hosting platform (e.g. Azure Portal, AWS/GCP console, Vercel), and design platform (Figma file/project, when Figma clues are present). Include a row only for platforms the project actually uses; use `[Fill in]` when a used platform's exact URL is unconfirmed. `cms.md` and `operational-context.md` point here rather than repeating URLs.
 
 ## Example Content
 - Setup: "Install Node LTS, authenticate Azure CLI, configure env vars from Key Vault"

@@ -75,14 +75,20 @@ Before generating new files, identify what already exists:
 
 ## Step 4: Collect Required Onboarding Links
 
-Gather these 5 links from repository evidence (config files, CI/CD, README, GitHub):
+Gather these 5 base links from repository evidence (config files, CI/CD, README, GitHub):
 - **GitHub URL** (repository location)
 - **Test environment URL** (where features are tested)
 - **Acceptance environment URL** (where client validates)
 - **Production environment URL** (live service)
 - **Keeper URL** (or equivalent secret-management reference)
 
-**Action:** Verify each link from codebase evidence. If any cannot be verified, prompt the user for the missing values.
+**Platform admin links (conditional — include only for platforms the repo actually uses):** when discovery detects a CMS or a cloud/hosting platform, add a dashboard/console link for each so newcomers can reach it. Detect from dependencies, SDK usage, config, and CI/CD; do **not** add a link for a platform the project does not use.
+- **CMS admin URL** — when a CMS is detected (e.g. Contentful → `https://app.contentful.com/spaces/<space>`, Sanity → `https://<project>.sanity.studio`, Storyblok, Strapi admin, etc.). One per CMS if several.
+- **Cloud / hosting platform URL** — when a cloud or hosting provider is detected (e.g. Azure Portal → `https://portal.azure.com`, ideally deep-linked to the resource group/subscription; AWS Console, GCP Console, Vercel, Netlify). One per provider if several.
+- **Figma URL** — when there are clues Figma is used: `figma.com/file/` or `figma.com/design/` links in README/docs/comments, `@figma/*` or `figma-*` dependencies, a Storybook Figma addon (`@storybook/addon-designs`), or design-token config exported from Figma. Link the project's Figma file/project.
+- Add any other first-class platform console the project clearly depends on (feature flags, payment dashboard, etc.) under the same rule.
+
+**Action:** Verify each link from codebase evidence. If a **base** link cannot be verified, prompt the user for it. For a **detected platform** link that cannot be verified from evidence, write the resolved section with a `[Fill in]` placeholder (same convention as the other unknowns) rather than dropping the platform or inventing a URL — the platform is real, only its exact console URL is unconfirmed. Do not emit `[Fill in]` slots for platforms the repo does not use.
 
 **Note:** Do NOT ask for Confluence URL. All pages are created under: `https://dept-nl.atlassian.net/wiki/spaces/MS/Projects`
 
@@ -122,7 +128,7 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 6. `operational-context.md` — deployment pipeline, environments, promotion flow, rollback strategy, monitoring
 7. `coding-standards.md` — conventions, quality gates, testing, branching, PR requirements
 8. `agent-registry.md` — existing agents, instructions, skills, MCP servers found in Step 3
-9. `onboarding.md` — GitHub, environment, and Keeper references collected in Step 4
+9. `onboarding.md` — GitHub, environment, and Keeper references collected in Step 4, plus a **Platform Access Links** section listing the detected CMS admin and cloud/hosting console URLs (or `[Fill in]` for a detected platform whose URL is unconfirmed). This is the single home for platform access links; `cms.md` and `operational-context.md` cross-reference it rather than restating URLs.
 
 **For each file:**
 - Extract evidence from code, config, CI/CD, and infrastructure files
