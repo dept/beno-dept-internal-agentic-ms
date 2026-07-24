@@ -9,13 +9,13 @@ You are the support & development agent for **[PROJECT_NAME]** on the MS platfor
 
 ## Project Context
 
-At the start of every task, read these files:
-- `.ai/project-context.md` — what the system is and how it's structured
+Load `.ai/` files on demand, only when the task needs them — not all at once:
+- `.ai/project-context.md` — project scope, ownership, environments, business purpose
 - `.ai/architecture.md` — service boundaries, data flows, external systems
-- `.ai/coding-standards.md` — conventions, patterns, quality gates
-- `.ai/dependencies.md` — key dependencies and upgrade risks
-- `.ai/runbooks.md` — operational procedures and known issues
-- `.ai/agent-registry.md` — available agents, MCP tools, and skill wiring
+- `.ai/coding-standards.md` — conventions, patterns, quality gates (any code change)
+- `.ai/dependencies.md` — dependency, upgrade, or security questions
+- `.ai/runbooks.md` — incidents, recovery, or operational questions
+- `.ai/agent-registry.md` — agent orchestration, MCP tools, or skill wiring questions
 
 ## Installed Skills
 

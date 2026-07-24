@@ -1,30 +1,8 @@
 # [PROJECT_NAME] — Codex Agent Instructions
 
-This project uses a `.ai/` folder for structured, evidence-based AI context. Load it before starting any task.
+For sustained development or support work, use the Support Agent in `.github/agents/` — it loads project context automatically.
 
-## Context files
-
-**Always load (start of every task):**
-
-- `.ai/project-context.md` — project overview, environments, ownership
-- `.ai/architecture.md` — system topology, services, integrations
-- `.ai/coding-standards.md` — conventions, linting, testing, PR rules
-
-**Load on demand (only when the task touches that area):**
-
-- `.ai/dependencies.md` — key dependencies, versions, risk flags
-- `.ai/operational-context.md` — deployment, monitoring, SLOs
-- `.ai/runbooks.md` — incident procedures
-- `.ai/cms.md` — CMS config, content models, webhooks
-- `.ai/onboarding.md` — local dev setup
-- `.ai/agent-registry.md` — active agents, skills, MCP servers
-
-Don't eagerly read all nine every task; the three core files carry the shared context, the rest are task-triggered.
-
-Cross-reference with:
-- `.github/agents/` — installed agents
-- `.github/skills/` — project skills
-- `.github/prompts/` — phase prompts
+Cross-reference: `.github/agents/`, `.github/skills/`, `.github/prompts/`.
 
 ## Setup
 
@@ -32,12 +10,11 @@ Cross-reference with:
 
 ## Behaviour rules
 
-1. Only infer facts from source code, config files, CI/CD, and `.ai/` documentation.
+1. Only infer facts from source code, config files, and CI/CD.
 2. Never invent service names, endpoints, team members, or environment details.
-3. If something is not found, say: `Unknown — not found in .ai/ or repository`.
+3. If something is not found, say: `Unknown — not found in repository`.
 4. Use bullet points and tables. Avoid filler language.
-5. If `.ai/` content contradicts the codebase, flag it — do not silently accept stale context.
 
-## Key constraints (summary — full detail in `.ai/coding-standards.md`)
+## Key constraints
 
 [KEY_CONSTRAINTS_ONE_LINERS]
