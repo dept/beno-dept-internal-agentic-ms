@@ -69,7 +69,7 @@ Coverage target — the four supported IDEs:
 - **Already present**: leave unchanged (report as already present)
 
 ### All wiring files must instruct AI to:
-1. Read `.ai/` files at session start
+1. Always load the three core files at session start (`project-context.md`, `architecture.md`, `coding-standards.md`); load the other six `.ai/` files on demand when the task touches that area. Never eagerly read all nine every session.
 2. Cross-reference `.ai/` with agents/instructions/skills found in Phase 2
 3. Respect constraints in existing agentic files
 4. Flag contradictions between `.ai/` and codebase (don't silently accept stale context)

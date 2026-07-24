@@ -4,17 +4,22 @@ This project uses a `.ai/` folder for structured, evidence-based AI context. Loa
 
 ## Context files
 
-Read these at the start of every task:
+**Always load (start of every task):**
 
 - `.ai/project-context.md` — project overview, environments, ownership
 - `.ai/architecture.md` — system topology, services, integrations
+- `.ai/coding-standards.md` — conventions, linting, testing, PR rules
+
+**Load on demand (only when the task touches that area):**
+
 - `.ai/dependencies.md` — key dependencies, versions, risk flags
 - `.ai/operational-context.md` — deployment, monitoring, SLOs
 - `.ai/runbooks.md` — incident procedures
-- `.ai/coding-standards.md` — conventions, linting, testing, PR rules
 - `.ai/cms.md` — CMS config, content models, webhooks
 - `.ai/onboarding.md` — local dev setup
 - `.ai/agent-registry.md` — active agents, skills, MCP servers
+
+Don't eagerly read all nine every task; the three core files carry the shared context, the rest are task-triggered.
 
 Cross-reference with:
 - `.github/agents/` — installed agents

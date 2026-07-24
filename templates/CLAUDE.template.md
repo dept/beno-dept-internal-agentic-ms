@@ -4,17 +4,22 @@ This project contains a `.ai/` folder with structured context. Read it before an
 
 ## Files to load
 
-Read these files at the start of every session:
+**Always load (start of every session):**
 
 - `.ai/project-context.md` — project overview, environments, ownership
 - `.ai/architecture.md` — system topology, services, integrations
+- `.ai/coding-standards.md` — conventions, linting, testing, PR rules
+
+**Load on demand (only when the task touches that area):**
+
 - `.ai/dependencies.md` — key dependencies, versions, risk flags
 - `.ai/operational-context.md` — deployment, monitoring, SLOs
 - `.ai/runbooks.md` — incident procedures
-- `.ai/coding-standards.md` — conventions, linting, testing, PR rules
 - `.ai/cms.md` — CMS config, content models, webhooks
 - `.ai/onboarding.md` — local dev setup
 - `.ai/agent-registry.md` — active agents and their scopes
+
+Don't eagerly read all nine every session; the three core files carry the shared context, the rest are task-triggered.
 
 ## Behaviour rules
 
