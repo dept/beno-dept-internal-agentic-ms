@@ -174,7 +174,7 @@ If any GitHub/environment/Keeper link cannot be verified, prompt the user for th
 After generating `.ai/`, create or update wiring files so every supported IDE (Copilot, Claude Code, Codex, Cursor) automatically reads the project context. `.ai/` is the single shared source; each file below is a thin pointer into it. **Check if each file exists first** — if it does, append; never overwrite.
 
 **`.github/copilot-instructions.md`** (Copilot)
-- Not present: create with full `.ai/` reading instructions and behaviour rules.
+- Not present: create with tiered `.ai/` reading instructions (three core files always, the other six on demand) and behaviour rules.
 - Already present: append a `## AI Project Context (.ai/)` section at the end.
 
 **`CLAUDE.md`** (Claude Code, repository root)
@@ -194,7 +194,7 @@ After generating `.ai/`, create or update wiring files so every supported IDE (C
 - Already present: leave unchanged — report as already present.
 
 In all wiring files, instruct the AI to:
-1. Read `.ai/` files at the start of every session
+1. Always load the three core files at session start (`project-context.md`, `architecture.md`, `coding-standards.md`); load the other six `.ai/` files on demand when the task touches that area. Never eagerly read all nine every session.
 2. Cross-reference `.ai/` content with any existing agents, instructions, and prompts found in step 0
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
