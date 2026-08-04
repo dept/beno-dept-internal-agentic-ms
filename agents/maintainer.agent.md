@@ -189,7 +189,7 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
 5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
 
-**Refresh key features.** The `## Key Features (Monitored)` section lives in `project-context.md` (syncs to the Overview page). If the **Datadog MCP** (`datadog` server, browser OAuth) is reachable, call its Synthetics tool for the `client:<name>` tag and update the section when the test set has changed (added/removed/renamed/status flip). If the MCP is not reachable/authed, leave the existing content untouched — never blank it.
+**Refresh key features.** The `## Key Features (Monitored)` section lives in `project-context.md` (syncs to the Overview page). If the **Datadog MCP** (`datadog` server, browser OAuth) is reachable, call its Synthetics tool for the `client:<name>` tag and update the section when the test set has changed (added/removed/renamed/status flip). Use the canonical table schema — **Public ID** (link → `https://app.datadoghq.<region>/synthetics/details/<public_id>`) · **Type** (Browser/API) · **Name** (exact test name) · **Description** (factual, from the config) — sorted Browser first, API second; do not invent columns or details. If the MCP is not reachable/authed, leave the existing content untouched — never blank it.
 
 ---
 
