@@ -174,13 +174,40 @@ Monitored via Datadog Synthetics — 5 browser tests + 2 API uptime tests.
 
 ### Content rules
 - Put a **Mermaid diagram** at the top of this page under `## Architecture overview`.
+- Publish it as a **rendering Mermaid macro**, not a fenced code block. See *Publishing the diagram as a macro* below. A code block shows the reader Mermaid source instead of a diagram.
 - The diagram must be a quick structural overview, not a screenshot, ASCII tree, or pseudo-diagram.
 - Prefer `flowchart LR` or `flowchart TD`.
 - Keep it high level: entrypoints, major internal apps/services/packages, and key external systems.
 - Include an inventory table for quick scanning.
 - Include a short summary for each major app/package/feature/campaign explaining what it is for.
 
+### Publishing the diagram as a macro
+
+The Mermaid source belongs inside a Mermaid macro so Confluence renders the diagram on the page. Storage format:
+
+```html
+<ac:structured-macro ac:name="mermaid">
+  <ac:parameter ac:name="diagramType">mermaid</ac:parameter>
+  <ac:parameter ac:name="size">xl</ac:parameter>
+  <ac:parameter ac:name="isEditable">true</ac:parameter>
+  <ac:parameter ac:name="theme">default</ac:parameter>
+  <ac:parameter ac:name="diagramCode">flowchart LR
+    User[User / Editor] --&gt; Frontend[Frontend App]
+    Frontend --&gt; API[Backend / API Layer]
+    API --&gt; DB[(Primary Database)]</ac:parameter>
+</ac:structured-macro>
+```
+
+- `diagramCode` is XML content: escape `>` as `&gt;` and `&` as `&amp;`. Use real newlines, not `\n`.
+- The source is a verbatim copy of the `mermaid` block in `.ai/architecture.md`, which remains the single source of truth. State that under the diagram, and tell the reader to change the repository file and re-sync instead of editing the diagram in place.
+- Verify after publishing with `npx -y confluence-axi page get <id> --format storage --full`. If the body comes back with a code block instead of the macro, the diagram is not rendering.
+- When updating a page that already has the macro, do not pass `--allow-macro-loss`.
+- If the site has no Mermaid macro app installed, keep the code block and record the gap as an open handover item.
+
 ### Example Mermaid pattern
+
+The source that goes into `diagramCode` (shown here as a fenced block for readability only):
+
 ```mermaid
 flowchart LR
     User[User / Editor] --> Frontend[Frontend App]
@@ -381,6 +408,7 @@ Bad customization examples:
 - skipping the architecture overview diagram
 - using only package lists without plain-language summaries
 - using screenshots instead of an editable Mermaid overview
+- publishing the Mermaid source as a fenced code block instead of a rendering Mermaid macro
 
 ## Enforcement guidance for agents
 When an agent creates Confluence documentation, it should:

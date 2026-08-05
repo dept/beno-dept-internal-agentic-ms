@@ -15,6 +15,7 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 
 ## Diagram Guidance
 - Use Mermaid, not ASCII art or pasted screenshots
+- When this diagram is published to Confluence it goes in a rendering Mermaid macro, never a fenced code block; see `docs/confluence-page-standard.md` → *Publishing the diagram as a macro*. This file stays the source of truth and the macro carries a verbatim copy of the `mermaid` block
 - Keep it high level: main entrypoints, major internal services/packages, and key external systems
 - Optimize for quick orientation by a new engineer or client manager
 - Prefer one simple overview diagram before any detailed package notes

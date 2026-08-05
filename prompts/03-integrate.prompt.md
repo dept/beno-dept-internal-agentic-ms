@@ -132,6 +132,26 @@ After wiring is complete, create handover documentation in Confluence.
    - a short summary paragraph or bullet for each major package/feature/campaign explaining purpose, ownership/context, and notable dependencies or integrations when known
    - a **Mermaid diagram** at the top of the page that gives a quick structural overview of how the project works
 9. The Mermaid diagram must be a concise architecture overview, not an ASCII tree or screenshot-style code block. Prefer a simple `flowchart LR` or `flowchart TD` showing the main runtime path, major internal components, and key external systems/services.
+   **Publish it as a rendering Mermaid macro, never as a fenced code block.** A code block leaves readers looking at Mermaid source instead of a diagram, and it is the single most common defect on existing pages. The storage-format shape is:
+
+   ```html
+   <ac:structured-macro ac:name="mermaid">
+     <ac:parameter ac:name="diagramType">mermaid</ac:parameter>
+     <ac:parameter ac:name="size">xl</ac:parameter>
+     <ac:parameter ac:name="isEditable">true</ac:parameter>
+     <ac:parameter ac:name="theme">default</ac:parameter>
+     <ac:parameter ac:name="diagramCode">flowchart LR
+       Browser --&gt; WebApp
+       WebApp --&gt; DB[(Database)]</ac:parameter>
+   </ac:structured-macro>
+   ```
+
+   Rules for it:
+   - `diagramCode` carries the Mermaid source verbatim. It is XML content, so `>` inside arrows must be escaped as `&gt;` and `&` as `&amp;`. Newlines are literal newlines, not `\n`.
+   - The source must be a verbatim copy of the `mermaid` block in `.ai/architecture.md`, which stays the single source of truth. Add one sentence under the diagram saying so, and telling the reader to change the repository file and re-sync rather than editing the diagram in Confluence.
+   - After publishing, re-read the page with `npx -y confluence-axi page get <id> --format storage --full` and confirm the macro is still there. A page that comes back with a `<pre>` or code block instead means the macro was rejected and the diagram is not rendering.
+   - When **updating** a page that already carries this macro, never pass `--allow-macro-loss`. That flag exists to permit dropping an embedded macro, which is exactly the regression to avoid here.
+   - If the Mermaid macro app turns out not to be installed on the target site, the macro will not render. In that case keep the fenced code block, and record the missing app as an open handover item rather than silently shipping an unrendered diagram.
 10. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
 11. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
 12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page.

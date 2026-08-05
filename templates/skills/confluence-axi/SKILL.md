@@ -45,6 +45,21 @@ Flags come **after** the command.
 ## Notes
 
 - **Body is storage format**, not Markdown. Markdown passed literally is stored as-is (not converted). Convert Markdown → storage before `create`/`update`. Mermaid goes in the diagram macro, tables as `<table>`.
+- **Mermaid diagram macro** — never publish Mermaid as a fenced code block or `<pre>`; readers get source instead of a diagram. Use:
+
+  ```html
+  <ac:structured-macro ac:name="mermaid">
+    <ac:parameter ac:name="diagramType">mermaid</ac:parameter>
+    <ac:parameter ac:name="size">xl</ac:parameter>
+    <ac:parameter ac:name="isEditable">true</ac:parameter>
+    <ac:parameter ac:name="theme">default</ac:parameter>
+    <ac:parameter ac:name="diagramCode">flowchart LR
+      Browser --&gt; WebApp
+      WebApp --&gt; DB[(Database)]</ac:parameter>
+  </ac:structured-macro>
+  ```
+
+  `diagramCode` is XML content: escape `>` as `&gt;` and `&` as `&amp;`, and use real newlines. Verify after publishing with `page get <id> --format storage --full`; a code block coming back means the macro was rejected and nothing renders.
 - **Output is TOON-encoded** (token-efficient) — there is no plain-text or JSON mode.
 - **DEPT handover sync:** page ids + full titles live in `.ai/.meta.yml` `confluence:`. Resolve by walking `landing.id`'s children (rule 1), act by id, write resolved ids back.
 
