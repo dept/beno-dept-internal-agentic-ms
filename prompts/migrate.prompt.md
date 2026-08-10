@@ -84,16 +84,22 @@ Graphify only produces its richest graph when an LLM API key is present. Without
 
 ### 2. Confluence access (for Phase 3 handover pages)
 
-Phase 3 publishes handover pages. The **primary path is the `confluence-axi` skill**, which drives the `confluence-axi` npm CLI (`npx`) against the Confluence Cloud REST API. It needs an API-token login (`echo -n "$TOKEN" | confluence-axi auth login --token --site <site> --email <email>`, or the `ATLASSIAN_API_TOKEN` env var) or a browser-OAuth session (`confluence-axi auth login`, which needs your own registered 3LO app). Verify **before** reaching Phase 3:
+Phase 3 publishes handover pages. The **primary path is the `confluence-axi` skill**, which drives the `confluence-axi` npm CLI (`npx`) against the Confluence Cloud REST API.
+
+**The user logs in; the agent never does.** The preferred login is **browser OAuth** (`npx -y confluence-axi auth login`), run by the user in their own terminal before the migration starts. It needs a registered Atlassian 3LO app once — see the skill's `references/setup.md`. An API token is the fallback for CI and headless runs. The agent never mints, types, echoes, or stores a token.
+
+Verify **before** reaching Phase 3:
 
 ```bash
 npx -y confluence-axi space list   # lists spaces if authed, errors otherwise
-# auth via API token (recommended) or browser OAuth — see the skill's references/setup.md
 ```
 
 - If it lists spaces (incl. `MS`) → Phase 3 can publish directly.
-- If it errors (not authed) → point the user at `references/setup.md` to log in or mint a token, or tell them Phase 3 will **stage drafts** to `.ai/confluence/` for later publishing.
-- **Note on the Atlassian MCP:** the remote Atlassian MCP is a valid alternative to `confluence-axi`, but (a) it is only configured in **Phase 4**, so it is not available during Phase 3, and (b) an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads its MCP connections. For a single-run migration, prefer `confluence-axi` for publishing. Do not block Phase 3 waiting on the MCP.
+- If it errors (not authed) → ask the user to run `confluence-axi auth login` (see `references/setup.md`). If they cannot log in now:
+  - **Atlassian MCP reachable** (already configured and reloaded, e.g. a re-run) → proceed on the MCP alone, and warn once: *"`confluence-axi` is not authenticated, so Confluence work is going through the Atlassian MCP. That reads whole page bodies rather than compact output, so expect noticeably higher token use."*
+  - **Neither available** (the normal first run, where the MCP only arrives in Phase 4) → Phase 3 **stages drafts** to `.ai/confluence/` for later publishing. Non-blocking.
+
+**Hybrid rule — `confluence-axi` first, Atlassian MCP only when it genuinely cannot do the job.** The CLI is the default for *every* Confluence operation: searching, resolving pages, reading a body, creating, updating, and verifying afterwards. Reads dominate the token cost of a migration and the CLI returns compact, truncatable output, so routing reads through the MCP is pure waste. Reach for the remote Atlassian MCP only when the CLI cannot complete the operation — in practice a page-body write the CLI refuses because a full-body replace would drop an embedded macro that cannot be reconstructed in storage format. When that happens: use the MCP for that one write, then **verify with `npx -y confluence-axi page get <id> --format storage --full`** and record in the phase notes which page went through the MCP and why. The other sanctioned MCP-only mode is the unauthenticated fallback above, which is allowed but must carry the token warning. Two MCP limits stand throughout: it is only configured in **Phase 4**, so it is unavailable during a first run's Phase 3, and an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads. Never block Phase 3 waiting on the MCP.
 
 ### 3. Datadog access (for Phase 2 "key features")
 

@@ -15,7 +15,25 @@ Drive Confluence Cloud from the terminal with the **`confluence-axi`** npm CLI, 
 npx -y confluence-axi space list   # lists spaces if auth is good, errors otherwise
 ```
 
-Errors → **stop** and walk the user through [references/setup.md](references/setup.md). Auth is either `confluence-axi auth login` (browser OAuth — needs your own registered 3LO app) or the API-token path (agents/CI). Never mint or type the token yourself — it is the user's secret.
+Errors → **ask the user to log in.** The preferred path is browser OAuth (`npx -y confluence-axi auth login`), which the user runs in their own terminal; it needs their own registered 3LO app, set up once per [references/setup.md](references/setup.md). The API-token path is the fallback for CI and headless runs. Never mint, type, echo, or store the token yourself — it is the user's secret.
+
+**If the user cannot or will not log in right now and the remote Atlassian MCP *is* reachable, proceed on the MCP alone** rather than blocking the run — but say so up front, once, in these terms:
+
+> ⚠️ `confluence-axi` is not authenticated, so all Confluence work is going through the Atlassian MCP. That reads whole page bodies instead of compact truncated output, so this run will use noticeably more tokens. Logging in with `confluence-axi auth login` avoids it.
+
+Say it once at the point you fall back, not per page. This fallback covers a missing login only; everything below about *which* tool to prefer still applies whenever the CLI is authenticated.
+
+## Hybrid rule: this CLI first, Atlassian MCP only when it cannot do the job
+
+Use `confluence-axi` for **every** Confluence operation by default — search, page resolution, reads, create, update, and post-write verification. Reads are the bulk of the token cost on a handover run and this CLI returns compact output that truncates unless you pass `--full`, so sending reads through the remote Atlassian MCP burns tokens for nothing.
+
+Reach for the MCP only when this CLI genuinely cannot complete the operation. In practice that is one case: a page-body update the CLI refuses because a full-body replace would drop an embedded macro you cannot faithfully reconstruct in storage format. When it happens:
+
+1. Do that single write through the MCP.
+2. Verify with `npx -y confluence-axi page get <id> --format storage --full`.
+3. Note which page went through the MCP and why, so the exception stays visible.
+
+The one other time the MCP takes over is the unauthenticated fallback in Preflight above — allowed, but announced with the token warning, never silent.
 
 ## Two rules that prevent every common failure
 
