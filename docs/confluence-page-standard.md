@@ -34,6 +34,8 @@ pages up by that full title when creating or syncing.
 - Add project-specific sections only **after** the standard sections unless the extra content must be interleaved for clarity.
 - Do not create extra sibling pages such as `Coding Standards`, `Dependencies`, or `Runbooks` unless explicitly requested.
 - Use clear mixed-audience language: understandable for both engineers and client managers.
+- **Confluence is the human surface; `.ai/` is the agent surface. Never send a human reader into `.ai/`.** These pages must stand on their own: a reader gets the answer on the page, not a pointer to a repository file written for AI tools. Do not write instructions like "read `.ai/project-context.md`, then `.ai/architecture.md`", and do not describe `.ai/` files as onboarding reading, background reading, or the fastest route into the codebase. If content only exists in `.ai/`, copy the substance onto the page in human wording instead of linking to the file.
+  Two narrow exceptions, both of which describe the repository rather than instruct the reader: the landing page's *AI tooling status* section may state that `.ai/` exists and what it contains, and a sync note under a synced artifact (such as the architecture diagram) may name the `.ai/` file that owns the source, so an engineer editing it knows where to change it. Neither is an instruction to go read `.ai/` to understand the project.
 - If `doc/` or `docs/` exists in the repository, use it as a primary wording source, then verify important claims against code and config.
 - Sanitize titles before creating Confluence pages: decode HTML entities and prefer readable words over raw symbols.
 
@@ -309,6 +311,7 @@ Short explanation of the available environments and what they are used for.
 
 ### Content rules
 - Optimize for a new engineer joining the project.
+- Write the onboarding path in human terms: what to install, what access to request, what to run, what to read *on Confluence*. Never route the new engineer through `.ai/` — those files are written for AI tools, and "read `.ai/project-context.md` first" is not an onboarding step for a person. Put the orientation itself on this page and link to the Overview and Architecture pages for depth.
 - Include setup prerequisites, local run/test commands, and known pitfalls.
 - Include support paths and escalation guidance.
 - Do **not** repeat a Key Contacts table here — contacts live on the main `[Project Name]` landing page. Link to it instead if readers need it.
@@ -409,6 +412,7 @@ Bad customization examples:
 - using only package lists without plain-language summaries
 - using screenshots instead of an editable Mermaid overview
 - publishing the Mermaid source as a fenced code block instead of a rendering Mermaid macro
+- pointing human readers at `.ai/` files, e.g. "read the context files in order: `.ai/project-context.md`, then `.ai/architecture.md`" as an onboarding step. Those files are the agent surface; put the substance on the page instead
 
 ## Enforcement guidance for agents
 When an agent creates Confluence documentation, it should:
@@ -418,7 +422,8 @@ When an agent creates Confluence documentation, it should:
 4. add project-specific sections only when needed
 5. explain any structural deviation explicitly in its final report
 6. place Key facts, AI tooling status, and Key contacts **only on the main `[Project Name]` landing page** — never repeat them on Overview, Architecture, or Onboarding subpages
-7. title pages per the **Page titles (collision-safe)** rule above: landing = project name (no affix), every subpage prefixed with the landing title (`<landing title> - <subpage>`); write the full titles into `.ai/.meta.yml` and resolve pages by them
+7. write for the human reader and keep `.ai/` out of the pages, per the Confluence-is-human rule in **Standardization rules** above; the landing page's AI tooling status entry and the diagram sync note are the only permitted mentions
+8. title pages per the **Page titles (collision-safe)** rule above: landing = project name (no affix), every subpage prefixed with the landing title (`<landing title> - <subpage>`); write the full titles into `.ai/.meta.yml` and resolve pages by them
 
 ## Recommended implementation pattern in prompts and skills
 To reduce drift, prompts and skills should say:
