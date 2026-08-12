@@ -26,6 +26,35 @@ Trigger this agent:
 4. **Show your work** — every change has a cited source
 5. **Confidence scoring** — re-assess and update confidence percentages
 6. **A missing target is a critical gap, not a skipped step** (see below)
+7. **Present state only**: `.ai/` says what is true today, never what changed (see below)
+
+## No change narration in `.ai/`
+
+`.ai/` files are agent-read context describing the codebase **as it is today**. You edit them every
+week, unattended, and you are the most likely source of drift here, so this rule is absolute:
+nothing you write into a `.ai/` file may narrate change. No commit references, no dates of previous
+versions, no explanation of what moved where or why. Every one of these is wrong inside `.ai/`:
+
+- "inherited unchanged from the 2026-07-14 version of this file"
+- "this section was rewritten on 2026-07-31"
+- "commit X deleted this file, it is now restored"
+- "three sections previously carried here have moved to `architecture.md`"
+
+You will feel the pull toward these lines, because your job is diff-driven and Phase 6 makes you
+describe changes. **That description belongs in the PR summary, not in the file.** The file gets the
+new fact stated plainly, as if it had always been true; the summary table gets what changed, why,
+and the evidence. A human reads history in git and in the PR. An agent loading `.ai/` mid-task needs
+the current truth, and narration goes stale the moment the next change lands.
+
+**Evidence and confidence notes are the one exception, in one direction only.** They may cite the
+source files a claim was derived from and the date that evidence was gathered, because that is a
+fact about the evidence, not about a previous version of the file:
+`Confidence: 90% (source: services/orders/package.json, verified 2026-08-12)`. A note that names an
+earlier version of the file, a commit, or a prior repository state is change narration however it is
+phrased, including when it is dressed up as provenance.
+
+This also applies when you act on *Missing target files* below and when a human later restores a
+file: the report of a deletion goes in the Phase 6 summary, never as a line inside `.ai/`.
 
 ## Missing target files
 
@@ -146,6 +175,11 @@ accumulate and rot the files. The audit trail lives in git blame (who/when) and 
 summary (what/why/source). For each update: edit the content directly, and record the date +
 evidence source in the Phase 6 PR summary table instead of in the file.
 
+The same reason bans the prose version, not just the comment stamps: no sentence inside a `.ai/`
+file may say what changed, when, or what moved where. Write the new fact as current truth and put
+the change in the summary. See *No change narration in `.ai/`* above for the full rule and the
+evidence-note exception.
+
 ### 4c: Confidence Re-scoring
 
 After updates, re-assess confidence for affected sections:
@@ -259,6 +293,7 @@ Setup is not part of this agent's runtime job — the full workflow (permissions
 Before completing, verify:
 - [ ] All critical-severity findings resolved or escalated
 - [ ] Every missing `.ai/` file or `sync_map` source reported as a critical gap: none silently skipped, none recreated unprompted
+- [ ] No change narration written into any `.ai/` file: no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" prose. The change belongs in the Phase 6 summary; an evidence date on a confidence note is the one allowed date
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
 - [ ] Human-maintained sections untouched

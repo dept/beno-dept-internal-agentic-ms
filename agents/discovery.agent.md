@@ -160,6 +160,33 @@ Each file must include:
 - `Confidence: <0-100>%` per major section
 - `Validation Questions` section for unresolved gaps
 
+#### Writing discipline: present state only, never change narration
+
+`.ai/` files are agent-read context. They state what is true about the codebase **today** and
+nothing else. Never write what changed, when it changed, or what moved where: no commit references,
+no dates of previous versions, no notes about a prior state of the repository or of the file. Every
+one of these is wrong inside `.ai/`:
+
+- "inherited unchanged from the 2026-07-14 version of this file"
+- "this section was rewritten on 2026-07-31"
+- "commit X deleted this file, it is now restored"
+- "three sections previously carried here have moved to `architecture.md`"
+
+The change history lives in git and in the PR that carried the change, which is where a human reads
+it. An agent loading a `.ai/` file mid-task needs the current truth; narration of how the file got
+this way is noise it has to read past, and it goes stale the moment the next change lands.
+
+**Evidence and confidence notes are the one exception, in one direction only.** They may cite the
+source files a claim was derived from and the date that evidence was gathered, because that is a
+fact about the evidence, not about a previous version of the file:
+`Confidence: 85% (source: turbo.json, pnpm-workspace.yaml, verified 2026-08-12)`. A note that names
+an earlier version of the file, a commit, or a prior repository state is change narration however it
+is phrased, including when it is dressed up as provenance.
+
+This applies to every `.ai/` file, and to the boundary pointers between `project-context.md` and
+`architecture.md` in particular: point at the other file because that is where the fact lives, never
+because it used to live here.
+
 ### Handover and Access Links
 
 Collect and validate these onboarding links from repository evidence:
@@ -525,6 +552,7 @@ Before finalising, verify:
 9. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
 10. Every skill mirrored to `.claude/skills/` (copy or symlink); `.claude/agents/support-agent.md` created mirroring the Copilot support agent's body.
 11. `architecture.md` carries the repository tree, the technology stack table, the high-fan-in symbol table, and the placement conventions; `project-context.md` restates none of them.
+12. No `.ai/` file narrates change: no commit references, no dates of previous versions, no "moved to", "was rewritten", or "restored" notes. An evidence date on a confidence note is the one allowed date.
 
 ## Completion Summary
 

@@ -23,6 +23,27 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 `project-context.md` is the business file: what the system is for, key features, ownership.
 Never restate the repository tree or the technology stack table there; point at this file instead.
 
+## Writing rules
+
+**Describe the codebase as it is today. Never narrate change.** This file is agent-read context, not
+a changelog. Do not write what changed, when it changed, or what moved where: no commit references,
+no dates of previous versions, no notes about a prior state of the repository or of this file. These
+lines are all wrong here:
+
+- "inherited unchanged from the 2026-07-14 version of this file"
+- "this section was rewritten on 2026-07-31"
+- "commit X deleted this file, it is now restored"
+- "three sections previously carried here have moved to `project-context.md`"
+
+The change history lives in git and in the PR that made the change, which is where a human reads it.
+An agent reading this file mid-task needs the current truth and nothing else.
+
+Evidence and confidence notes are the one exception, in one direction only: cite the source files a
+claim was derived from and the date that evidence was gathered, because that is a fact about the
+evidence. `Confidence: 85% (source: turbo.json, pnpm-workspace.yaml, verified 2026-08-12)` is
+correct. A note that names an earlier version of this file, a commit, or a prior repository state is
+not, however it is phrased.
+
 ## High-fan-in symbols (who owns what)
 
 The shared functions, hooks, and helpers that the rest of the codebase depends on. An agent reads
@@ -73,6 +94,7 @@ same place a team member would have put it.
 - Does every row of the high-fan-in table name a symbol and path that exist, with the source of its consumer count stated?
 - Does the placement table cover the kinds of change this project actually receives, with a real example file per row?
 - Does `project-context.md` avoid restating the repository tree and the technology stack table?
+- Is the file free of change narration: no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes? (An evidence date on a confidence note is fine.)
 - If Graphify highlighted service boundaries, dependency clusters, or hotspots, were those findings verified against repository evidence before being documented?
 
 ## Missing Information

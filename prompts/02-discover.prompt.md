@@ -25,6 +25,7 @@ agent: "Discovery Agent"
 - No hallucination: mark unknowns explicitly with `Assumption:` tags
 - All claims traceable to source files
 - Rate `Confidence: <0-100>%` per major section
+- Present state only: `.ai/` says what is true today. No change narration, no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes. A confidence note may cite its source files and the date the evidence was gathered, nothing about a prior version (full rule in `agents/discovery.agent.md` → *Writing discipline*)
 
 **Exclude from analysis:** `node_modules/`, `.next/`, `dist/`, `build/`, `.turbo/`, `.git/`, `coverage/`, `.cache/`, `.pnpm-store/`
 

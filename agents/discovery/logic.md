@@ -107,6 +107,7 @@ Generate all 9 required files + .meta.yml:
 - Rate confidence per section: `Confidence: <0-100>%`
 - Add `Validation Questions` for gaps
 - No empty sections — explicit unknowns instead
+- Present state only: no change narration, no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes. An evidence or confidence note may cite its source files and the date the evidence was gathered, nothing about a prior version (rule and examples in `agents/discovery.agent.md` → *Writing discipline*)
 
 ### Step 9: AI Context Wiring + Confluence
 
