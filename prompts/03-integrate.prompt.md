@@ -126,6 +126,8 @@ After wiring is complete, create handover documentation in Confluence.
    - `## AI tooling status` — list context files, agents, skills, code graph, MCP servers, instructions; add a warning panel if not yet confirmed
    - `## Key contacts` table (last section) — columns `Role`, `Name`, `Contact (email)`; add a warning panel asking the team to verify before sharing
 6. Make content readable for mixed roles (developer + client manager).
+6b. **Confluence is written for humans; `.ai/` is written for AI tools. Never tell a Confluence reader to go read `.ai/`.** Every page must stand on its own — the answer goes on the page, not behind a pointer to a repository file. Do not write onboarding or orientation instructions such as "read the context files in order: `.ai/project-context.md`, then `.ai/architecture.md`", and do not describe `.ai/` as background reading or the fastest route into the codebase. Where the substance only exists in `.ai/`, restate it on the page in human wording.
+   Two narrow exceptions, both describing the repository rather than instructing the reader: the landing page's `## AI tooling status` section may state that `.ai/` exists and what it holds, and a sync note under a synced artifact (the architecture diagram) may name the `.ai/` file that owns the source so an engineer knows where to change it.
 7. In `Overview`, include what the system does and the main business capabilities. When the project has multiple packages, features, brands, or campaigns, add a short plain-language summary for each major area so a new developer can quickly understand what each one is for. Also include a `## Key Features (Monitored)` section copied from `.ai/project-context.md` → *Key Features* (the Datadog Synthetic tests fetched in Phase 2 Step 4b). Use the canonical schema — **Public ID** (link → `https://app.datadoghq.<region>/synthetics/details/<public_id>`) · **Type** (Browser/API) · **Name** (exact test name) · **Description** (factual, from the config) — sorted Browser first, API second, with a one-line note on the split (e.g. "5 browser tests + 2 API uptime tests"). Keep it in sync with `.ai/project-context.md`; do not invent columns or details. If Datadog access was unavailable at migration time, keep the section with a `[To fill in]` note — do not omit it.
 8. In `Architecture & Package Map`, document each major app/package/feature/campaign and what it is responsible for. For monorepos or multi-brand/campaign projects, include all of the following:
    - an inventory table for quick scanning
@@ -161,7 +163,7 @@ After wiring is complete, create handover documentation in Confluence.
    - If no Mermaid app is installed on the target site, keep the plain code block and record "request the Atlassian Labs Mermaid Diagrams Viewer app" as an open handover item rather than silently shipping an unrendered diagram.
 10. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
 11. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
-12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page.
+12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page. Write the reading path for a person: point at the Overview and Architecture pages for orientation, never at `.ai/` files (see rule 6b).
 13. Include all 5 links collected in Phase 2 Step 4.
 14. Do NOT create a separate coding standards page unless explicitly requested.
 15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's **full prefixed** `title`, its real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves it by the full title and backfills it on first run.
@@ -175,6 +177,7 @@ Before proceeding to Phase 4, confirm:
 - [ ] `.github/instructions/ai-context.instructions.md` exists (Copilot path-scoped)
 - [ ] `.cursor/rules/ai-context.mdc` exists (Cursor native, `alwaysApply: true`)
 - [ ] Confluence pages created (or report why not)
+- [ ] No Confluence page instructs a human reader to read `.ai/` files (rule 6b; the landing page's AI tooling status entry and the diagram sync note are the only allowed mentions)
 - [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`
 
 ## Completion Signal
