@@ -62,22 +62,27 @@ Flags come **after** the command.
 
 ## Notes
 
-- **Body is storage format**, not Markdown. Markdown passed literally is stored as-is (not converted). Convert Markdown → storage before `create`/`update`. Mermaid goes in the diagram macro, tables as `<table>`.
-- **Mermaid diagram macro** — never publish Mermaid as a fenced code block or `<pre>`; readers get source instead of a diagram. Use:
+- **Body is storage format**, not Markdown. Markdown passed literally is stored as-is (not converted). Convert Markdown → storage before `create`/`update`. Tables go in as `<table>`. Mermaid needs ADF, see below.
+- **Mermaid diagrams**: publish them with the Atlassian Labs **Mermaid Diagrams Viewer** app, which renders a code block on the page at view time and so works for API-written pages. Never use the "Mermaid Chart for Confluence" macro (`ac:name="mermaid"`): it caches a pre-rendered SVG in its config, which an API write cannot produce, so the diagram stays blank until a human re-saves it in the editor. Write the page with `--format adf` and emit a collapsed expand holding the source, immediately followed by the viewer macro:
 
-  ```html
-  <ac:structured-macro ac:name="mermaid">
-    <ac:parameter ac:name="diagramType">mermaid</ac:parameter>
-    <ac:parameter ac:name="size">xl</ac:parameter>
-    <ac:parameter ac:name="isEditable">true</ac:parameter>
-    <ac:parameter ac:name="theme">default</ac:parameter>
-    <ac:parameter ac:name="diagramCode">flowchart LR
-      Browser --&gt; WebApp
-      WebApp --&gt; DB[(Database)]</ac:parameter>
-  </ac:structured-macro>
+  ```json
+  {"type":"expand","attrs":{"title":"Diagram source"},"content":[
+    {"type":"codeBlock","attrs":{"language":"ruby"},
+     "content":[{"type":"text","text":"flowchart LR\n    Browser --> WebApp\n    WebApp --> DB[(Database)]"}]}]}
+  {"type":"extension","attrs":{
+    "layout":"default",
+    "extensionType":"com.atlassian.ecosystem",
+    "extensionKey":"23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
+    "text":"Mermaid diagram",
+    "parameters":{
+      "layout":"extension",
+      "guestParams":{"index":0},
+      "forgeEnvironment":"PRODUCTION",
+      "extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
+      "extensionTitle":"Mermaid diagram"}}}
   ```
 
-  `diagramCode` is XML content: escape `>` as `&gt;` and `&` as `&amp;`, and use real newlines. Verify after publishing with `page get <id> --format storage --full`; a code block coming back means the macro was rejected and nothing renders.
+  `guestParams` must be `{"index": N}`, with `N` the 0-based position of the source among **all** code blocks on the page, counted recursively so blocks inside expands count too. `""` ("Auto detect") gives *Error while loading diagram* on API-written pages. The code block `language` is cosmetic; do not tag it `mermaid`. The ids above are specific to the dept-nl install: if the app is reinstalled or another site is targeted, read a live page's ADF and copy the current ones. Verify with `page get <id> --format adf --full` and check for the expand plus extension pair; the rendered diagram itself takes 10 to 20 seconds to appear.
 - **Output is TOON-encoded** (token-efficient) — there is no plain-text or JSON mode.
 - **DEPT handover sync:** page ids + full titles live in `.ai/.meta.yml` `confluence:`. Resolve by walking `landing.id`'s children (rule 1), act by id, write resolved ids back.
 

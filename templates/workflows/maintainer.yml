@@ -1,46 +1,120 @@
 name: Maintainer Agent
+
 on:
   schedule:
-    - cron: '0 9 * * 1'   # Every Monday 09:00 UTC (schedule always runs on default branch)
-  workflow_dispatch: {}   # Manual run — bypasses the cost gate
+    # Every 2 weeks: 1st and 15th at 09:00 UTC. GitHub cron has no "every other week"
+    # expression, so day-of-month is the cheap approximation.
+    # ponytail: day-of-month, not week parity. Good enough; swap for a parity gate if
+    # you truly need a fixed weekday cadence.
+    - cron: "0 9 1,15 * *"
+  workflow_dispatch: {} # Manual run from the Actions tab (bypasses the cost gate)
 
 permissions:
-  contents: write         # commit .ai/ updates to a branch
-  pull-requests: write    # open the maintenance PR
-  id-token: write         # required by claude-code-action for OIDC auth
+  contents: write # commit .ai/ updates to a branch
+  pull-requests: write # open the maintenance PR
+  id-token: write # required by claude-code-action to fetch an OIDC token
+
+concurrency:
+  group: maintainer-agent
+  cancel-in-progress: false
 
 jobs:
   maintain:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0   # full history for git log drift analysis
+          fetch-depth: 0 # full history for `git log` drift analysis
 
-      - name: Check for drift since last maintenance   # cost gate
+      # Cost gate: skip the (expensive) agent run when nothing changed since the last
+      # maintenance. Most runs have no relevant drift, so this keeps cost ~$0.
+      # Manual dispatch always runs. First run (no last_maintained yet) always runs.
+      - name: Check for drift since last maintenance
         id: gate
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+            echo "Manual dispatch — running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           last=$(grep -oE 'last_maintained:[[:space:]]*"[^"]*"' .ai/.meta.yml | head -1 | sed -E 's/.*"(.*)"/\1/')
-          if [ -z "$last" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ -z "$last" ]; then
+            echo "No last_maintained — first run, running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
           changed=$(git log --since="$last" --name-only --pretty=format: -- . ':(exclude).ai/**' | sort -u | grep -c . || true)
+          echo "Non-doc files changed since $last: $changed"
           if [ "$changed" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+
+      # Optional — only needed when this repo syncs .ai/ to Confluence.
+      # Build the Atlassian MCP config at runtime. The token is NEVER written to disk:
+      # the config only lists the docker command + `-e VAR` passthrough flags, and docker
+      # reads the actual values from the agent step's env below. This keeps the token out
+      # of any file a prompt-injected agent could read.
+      # Uses the community sooperset/mcp-atlassian server (API-token auth = non-interactive, works in CI).
+      # ponytail: pinned to :latest; pin a digest if you need reproducible runs.
+      - name: Build Atlassian MCP config
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          jq -n \
+            '{mcpServers:{atlassian:{command:"docker",args:["run","-i","--rm","-e","CONFLUENCE_URL","-e","CONFLUENCE_USERNAME","-e","CONFLUENCE_API_TOKEN","ghcr.io/sooperset/mcp-atlassian:latest"]}}}' \
+            > /tmp/mcp-atlassian.json
+          jq empty /tmp/mcp-atlassian.json
 
       - name: Run Maintainer Agent
         if: steps.gate.outputs.run == 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@37b464ce72700f7b2c5ff8d2db7fa7b15df792f5 # v1.0.169
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Forwarded into the MCP docker container via the `-e` flags above.
+          CONFLUENCE_URL: https://dept-nl.atlassian.net/wiki
+          CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+          CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Follow .github/agents/maintainer.agent.md. FIRST run the Phase 2 git check; if no
-            change since last_maintained affects a documented area, report "no drift" and stop.
-            Otherwise run the pass, read only impacted .ai/ files, and open a PR (never push to main).
+            Follow the instructions in .github/agents/maintainer.agent.md exactly. Run a biweekly maintenance pass.
+
+            EARLY EXIT (do this first, it saves cost): run the Phase 2 git-history check.
+            If no changes since `last_maintained` actually affect a documented area in .ai/,
+            do NOT read every file, do NOT touch Confluence, do NOT open a PR. Just report
+            "no drift" and stop. Only continue the full pass when real drift exists.
+
+            Scope and rules (these mirror the agent doc — do not override them):
+            - Detect drift using `git diff` since `last_maintained` — read diffs, not full files.
+              Open a full source file only when the diff can't tell you how docs must change.
+            - Read only the .ai/ files impacted by the changed areas — not all of them.
+            - Apply surgical, evidence-cited updates only. NEVER delete existing content unless it references
+              something that was removed from the repo (i.e. it is provably no longer used).
+            - Respect <!-- human-maintained --> sections — leave them untouched.
+            - Confluence sync (space MS, base https://dept-nl.atlassian.net/wiki/spaces/MS/Projects):
+              UPDATE existing pages in place. Never remove a page unless its underlying subject no longer exists
+              in the repo. Add a "Last synced from .ai/" timestamp. Push critical/moderate updates only, skip minor.
+
+            NO-OP RULE (hard requirement): a maintenance PR must carry real documentation content.
+            After applying updates, run `git status --porcelain -- .ai/` and inspect the diff:
+            - If the ONLY changed file is `.ai/.meta.yml`, or the whole diff is limited to bookkeeping
+              fields (`last_maintained`, `last_maintained_by`, `last_checked`, resolved Confluence page
+              `id`s, version stamps), then `git checkout -- .ai/` (or `git restore`), do NOT commit,
+              do NOT push a branch, and do NOT open a PR. Report "no content drift" and exit 0.
+            - Only when at least one non-`.meta.yml` `.ai/` file has a content change do you update
+              `.meta.yml` and open the PR. The timestamp rides along with real changes; it never
+              justifies a PR on its own.
+
+            Commit all .ai/ changes to a NEW branch and open a PR. Do NOT push to main.
+            Commit message + PR title must follow this repo's commit convention (commitlint may be
+            enforced). If the repo requires an issue key, use its no-op placeholder. Example title:
+            "chore(docs): biweekly .ai/ maintenance".
           claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*)"
+            --mcp-config /tmp/mcp-atlassian.json
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian"
             --model claude-sonnet-5
             --max-turns 100
+
+      # Persist the agent's execution log so it's downloadable from the run page.
+      # `if: always()` = upload even when the agent step fails/hits max-turns.
+      - name: Upload agent execution log
+        if: always() && steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-output
+          path: ${{ runner.temp }}/claude-execution-output.json
+          if-no-files-found: warn

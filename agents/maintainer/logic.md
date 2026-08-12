@@ -94,9 +94,15 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 
 ### Phase 8: Metadata Update
 
-Update `.ai/.meta.yml`:
+Update `.ai/.meta.yml` — **only when Phase 4/5 changed real documentation content**:
 - `last_maintained`: current timestamp
 - `last_maintained_by`: agent identifier
+
+**No-op rule:** if `git status --porcelain -- .ai/` shows only `.meta.yml`, or the diff is limited to
+bookkeeping fields (`last_maintained`, `last_maintained_by`, `last_checked`, resolved Confluence page
+`id`s, version stamps), revert the working tree (`git checkout -- .ai/`), commit nothing, open no PR,
+and report "no content drift". A timestamp is never a reason for a PR. Likewise, skip a Confluence
+page whose only delta would be the "Last synced" line.
 
 ## Conflict Resolution Rules
 
@@ -120,5 +126,6 @@ Update `.ai/.meta.yml`:
 - [ ] No secrets in any `.ai/` file
 - [ ] Confidence scores updated
 - [ ] Human-maintained sections untouched
-- [ ] `.meta.yml` updated
+- [ ] `.meta.yml` updated (only alongside real content changes)
+- [ ] No PR opened for a bookkeeping-only diff
 - [ ] Change summary generated

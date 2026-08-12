@@ -176,39 +176,52 @@ Monitored via Datadog Synthetics — 5 browser tests + 2 API uptime tests.
 
 ### Content rules
 - Put a **Mermaid diagram** at the top of this page under `## Architecture overview`.
-- Publish it as a **rendering Mermaid macro**, not a fenced code block. See *Publishing the diagram as a macro* below. A code block shows the reader Mermaid source instead of a diagram.
+- Publish it with the **Mermaid Diagrams Viewer** app: a collapsed expand holding the source code block, immediately followed by the viewer macro. See *Publishing the diagram* below. The code block is the source the viewer reads, so it must stay on the page.
 - The diagram must be a quick structural overview, not a screenshot, ASCII tree, or pseudo-diagram.
 - Prefer `flowchart LR` or `flowchart TD`.
 - Keep it high level: entrypoints, major internal apps/services/packages, and key external systems.
 - Include an inventory table for quick scanning.
 - Include a short summary for each major app/package/feature/campaign explaining what it is for.
 
-### Publishing the diagram as a macro
+### Publishing the diagram
 
-The Mermaid source belongs inside a Mermaid macro so Confluence renders the diagram on the page. Storage format:
+Use the Atlassian Labs **Mermaid Diagrams Viewer** Forge app (marketplace app `1232887`, app key `com.atlassian.confluence.plugins.mermaid-diagrams-viewer`). It reads a code block from the page at view time and renders the diagram client-side, so a page written purely through the API renders correctly and keeps rendering after later edits.
 
-```html
-<ac:structured-macro ac:name="mermaid">
-  <ac:parameter ac:name="diagramType">mermaid</ac:parameter>
-  <ac:parameter ac:name="size">xl</ac:parameter>
-  <ac:parameter ac:name="isEditable">true</ac:parameter>
-  <ac:parameter ac:name="theme">default</ac:parameter>
-  <ac:parameter ac:name="diagramCode">flowchart LR
-    User[User / Editor] --&gt; Frontend[Frontend App]
-    Frontend --&gt; API[Backend / API Layer]
-    API --&gt; DB[(Primary Database)]</ac:parameter>
-</ac:structured-macro>
+Do **not** use the "Mermaid Chart for Confluence" macro or the Stratus Add-ons equivalent. Those apps cache a pre-rendered SVG inside the macro configuration. An API write cannot produce that cache, so the diagram stays blank until a human opens the editor and re-saves the macro.
+
+The page shape is a collapsed expand holding the source, immediately followed by the viewer macro. Write it in ADF:
+
+```json
+{"type":"expand","attrs":{"title":"Diagram source"},"content":[
+  {"type":"codeBlock","attrs":{"language":"ruby"},
+   "content":[{"type":"text","text":"flowchart LR\n    User[User / Editor] --> Frontend[Frontend App]\n    Frontend --> API[Backend / API Layer]\n    API --> DB[(Primary Database)]"}]}]}
+{"type":"extension","attrs":{
+  "layout":"default",
+  "extensionType":"com.atlassian.ecosystem",
+  "extensionKey":"23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
+  "text":"Mermaid diagram",
+  "parameters":{
+    "layout":"extension",
+    "guestParams":{"index":0},
+    "forgeEnvironment":"PRODUCTION",
+    "extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
+    "extensionTitle":"Mermaid diagram"}}}
 ```
 
-- `diagramCode` is XML content: escape `>` as `&gt;` and `&` as `&amp;`. Use real newlines, not `\n`.
+Rules:
+
+- **`guestParams` must be `{"index": N}`.** `N` is the 0-based position of this diagram's source among **all** code blocks on the page, counted recursively so blocks nested inside expands count too. A page with two diagrams uses index `0` and index `1`. Leaving it `""` (the editor's "Auto detect") produces *Error while loading diagram* on any API-written page. This is the single detail most likely to break a generated page.
+- The viewer finds code blocks inside a **collapsed** expand, so readers see the diagram with the source tucked behind a `Diagram source` toggle. Keep it that way.
+- The code block `language` is cosmetic for this app. Do not tag it `mermaid`.
 - The source is a verbatim copy of the `mermaid` block in `.ai/architecture.md`, which remains the single source of truth. State that under the diagram, and tell the reader to change the repository file and re-sync instead of editing the diagram in place.
-- Verify after publishing with `npx -y confluence-axi page get <id> --format storage --full`. If the body comes back with a code block instead of the macro, the diagram is not rendering.
-- When updating a page that already has the macro, do not pass `--allow-macro-loss`.
-- If the site has no Mermaid macro app installed, keep the code block and record the gap as an open handover item.
+- The app id and environment id above are **specific to the dept-nl site install**. If the app is reinstalled, or another Confluence site is targeted, read a live page's ADF back and copy the current `extensionKey` and `extensionId` from it.
+- The diagram appears 10 to 20 seconds after page load. Wait that long before calling a page broken.
+- Verify by reading the page ADF back (`npx -y confluence-axi page get <id> --format adf --full`) and confirming the expand plus extension pair with the right `index`, rather than only eyeballing the rendered page.
+- If the site has no Mermaid app installed, keep the code block on its own and record "request the Atlassian Labs Mermaid Diagrams Viewer app" as an open handover item.
 
 ### Example Mermaid pattern
 
-The source that goes into `diagramCode` (shown here as a fenced block for readability only):
+The source that goes into the code block (shown here as a fenced block for readability only):
 
 ```mermaid
 flowchart LR
