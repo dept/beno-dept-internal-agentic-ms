@@ -2,20 +2,23 @@
 
 This project contains a `.ai/` folder with structured context for AI assistants. Read it before answering questions about this codebase.
 
-## What to read first
+## What this project is
 
-Always load at the start of every session:
+[PROJECT_SUMMARY]
 
-| File | Contains |
-|------|----------|
-| `.ai/project-context.md` | Project overview, environments, team ownership |
-| `.ai/architecture.md` | System topology, service boundaries, integrations |
-| `.ai/coding-standards.md` | Conventions, linting, testing, PR policy |
+<!-- Two or three sentences from .ai/project-context.md: what the system is, who it
+serves, and the constraints that apply to every task. This summary is the only .ai/
+content restated here. Keep it short, and keep it a summary, never a copy. -->
 
-Load additionally only when the task requires it:
+## What to read, and when
+
+Do not load `.ai/` files up front. Read one when the task touches its area:
 
 | File | Load when |
 |------|-----------|
+| `.ai/project-context.md` | Project scope, business capabilities, key features, team ownership, environments |
+| `.ai/architecture.md` | Structure questions: repository layout, technology stack, service boundaries, which shared helpers to reuse, where new code goes |
+| `.ai/coding-standards.md` | Any code change: conventions, linting, testing, PR policy |
 | `.ai/dependencies.md` | Dependency, upgrade, or security questions |
 | `.ai/operational-context.md` | Deployment, monitoring, or SLO questions |
 | `.ai/runbooks.md` | Incidents, recovery, or on-call questions |

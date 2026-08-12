@@ -11,7 +11,7 @@ You are the support & development agent for **[PROJECT_NAME]** on the MS platfor
 
 Load `.ai/` files on demand, only when the task needs them — not all at once:
 - `.ai/project-context.md` — project scope, ownership, environments, business purpose
-- `.ai/architecture.md` — service boundaries, data flows, external systems
+- `.ai/architecture.md` — repository layout, technology stack, service boundaries, shared helpers to reuse, where new code goes
 - `.ai/coding-standards.md` — conventions, patterns, quality gates (any code change)
 - `.ai/dependencies.md` — dependency, upgrade, or security questions
 - `.ai/runbooks.md` — incidents, recovery, or operational questions
@@ -70,7 +70,7 @@ The following MCP servers are wired and available for this project:
 ## Tech Stack
 
 [TECH_STACK_DETAILS]
-<!-- Generated from .ai/project-context.md during bootstrap
+<!-- Generated from .ai/architecture.md during bootstrap
 Examples:
 - Frontend: Next.js 15 + React 19 (Server Components)
 - API: Node.js + Express

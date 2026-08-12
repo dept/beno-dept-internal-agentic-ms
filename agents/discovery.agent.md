@@ -38,7 +38,7 @@ Your job is to generate a complete, review-ready `.ai` folder for any repository
 - Look for `pnpm-workspace.yaml`, `turbo.json`, `nx.json`, `lerna.json`, or `workspaces` field in root `package.json`
 - List all workspace packages/apps before beginning per-package analysis
 - Treat each package as a named service boundary with its own entry in `architecture.md`
-- Record the monorepo tool (Turborepo, Nx, Lerna, etc.) and task runner (pnpm, bun, yarn) in `project-context.md`
+- Record the monorepo tool (Turborepo, Nx, Lerna, etc.) and task runner (pnpm, bun, yarn) in `architecture.md`'s technology stack table, alongside the repository tree. `project-context.md` carries the business view and points here for structure; the two files must never restate each other.
 
 ## Approach
 
@@ -115,6 +115,10 @@ Document all findings in `agent-registry.md` under a dedicated **Existing Agenti
 - Extract runtime topology from source and infrastructure definitions.
 - Identify external systems and trust boundaries.
 - Document data flows and integration points.
+- Record the repository tree and the technology stack table. `architecture.md` is their only home.
+- Identify the **high-fan-in symbols**: the shared functions, hooks, and helpers the rest of the codebase depends on. Capture the file path, the consumer count (from `graphify-out/graph.json` when Graphify ran, otherwise `grep -rc`; say which), and a one-line role. This is what stops an agent reimplementing a helper that already exists.
+- Derive the **placement conventions**: for each kind of change this project actually receives, where the new file goes and which existing file to follow as the pattern. Confirm every path with `ls`/glob.
+- Both tables are required sections of `architecture.md` (see `templates/architecture.template.md`).
 
 ### 3) Dependency Discovery
 - Parse dependency manifests.
@@ -156,6 +160,33 @@ Each file must include:
 - `Confidence: <0-100>%` per major section
 - `Validation Questions` section for unresolved gaps
 
+#### Writing discipline: present state only, never change narration
+
+`.ai/` files are agent-read context. They state what is true about the codebase **today** and
+nothing else. Never write what changed, when it changed, or what moved where: no commit references,
+no dates of previous versions, no notes about a prior state of the repository or of the file. Every
+one of these is wrong inside `.ai/`:
+
+- "inherited unchanged from the 2026-07-14 version of this file"
+- "this section was rewritten on 2026-07-31"
+- "commit X deleted this file, it is now restored"
+- "three sections previously carried here have moved to `architecture.md`"
+
+The change history lives in git and in the PR that carried the change, which is where a human reads
+it. An agent loading a `.ai/` file mid-task needs the current truth; narration of how the file got
+this way is noise it has to read past, and it goes stale the moment the next change lands.
+
+**Evidence and confidence notes are the one exception, in one direction only.** They may cite the
+source files a claim was derived from and the date that evidence was gathered, because that is a
+fact about the evidence, not about a previous version of the file:
+`Confidence: 85% (source: turbo.json, pnpm-workspace.yaml, verified 2026-08-12)`. A note that names
+an earlier version of the file, a commit, or a prior repository state is change narration however it
+is phrased, including when it is dressed up as provenance.
+
+This applies to every `.ai/` file, and to the boundary pointers between `project-context.md` and
+`architecture.md` in particular: point at the other file because that is where the fact lives, never
+because it used to live here.
+
 ### Handover and Access Links
 
 Collect and validate these onboarding links from repository evidence:
@@ -174,7 +205,7 @@ If any GitHub/environment/Keeper link cannot be verified, prompt the user for th
 After generating `.ai/`, create or update wiring files so every supported IDE (Copilot, Claude Code, Codex, Cursor) automatically reads the project context. `.ai/` is the single shared source; each file below is a thin pointer into it. **Check if each file exists first** — if it does, append; never overwrite.
 
 **`.github/copilot-instructions.md`** (Copilot)
-- Not present: create with tiered `.ai/` reading instructions (three core files always, the other six on demand) and behaviour rules.
+- Not present: create with a short project summary, an on-demand `.ai/` routing table (which file to read for which kind of task), and behaviour rules.
 - Already present: append a `## AI Project Context (.ai/)` section at the end.
 
 **`CLAUDE.md`** (Claude Code, repository root)
@@ -194,7 +225,7 @@ After generating `.ai/`, create or update wiring files so every supported IDE (C
 - Already present: leave unchanged — report as already present.
 
 In all wiring files, instruct the AI to:
-1. Always load the three core files at session start (`project-context.md`, `architecture.md`, `coding-standards.md`); load the other six `.ai/` files on demand when the task touches that area. Never eagerly read all nine every session.
+1. Load `.ai/` files **on demand**, never at session start. The wiring file carries a two-to-three sentence summary of what the system is plus the always-on constraints, and a routing table saying which file to read for which kind of task. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
 2. Cross-reference `.ai/` content with any existing agents, instructions, and prompts found in step 0
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
@@ -235,7 +266,7 @@ The goal is to install skills and MCP servers for **every technology found in th
 Read `package.json` (all workspaces if monorepo) and config files at repository root. Extract:
 - All `dependencies`, `devDependencies`, and `peerDependencies` package names
 - Presence of config files (e.g. `next.config.*`, `turbo.json`, `wrangler.toml`, `Dockerfile`)
-- Technology names already written into `.ai/project-context.md`
+- Technology names already written into `.ai/architecture.md` (technology stack table)
 
 Use `config/stack-detection.yml` from this standards repository as detection hints — it maps package names to human-readable technology names. If a package is not listed there, derive the technology name from the package itself (e.g. `@prisma/client` → `prisma`, `@shopify/shopify-api` → `shopify`).
 
@@ -283,7 +314,7 @@ description: "Use when working with <technology> in [PROJECT_NAME]: [scenarios v
 # <Technology Display Name>
 
 ## Project Context
-Read `.ai/project-context.md` for how <technology> is used in this project.
+Read `.ai/architecture.md` for how <technology> fits this project.
 
 ## Key Files
 - [paths confirmed with `ls`/glob]
@@ -297,7 +328,22 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 2. There must be a `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
 3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary.
 4. **Self-check before finishing each skill:** re-grep every symbol and re-`ls` every path you wrote. A skill that references anything you could not locate fails the phase — fix or remove it.
-5. **Mirror to Claude Code:** copy the finished skill directory verbatim to `.claude/skills/<technology-name>/`. `.github/skills/` is Copilot-only — Claude Code reads `.claude/skills/` and won't see anything left only in `.github/`. SKILL.md's frontmatter format is identical across both, so this is a plain copy, not a rewrite. `.github/skills/` stays the source of truth; re-copy the mirror whenever the source changes.
+5. **Mirror to Claude Code:** put the finished skill at `.claude/skills/<technology-name>/` as well. `.github/skills/` is Copilot-only: Claude Code reads `.claude/skills/` and will not see anything left only in `.github/`. SKILL.md's frontmatter format is identical across both, so no rewrite is involved. `.github/skills/` stays the source of truth.
+
+   **A copy and a symlink are both acceptable.** A symlink (`ln -s ../../.github/skills/<name> .claude/skills/<name>`) cannot drift, so it needs no re-copy when the source changes. A copy is the safer default for a team with Windows checkouts: git without symlink support materialises a link as a plain text file holding the target path, which turns the mirrored skill into a one-line file naming a path. Pick one per project and stay consistent; if you copy, re-copy the mirror whenever the source changes. `scripts/validate.sh` counts both (it uses `find -L`).
+
+#### Step B3: the `codebase-overview` skill
+
+Alongside the technology skills, emit `.github/skills/codebase-overview/SKILL.md` from
+`templates/skills/codebase-overview/SKILL.md`, substituting `[PROJECT_NAME]`. Mirror it to
+`.claude/skills/codebase-overview/` like the rest.
+
+It is deliberately thin. The `description` frontmatter is what makes an agent discover it before
+exploring the tree, so that line does the work; the body stays a routing table into `.ai/` and
+carries no structural facts of its own. Do not paste the repository tree, the stack table, or the
+diagram into it. `.ai/architecture.md` is the single source of truth, and a second copy would
+drift, land on the wrong Confluence page, and leave harnesses with no skill loader (Codex, Cursor)
+without the content. Adding sections here is the failure mode to avoid, not an improvement.
 
 #### Step C — Find and add MCP servers
 
@@ -453,8 +499,8 @@ tools: [read, edit, search, execute, web, agent, github/*, [ADDITIONAL_MCP_TOOLS
 
 You are the support agent for **[PROJECT_NAME]**.
 
-## Before Each Task
-Read `.ai/project-context.md`, `.ai/architecture.md`, and `.ai/coding-standards.md`.
+## Project Context
+Load `.ai/` files on demand, only when the task needs them, not all at once. `.ai/architecture.md` for structure (layout, stack, shared helpers, where new code goes), `.ai/coding-standards.md` before any code change, `.ai/project-context.md` for scope and ownership, the rest when the task touches their area.
 
 ## Available Skills
 [list each installed skill, e.g.: - `/nextjs` — Next.js App Router patterns for this project]
@@ -484,7 +530,7 @@ tools: [read, edit, search, execute, web, agent, github/*, contentful/*, vercel/
 ---
 ```
 
-**Mirror to Claude Code:** create `.claude/agents/support-agent.md` with the same body (Before Each Task, Available Skills, Available MCP Integrations, Behaviour Rules) but Claude Code frontmatter — `name`/`description` only, no `tools:` line. Claude Code subagents inherit all available tools (files, search, bash, every configured MCP server) by default, so omitting `tools:` already covers everything the Copilot `tools:` list enumerates explicitly. Keep `name:` identical to the source (`"Support Agent"`) — VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/` and lists the agent twice, so matching names makes the two picker rows read as one agent. This duplication is expected (both folders serve different clients) and can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
+**Mirror to Claude Code:** create `.claude/agents/support-agent.md` with the same body (Project Context, Available Skills, Available MCP Integrations, Behaviour Rules) but Claude Code frontmatter — `name`/`description` only, no `tools:` line. Claude Code subagents inherit all available tools (files, search, bash, every configured MCP server) by default, so omitting `tools:` already covers everything the Copilot `tools:` list enumerates explicitly. Keep `name:` identical to the source (`"Support Agent"`) — VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/` and lists the agent twice, so matching names makes the two picker rows read as one agent. This duplication is expected (both folders serve different clients) and can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
 
 ## Output Format
 
@@ -502,8 +548,11 @@ Before finalising, verify:
 5. All wiring files created/updated for the four IDEs — `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.github/instructions/ai-context.instructions.md`, `.cursor/rules/ai-context.mdc`.
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
-8. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
-9. Every skill mirrored to `.claude/skills/`; `.claude/agents/support-agent.md` created mirroring the Copilot support agent's body.
+8. `codebase-overview` skill emitted with `[PROJECT_NAME]` substituted, and still thin: a routing table into `.ai/`, with no repository tree, stack table, or diagram pasted into it.
+9. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
+10. Every skill mirrored to `.claude/skills/` (copy or symlink); `.claude/agents/support-agent.md` created mirroring the Copilot support agent's body.
+11. `architecture.md` carries the repository tree, the technology stack table, the high-fan-in symbol table, and the placement conventions; `project-context.md` restates none of them.
+12. No `.ai/` file narrates change: no commit references, no dates of previous versions, no "moved to", "was rewritten", or "restored" notes. An evidence date on a confidence note is the one allowed date.
 
 ## Completion Summary
 
@@ -518,8 +567,8 @@ Output after all files are written:
 [list each file with action: created / appended / already present]
 
 ### Skills installed
-[list each .github/skills/<name>/SKILL.md created, or "None matched"]
-[note: each mirrored to .claude/skills/<name>/]
+[list each .github/skills/<name>/SKILL.md created, including codebase-overview, or "None matched"]
+[note: each mirrored to .claude/skills/<name>/, say whether by copy or symlink]
 
 ### MCP servers added
 [list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]

@@ -25,6 +25,7 @@ agent: "Discovery Agent"
 - No hallucination: mark unknowns explicitly with `Assumption:` tags
 - All claims traceable to source files
 - Rate `Confidence: <0-100>%` per major section
+- Present state only: `.ai/` says what is true today. No change narration, no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes. A confidence note may cite its source files and the date the evidence was gathered, nothing about a prior version (full rule in `agents/discovery.agent.md` → *Writing discipline*)
 
 **Exclude from analysis:** `node_modules/`, `.next/`, `dist/`, `build/`, `.turbo/`, `.git/`, `coverage/`, `.cache/`, `.pnpm-store/`
 
@@ -120,8 +121,10 @@ Feed any fetched tests into `project-context.md` in Step 5 (see file 1 below).
 Generate all 9 context files and write to `.ai/` directory in repository root.
 
 **Files to create:**
-1. `project-context.md` — what the system is, key services, monorepo structure, tech stack, and a `## Key Features (Monitored)` section built from the Step 4b Datadog fetch. Use the Step 4b table schema — **Public ID** (link) · **Type** (Browser/API) · **Name** · **Description** — sorted Browser first, API second, with a one-line note on the split (e.g. "5 browser + 2 API uptime"). This is the single home for key features — it syncs to the Confluence Overview page via `sync_map`. Monitoring *tooling* (that Datadog is the monitor) still belongs in `operational-context.md`; cross-reference, don't duplicate.
-2. `architecture.md` — service boundaries, runtime topology, data flows, external systems
+1. `project-context.md` — what the system is, business capabilities, ownership, environments, one plain-language line per major area, and a `## Key Features (Monitored)` section built from the Step 4b Datadog fetch. Structure stays out of this file: the repository tree and the technology stack table live in `architecture.md`, referenced from here by pointer. Use the Step 4b table schema — **Public ID** (link) · **Type** (Browser/API) · **Name** · **Description** — sorted Browser first, API second, with a one-line note on the split (e.g. "5 browser + 2 API uptime"). This is the single home for key features — it syncs to the Confluence Overview page via `sync_map`. Monitoring *tooling* (that Datadog is the monitor) still belongs in `operational-context.md`; cross-reference, don't duplicate.
+2. `architecture.md` — the structural file, and the only home for the repository tree and the technology stack table. Also service boundaries, runtime topology, data flows, external systems, plus two required tables an agent uses to act rather than just describe (see `templates/architecture.template.md`):
+   - **High-fan-in symbols (who owns what):** the shared functions/hooks everything depends on, with file path, consumer count, and a one-line role. Take counts from `graphify-out/graph.json` when Graphify ran, else `grep -rc`, and say which.
+   - **Placement conventions:** where each kind of new code goes, with a real existing file per row to follow as the pattern.
 3. `runbooks.md` — operational procedures, incident response, common issues and fixes
 4. `dependencies.md` — critical vendors, lock-in risks, upgrade paths
 5. `cms.md` — CMS SDKs, content models, webhooks, caching, publishing flow
@@ -141,7 +144,8 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 **Single source of truth (avoid cross-file duplication):**
 Each fact/constraint has exactly ONE home file; other files cross-reference it instead of restating it. This prevents drift and the duplication reviewers flag.
 - Commit conventions, linting, testing, TypeScript/import rules → **only** `coding-standards.md`
-- Tech stack + monorepo layout, and Key Features (monitored Synthetic flows) → **only** `project-context.md`
+- Tech stack table, repository/monorepo layout, high-fan-in symbols, placement conventions → **only** `architecture.md`
+- Business purpose, ownership, environments, and Key Features (monitored Synthetic flows) → **only** `project-context.md`
 - Deploy pipeline, environments, env-var handling → **only** `operational-context.md`
 - CMS/content model/webhooks/ISR → **only** `cms.md`
 

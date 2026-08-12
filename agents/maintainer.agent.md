@@ -25,6 +25,56 @@ Trigger this agent:
 3. **Respect human edits** — sections marked `<!-- human-maintained -->` are untouchable
 4. **Show your work** — every change has a cited source
 5. **Confidence scoring** — re-assess and update confidence percentages
+6. **A missing target is a critical gap, not a skipped step** (see below)
+7. **Present state only**: `.ai/` says what is true today, never what changed (see below)
+
+## No change narration in `.ai/`
+
+`.ai/` files are agent-read context describing the codebase **as it is today**. You edit them every
+week, unattended, and you are the most likely source of drift here, so this rule is absolute:
+nothing you write into a `.ai/` file may narrate change. No commit references, no dates of previous
+versions, no explanation of what moved where or why. Every one of these is wrong inside `.ai/`:
+
+- "inherited unchanged from the 2026-07-14 version of this file"
+- "this section was rewritten on 2026-07-31"
+- "commit X deleted this file, it is now restored"
+- "three sections previously carried here have moved to `architecture.md`"
+
+You will feel the pull toward these lines, because your job is diff-driven and Phase 6 makes you
+describe changes. **That description belongs in the PR summary, not in the file.** The file gets the
+new fact stated plainly, as if it had always been true; the summary table gets what changed, why,
+and the evidence. A human reads history in git and in the PR. An agent loading `.ai/` mid-task needs
+the current truth, and narration goes stale the moment the next change lands.
+
+**Evidence and confidence notes are the one exception, in one direction only.** They may cite the
+source files a claim was derived from and the date that evidence was gathered, because that is a
+fact about the evidence, not about a previous version of the file:
+`Confidence: 90% (source: services/orders/package.json, verified 2026-08-12)`. A note that names an
+earlier version of the file, a commit, or a prior repository state is change narration however it is
+phrased, including when it is dressed up as provenance.
+
+This also applies when you act on *Missing target files* below and when a human later restores a
+file: the report of a deletion goes in the Phase 6 summary, never as a line inside `.ai/`.
+
+## Missing target files
+
+You will be routed to a file that does not exist: a `.ai/` file named by
+`config/change-impact-matrix.yml`, or a `sync_map` source in `.ai/.meta.yml`. Someone deleted or
+moved it. This is the rule for that case, and it has no exceptions:
+
+**Report it as a critical gap and stop working on that route.** Name the missing path, the trigger
+that routed you to it, and the update you were about to make. It goes in the Phase 6 summary under
+**Needs Human Review** at critical severity, and it fails the "all critical-severity findings
+resolved or escalated" quality gate until a human answers.
+
+- **Never silently skip it.** A missing `architecture.md` turns every package into a Phase 5 gap.
+  Dropping those findings because the file is absent reports a clean run on a broken project, which
+  is worse than reporting nothing.
+- **Never recreate it unprompted.** A deleted `.ai/` file is a deliberate act until a human says
+  otherwise. Regenerating it from evidence silently reverts their change and lands the revert in an
+  unattended maintenance PR. Recreate only when a human asks in this run.
+- Applies equally to a `sync_map` source: an unresolvable source means that Confluence page has no
+  source of truth. Report it, leave the page untouched, and do not re-point the mapping yourself.
 
 ---
 
@@ -72,6 +122,8 @@ For each changed file, consult `config/change-impact-matrix.yml` to determine:
 - Which `.ai/` files are impacted
 - Severity level (critical / moderate / minor)
 - Recommended action
+
+If an impacted file does not exist on disk, follow *Missing target files* above: report, do not skip, do not recreate.
 
 ### 2c: Priority Ranking
 
@@ -123,6 +175,11 @@ accumulate and rot the files. The audit trail lives in git blame (who/when) and 
 summary (what/why/source). For each update: edit the content directly, and record the date +
 evidence source in the Phase 6 PR summary table instead of in the file.
 
+The same reason bans the prose version, not just the comment stamps: no sentence inside a `.ai/`
+file may say what changed, when, or what moved where. Write the new fact as current truth and put
+the change in the summary. See *No change narration in `.ai/`* above for the full rule and the
+evidence-note exception.
+
 ### 4c: Confidence Re-scoring
 
 After updates, re-assess confidence for affected sections:
@@ -145,6 +202,8 @@ Identify new things that should be documented but aren't:
 - New team members (from git log) with no onboarding update
 
 For each gap, add a section with `Confidence: 0% — needs team input` marker.
+
+If the file the gap belongs in is missing, do not create it to hold the section. Follow *Missing target files* above.
 
 ---
 
@@ -184,7 +243,7 @@ Generate a structured summary of all changes:
 Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`). It declares the space, the page tree with each page's recorded `id`, and the `sync_map` routing each `.ai/` file to a page.
 
 1. **Resolve page IDs.** For each page whose `id` is empty, find the existing page by its `title` under the configured space/base URL and write the resolved `id` back into `.ai/.meta.yml`. Titles are the **full, collision-safe values** (subpages prefixed with the landing title — `<landing title> - <subpage>`; landing unaffixed — see `docs/confluence-page-standard.md` → *Page titles*), so match the exact stored title. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found — and use the prefixed title when doing so.
-2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section.
+2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section. A `sync_map` source that does not exist is a missing target; see *Missing target files* above.
 3. Push **critical/moderate** updates only. Skip minor (avoid noise).
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
 5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
@@ -233,6 +292,8 @@ Setup is not part of this agent's runtime job — the full workflow (permissions
 
 Before completing, verify:
 - [ ] All critical-severity findings resolved or escalated
+- [ ] Every missing `.ai/` file or `sync_map` source reported as a critical gap: none silently skipped, none recreated unprompted
+- [ ] No change narration written into any `.ai/` file: no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" prose. The change belongs in the Phase 6 summary; an evidence date on a confidence note is the one allowed date
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
 - [ ] Human-maintained sections untouched
