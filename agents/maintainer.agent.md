@@ -25,6 +25,27 @@ Trigger this agent:
 3. **Respect human edits** — sections marked `<!-- human-maintained -->` are untouchable
 4. **Show your work** — every change has a cited source
 5. **Confidence scoring** — re-assess and update confidence percentages
+6. **A missing target is a critical gap, not a skipped step** (see below)
+
+## Missing target files
+
+You will be routed to a file that does not exist: a `.ai/` file named by
+`config/change-impact-matrix.yml`, or a `sync_map` source in `.ai/.meta.yml`. Someone deleted or
+moved it. This is the rule for that case, and it has no exceptions:
+
+**Report it as a critical gap and stop working on that route.** Name the missing path, the trigger
+that routed you to it, and the update you were about to make. It goes in the Phase 6 summary under
+**Needs Human Review** at critical severity, and it fails the "all critical-severity findings
+resolved or escalated" quality gate until a human answers.
+
+- **Never silently skip it.** A missing `architecture.md` turns every package into a Phase 5 gap.
+  Dropping those findings because the file is absent reports a clean run on a broken project, which
+  is worse than reporting nothing.
+- **Never recreate it unprompted.** A deleted `.ai/` file is a deliberate act until a human says
+  otherwise. Regenerating it from evidence silently reverts their change and lands the revert in an
+  unattended maintenance PR. Recreate only when a human asks in this run.
+- Applies equally to a `sync_map` source: an unresolvable source means that Confluence page has no
+  source of truth. Report it, leave the page untouched, and do not re-point the mapping yourself.
 
 ---
 
@@ -72,6 +93,8 @@ For each changed file, consult `config/change-impact-matrix.yml` to determine:
 - Which `.ai/` files are impacted
 - Severity level (critical / moderate / minor)
 - Recommended action
+
+If an impacted file does not exist on disk, follow *Missing target files* above: report, do not skip, do not recreate.
 
 ### 2c: Priority Ranking
 
@@ -146,6 +169,8 @@ Identify new things that should be documented but aren't:
 
 For each gap, add a section with `Confidence: 0% — needs team input` marker.
 
+If the file the gap belongs in is missing, do not create it to hold the section. Follow *Missing target files* above.
+
 ---
 
 ## Phase 6: Change Summary
@@ -184,7 +209,7 @@ Generate a structured summary of all changes:
 Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`). It declares the space, the page tree with each page's recorded `id`, and the `sync_map` routing each `.ai/` file to a page.
 
 1. **Resolve page IDs.** For each page whose `id` is empty, find the existing page by its `title` under the configured space/base URL and write the resolved `id` back into `.ai/.meta.yml`. Titles are the **full, collision-safe values** (subpages prefixed with the landing title — `<landing title> - <subpage>`; landing unaffixed — see `docs/confluence-page-standard.md` → *Page titles*), so match the exact stored title. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found — and use the prefixed title when doing so.
-2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section.
+2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section. A `sync_map` source that does not exist is a missing target; see *Missing target files* above.
 3. Push **critical/moderate** updates only. Skip minor (avoid noise).
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
 5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
@@ -233,6 +258,7 @@ Setup is not part of this agent's runtime job — the full workflow (permissions
 
 Before completing, verify:
 - [ ] All critical-severity findings resolved or escalated
+- [ ] Every missing `.ai/` file or `sync_map` source reported as a critical gap: none silently skipped, none recreated unprompted
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
 - [ ] Human-maintained sections untouched

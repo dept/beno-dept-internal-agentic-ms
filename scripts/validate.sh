@@ -223,13 +223,16 @@ fi
 # fn: warn if source dir has entries but a mirror is empty/absent.
 # kind = "md" (count *.md files) or "dir" (count subdirs). Predicate is hardcoded
 # per-kind so no glob pattern passes through word-splitting (which would expand vs cwd).
+# -L follows symlinks: a mirror may be symlinked instead of copied (both are allowed,
+# see agents/discovery.agent.md → Mirror to Claude Code), and a symlinked directory is
+# -type l, not -type d, so without -L a perfectly in-sync mirror counts as 0.
 count_entries() {
   local dir="$1" kind="$2"
   # Missing dir → 0. Guard prevents find's exit-1 aborting the $(...) under set -e + pipefail.
   if [ ! -d "$dir" ]; then echo 0; return; fi
   case "$kind" in
-    md)  find "$dir" -maxdepth 1 -mindepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ' ;;
-    dir) find "$dir" -maxdepth 1 -mindepth 1 -type d      2>/dev/null | wc -l | tr -d ' ' ;;
+    md)  find -L "$dir" -maxdepth 1 -mindepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ' ;;
+    dir) find -L "$dir" -maxdepth 1 -mindepth 1 -type d      2>/dev/null | wc -l | tr -d ' ' ;;
   esac
 }
 check_mirror() {

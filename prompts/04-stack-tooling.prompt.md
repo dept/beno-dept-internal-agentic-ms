@@ -8,7 +8,7 @@ description: "Phase 4: Install stack-specific skills and MCP servers for every d
 
 ## Prerequisites
 
-- Phase 2 completed (`.ai/` folder with `project-context.md` and tech stack identified)
+- Phase 2 completed (`.ai/` folder generated, with the technology stack table in `architecture.md`)
 - Network access for registry queries
 
 ## Step 7.5: Detect Existing Test Patterns (Before Stack Detection)
@@ -78,7 +78,7 @@ Read project manifest files and config to identify all technologies:
 - `Gemfile` (Ruby)
 - Config file presence (`next.config.*`, `turbo.json`, `wrangler.toml`, `Dockerfile`, `*.tf`)
 - CI/CD configs (`.github/workflows/`, `azure-pipelines.yml`)
-- Technology names already in `.ai/project-context.md`
+- Technology names already in `.ai/architecture.md` (technology stack table)
 
 **Mapping:** Use `config/stack-detection.yml` from DEPT standards repo to translate detected signals to technology names.
 
@@ -118,7 +118,7 @@ description: "Use when working with <technology> in [PROJECT_NAME]: [specific sc
 # <Technology Display Name>
 
 ## Project Context
-Read `.ai/project-context.md` for how <technology> is used in this project.
+Read `.ai/architecture.md` for how <technology> fits this project.
 
 ## Key Files
 - [actual paths found during discovery]
@@ -137,14 +137,26 @@ Read `.ai/project-context.md` for how <technology> is used in this project.
 
 **Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.github/skills/` — either vendor-fetched or evidence-generated fallback.
 
+## Step 9.3: The `codebase-overview` Skill
+
+Alongside the technology skills, emit `.github/skills/codebase-overview/SKILL.md` from
+`templates/skills/codebase-overview/SKILL.md`, substituting `[PROJECT_NAME]`. It is mirrored in
+Step 9.4 like every other skill.
+
+Keep it thin. The `description` frontmatter is what makes an agent discover it before exploring the
+tree, so that line carries the value; the body stays a routing table into `.ai/`. Do not paste the
+repository tree, the stack table, or the architecture diagram into it. `.ai/architecture.md` is the
+single source of truth: a second copy drifts, publishes to the wrong Confluence page, and is
+invisible to harnesses with no skill loader (Codex, Cursor). Growing this file is the failure mode,
+not the goal.
+
 ## Step 9.4: Mirror Skills to Other Clients
 
-`.github/skills/` is read by GitHub Copilot. It is not auto-discovered by Claude Code (`.claude/skills/`) or Continue/Kilocode-style clients (`.continue/skills/`, `.kilocode/skills/`). SKILL.md's `name`/`description` frontmatter is the same format across all of these — no translation needed, just a copy.
+`.github/skills/` is read by GitHub Copilot. It is not auto-discovered by Claude Code (`.claude/skills/`) or Continue/Kilocode-style clients (`.continue/skills/`, `.kilocode/skills/`). SKILL.md's `name`/`description` frontmatter is the same format across all of these, so no translation is needed.
 
-For every skill installed or generated in Step 9 (vendor-fetched or fallback), copy the whole skill directory verbatim to:
-- `.claude/skills/<technology-name>/`
+Mirror every skill installed or generated in Steps 9 and 9.3 to `.claude/skills/<skill-name>/`.
 
-**Rule:** `.github/skills/` stays the single source of truth for content. Mirrors are exact copies, re-copied whenever the source changes — never hand-edited independently. If a skill directory already exists at the mirror path with identical content, skip.
+**Rule:** `.github/skills/` stays the single source of truth for content; the mirror is never hand-edited independently. A copy and a symlink are both acceptable: the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5. If you copy, re-copy whenever the source changes; if a directory already exists at the mirror path with identical content, skip.
 
 ## Step 9.5: Update agent-registry.md with Installed Skills
 
@@ -244,7 +256,7 @@ Create `.github/agents/support-agent.agent.md` if not already present.
   - `[TECH_STACK_SUMMARY]` → e.g., "Node.js + Next.js + PostgreSQL + Vercel"
   - `[SKILL_LIST]` → bulleted list of installed skills with brief descriptions
   - `[MCP_SERVERS_TABLE]` → table of MCP servers (name, tools, purpose)
-  - `[TECH_STACK_DETAILS]` → detailed tech stack from `.ai/project-context.md`
+  - `[TECH_STACK_DETAILS]` → detailed tech stack from `.ai/architecture.md`
   - `[CONSTRAINTS]` → notable items from `.ai/` files (monorepo layout, deploy constraints, gotchas)
 - **Rewrite the `tools:` frontmatter line** to include all MCP server keys:
   ```
@@ -278,12 +290,13 @@ Keep `name:` **identical to the `.github/agents/support-agent.agent.md` source**
 - [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/`/`copilot-instructions.md` (pointer only)
 - [ ] Testing skill installed only if test files exist AND framework is detected — not otherwise
 - [ ] No generic `test-driven-development` skill installed (it's methodology-prescriptive, not evidence-based)
+- [ ] `codebase-overview` skill emitted, `[PROJECT_NAME]` substituted, and still thin (routing table into `.ai/`, no repository tree/stack table/diagram pasted in)
 - [ ] `.ai/agent-registry.md` has a "Phase 4 Skills" section listing every skill installed or skipped
 - [ ] MCP servers installed (or documented why not)
 - [ ] MCP config written to all 3 IDE files
 - [ ] `.ai/agent-registry.md` `## MCP Servers` section updated with installed servers
 - [ ] Project support agent created
-- [ ] Every skill from Step 9 mirrored into `.claude/skills/`
+- [ ] Every skill from Steps 9 and 9.3 mirrored into `.claude/skills/` (copy or symlink)
 - [ ] `.claude/agents/support-agent.md` created, mirroring `.github/agents/support-agent.agent.md`'s body
 
 ## Completion Signal

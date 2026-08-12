@@ -44,8 +44,11 @@ Map the system topology:
 - External system integrations
 - Data flow between components
 - Runtime environment (cloud services, containers, serverless)
+- Repository tree and technology stack table (`architecture.md` is their only home; `project-context.md` points here rather than restating them)
+- High-fan-in symbols: shared functions/hooks everything depends on, with path, consumer count, and one-line role
+- Placement conventions: where each kind of new code goes, with a real existing file to follow per row
 
-**Output:** Mermaid diagram + prose description
+**Output:** Mermaid diagram + prose description + the two tables above (see `templates/architecture.template.md`)
 
 ### Step 4: Dependency Discovery
 
@@ -87,8 +90,8 @@ Generate all 9 required files + .meta.yml:
 
 | File | Content Source |
 |------|--------------|
-| `project-context.md` | Steps 2 + onboarding links |
-| `architecture.md` | Step 3 |
+| `project-context.md` | Business view from Step 2 + onboarding links (no tree, no stack table) |
+| `architecture.md` | Step 3, including the repository tree, stack table, high-fan-in symbols, and placement conventions |
 | `runbooks.md` | Step 5 + incident patterns |
 | `dependencies.md` | Step 4 |
 | `cms.md` | Step 6 |
@@ -129,11 +132,12 @@ collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): 
 For each detected technology:
 1. Try a vendor skill first via `gh skill search <technology-name> --owner <vendor-org>` then `gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force` — `gh skill` is a real, built-in (preview) GitHub CLI feature. If `gh skill` is unavailable (older `gh`) or returns no authoritative vendor-org match, fall through to generation. Never fabricate a vendor source when the command didn't run.
 2. Generate a code-verified skill so each detected core technology ends with a `.github/skills/<technology-name>/SKILL.md`. `.ai/` says which files to inspect; the skill's symbols/paths/code samples must be verified against actual source (`grep` symbols, `ls` paths, copy from real call sites) — never written from `.ai/` prose or framework convention. Mark anything unverifiable with `Assumption:`.
-3. Check DEPT MCP registry for servers
-4. Fallback to public MCP registry
-5. Write MCP config to all three IDE files
-6. Generate support-agent with detected tools
-7. Mirror every generated/installed skill from `.github/skills/` into `.claude/skills/` (verbatim — same SKILL.md format), and mirror the support agent from `.github/agents/support-agent.agent.md` into `.claude/agents/support-agent.md` (same body + same `name:`, Claude Code frontmatter, no `tools:` restriction). Claude Code reads `.claude/agents/`/`.claude/skills/`, not `.github/`. Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker — keep `name:` identical so the rows read as one agent; skills/commands don't duplicate.
+3. Emit `.github/skills/codebase-overview/SKILL.md` from `templates/skills/codebase-overview/SKILL.md` (substitute `[PROJECT_NAME]`). Keep it thin: the `description` carries the discovery trigger, the body stays a routing table into `.ai/`, never a copy of it.
+4. Check DEPT MCP registry for servers
+5. Fallback to public MCP registry
+6. Write MCP config to all three IDE files
+7. Generate support-agent with detected tools
+8. Mirror every skill from `.github/skills/` into `.claude/skills/`, and the support agent from `.github/agents/support-agent.agent.md` into `.claude/agents/support-agent.md` (same body + same `name:`, Claude Code frontmatter, no `tools:` restriction). Claude Code reads `.claude/agents/`/`.claude/skills/`, not `.github/`. **Copy or symlink: both are acceptable for skills; the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker — keep `name:` identical so the rows read as one agent; skills/commands don't duplicate.
 
 ## Quality Gates
 
@@ -142,6 +146,7 @@ Before declaring complete:
 - [ ] `.meta.yml` created with standard version
 - [ ] AI wiring files created/updated
 - [ ] Skill file exists for every detected core technology (or explicit skip reason recorded)
+- [ ] `codebase-overview` skill emitted, and still thin (routing table into `.ai/`, no structural facts of its own)
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] Support agent created

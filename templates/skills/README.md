@@ -14,15 +14,16 @@ If no authoritative vendor-owned `gh skill search` result is found, the agent ge
 
 **Fallback skills must be evidence-accurate** (see accuracy rules in `prompts/04-stack-tooling.prompt.md`): no invented APIs/symbols (grep them first), only real paths (`ls`-confirmed), code samples copied from real call sites, no empty sections, and no restatement of global constraints already in `.ai/`/`copilot-instructions.md` (pointer only).
 
-**Fixed DEPT skills** (used by every project regardless of stack) ARE stored here as templates and installed in **Phase 1**:
+**Fixed DEPT skills** (used by every project regardless of stack) ARE stored here as templates:
 
-- `confluence-axi/` — drive Confluence Cloud (handover pages) from the terminal via the `confluence-axi` npm CLI (`npx`, no bundled script). Every DEPT MS project publishes handover pages to Confluence, so this ships with every migration. Phase 1 copies it to `.github/skills/confluence-axi/`.
+- `confluence-axi/` — drive Confluence Cloud (handover pages) from the terminal via the `confluence-axi` npm CLI (`npx`, no bundled script). Every DEPT MS project publishes handover pages to Confluence, so this ships with every migration. **Phase 1** copies it to `.github/skills/confluence-axi/`.
+- `codebase-overview/` — the discovery entry point into `.ai/`. Its `description` is what makes an agent read the project's structure before exploring the tree; its body is a routing table into `.ai/`, never a copy of it. **Phase 4** emits it to `.github/skills/codebase-overview/` alongside the stack-specific skills, substituting `[PROJECT_NAME]`. It stays thin by design: `.ai/architecture.md` is the single source of truth, and content pasted here would drift, publish to the wrong Confluence page, and be invisible to harnesses with no skill loader.
 
 Datadog "key features" have **no skill** — they are fetched via the **Datadog MCP** (browser OAuth), configured in Phase 4.
 
 Only **stack-specific** skills are left to Phase 4 (vendor-fetched via `gh skill` or generated from `.ai/` evidence) and are NOT stored here — they live in the target project's `.github/skills/`.
 
-**Multi-client mirroring:** `.github/skills/` is Copilot-only — Claude Code, Continue, and Kilocode don't read it. Every skill installed to `.github/skills/` (Phase 1's `confluence-axi` and Phase 4's stack-specific skills alike) is also copied verbatim to `.claude/skills/`. SKILL.md's frontmatter format is identical across clients, so this is a plain copy, not a rewrite. `.github/skills/` remains the single source of truth; re-copy on change, never hand-edit the mirror.
+**Multi-client mirroring:** `.github/skills/` is Copilot-only: Claude Code, Continue, and Kilocode don't read it, so every skill installed to `.github/skills/` is also present at `.claude/skills/`. SKILL.md's frontmatter format is identical across clients, so no rewrite is involved. `.github/skills/` remains the single source of truth and the mirror is never hand-edited. A copy and a symlink are both acceptable: the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5.
 
 ## Adding a new technology
 

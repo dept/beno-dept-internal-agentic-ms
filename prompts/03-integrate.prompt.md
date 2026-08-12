@@ -62,14 +62,16 @@ Coverage target — the four supported IDEs:
   description: Load .ai/ project context before any task
   alwaysApply: true
   ---
-  This project keeps machine-readable context in `.ai/`. Read `.ai/project-context.md`,
-  `.ai/architecture.md`, and `.ai/coding-standards.md` at the start of every task; consult the
-  other `.ai/` files as the task requires. Flag contradictions between `.ai/` and the codebase.
+  This project keeps machine-readable context in `.ai/`. [Two or three sentences on what the
+  system is and the constraints that apply to every task.] Do not load `.ai/` files up front.
+  Read `.ai/architecture.md` for structure (layout, stack, shared helpers, where new code goes),
+  `.ai/coding-standards.md` before any code change, and the other `.ai/` files when the task
+  touches their area. Flag contradictions between `.ai/` and the codebase.
   ```
 - **Already present**: leave unchanged (report as already present)
 
 ### All wiring files must instruct AI to:
-1. Always load the three core files at session start (`project-context.md`, `architecture.md`, `coding-standards.md`); load the other six `.ai/` files on demand when the task touches that area. Never eagerly read all nine every session.
+1. Load `.ai/` files **on demand**, never at session start. The wiring file carries a two-to-three sentence summary of what the system is plus the always-on constraints, and a routing table saying which file to read for which kind of task. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
 2. Cross-reference `.ai/` with agents/instructions/skills found in Phase 2
 3. Respect constraints in existing agentic files
 4. Flag contradictions between `.ai/` and codebase (don't silently accept stale context)
