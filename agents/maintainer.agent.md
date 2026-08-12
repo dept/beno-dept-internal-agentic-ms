@@ -195,17 +195,35 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 
 ## Phase 8: Metadata Update
 
-Update `.ai/.meta.yml`:
+Update `.ai/.meta.yml` **only when Phase 4/5 actually changed documentation content**:
 ```yaml
 last_maintained: "[current ISO 8601 timestamp]"
 last_maintained_by: "maintainer@2.0"
 ```
 
+### No-op rule — never open a PR for bookkeeping alone
+
+A maintenance PR must carry real documentation content. Before committing, check the working tree:
+
+```bash
+git status --porcelain -- .ai/
+git diff -- .ai/
+```
+
+- If the only changed file is `.ai/.meta.yml`, **or** the whole diff is limited to bookkeeping fields
+  (`last_maintained`, `last_maintained_by`, `last_checked`, resolved Confluence page `id`s, version
+  stamps), then **revert** (`git checkout -- .ai/`), do **not** commit, do **not** push a branch, and
+  do **not** open a PR. Report "no content drift" and stop.
+- Only when at least one non-`.meta.yml` `.ai/` file has a content change do you write the timestamp
+  and open the PR. The timestamp rides along with real changes; it never justifies a PR on its own.
+
+Same rule for Confluence: a page whose only delta would be the "Last synced" line is left untouched.
+
 ---
 
 ## CI/CD Integration
 
-Automated triggering runs this agent via a **cost-gated GitHub Actions workflow**: a cheap `git log` step skips the paid agent run in any week where nothing outside `.ai/**` changed, and the agent opens a PR (never pushes to `main`). Triggers: weekly `schedule` + manual `workflow_dispatch`.
+Automated triggering runs this agent via a **cost-gated GitHub Actions workflow**: a cheap `git log` step skips the paid agent run whenever nothing outside `.ai/**` changed, and the agent opens a PR (never pushes to `main`) — and only when the run produced real content changes (see the no-op rule above). Triggers: biweekly `schedule` (1st + 15th, 09:00 UTC) + manual `workflow_dispatch`.
 
 Setup is not part of this agent's runtime job — the full workflow (permissions, cost-gate step, model choice, and the Atlassian-MCP-for-Confluence note) lives in `templates/workflows/maintainer.yml`. Copy it to `.github/workflows/maintainer.yml` to enable automation; a repo may already have its own.
 
@@ -218,6 +236,7 @@ Before completing, verify:
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
 - [ ] Human-maintained sections untouched
-- [ ] `.meta.yml` updated with current timestamp
+- [ ] `.meta.yml` updated with current timestamp — only if real content changed (no-op rule)
+- [ ] No PR opened when the diff is `.meta.yml` / bookkeeping fields only
 - [ ] Change summary generated
 - [ ] Standard version in `.meta.yml` matches current standard

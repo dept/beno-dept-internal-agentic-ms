@@ -19,6 +19,7 @@ After this workflow completes:
 - ✓ Confluence handover pages created (or staged as drafts when Confluence access is unavailable)
 - ✓ Client **key features** (Datadog Synthetic tests) fetched by `client:<name>` tag and added to `.ai/project-context.md` + the Confluence Overview page (or `[To fill in]` when Datadog access is unavailable)
 - ✓ Stack-specific skills (Phase 4) and MCP servers installed
+- ✓ Optional biweekly Maintainer cron (`.github/workflows/maintainer.yml`) — offered, never forced
 - ✓ Support agent configured
 - ✓ Graphify structural pre-pass attempted before Discovery
 - ✓ Discovery Agent explicitly used for the discovery phase
@@ -253,6 +254,24 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 **Does:** Detects tech stack, installs skills + MCP servers, creates support agent. Mirrors every skill to `.claude/skills/` and the support agent to `.claude/agents/support-agent.md`.
 **Verify before continuing:** MCP config in all 3 IDEs, support-agent exists (mirrored in `.claude/agents/`), skills mirrored in `.claude/skills/`
 
+### Phase 4b: Maintainer Automation (ask the user)
+
+**Does:** Optionally installs the scheduled Maintainer workflow so `.ai/` stays fresh without anyone remembering to run it. Inline (no separate prompt file). **Always ask first** — some repos have their own scheduling, restricted Actions, or no `ANTHROPIC_API_KEY` secret.
+
+Ask, verbatim in spirit:
+
+> Install the Maintainer cron (GitHub Actions, runs every 2 weeks and opens a PR only when docs actually drifted)? [yes / no]
+
+If **yes**:
+1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/maintainer.yml` → write to `.github/workflows/maintainer.yml`. If that file already exists, show the diff and ask before overwriting.
+2. Tell the user which repo secrets it needs, and that the workflow is inert until they exist:
+   - `ANTHROPIC_API_KEY` — required.
+   - `CONFLUENCE_USERNAME` + `CONFLUENCE_API_TOKEN` — only if this repo syncs `.ai/` to Confluence. If it does not, delete the "Build Atlassian MCP config" step, the three `CONFLUENCE_*` env lines, the `--mcp-config` flag, and `mcp__atlassian` from `--allowedTools`.
+3. Adjust the workflow's commit/PR title convention to this repo (e.g. prepend the issue key if commitlint requires one).
+4. Cadence is the 1st and 15th at 09:00 UTC. Change the `cron:` line if the team wants a different rhythm.
+
+If **no**: skip it and note in the summary that the Maintainer runs on demand only (`@agent maintainer` / run the agent manually after each sprint).
+
 ### Phase 5: Cleanup (recommended)
 **Does:** Removes one-time migration artifacts so the repo keeps only what has ongoing value. This is inline (no separate prompt file). **Ask the user before deleting** — some teams prefer to keep the migration tooling in-repo for cheap re-runs.
 
@@ -267,6 +286,7 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - Datadog MCP (in the MCP configs) — used to fetch/refresh key features via browser OAuth
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
+- `.github/workflows/maintainer.yml` — if installed in Phase 4b
 - `.claude/commands/ms-migration.md` + `.cursor/commands/ms-migration.md` (single entry point for a future full re-run)
 
 **Safe to remove after a successful migration (ask, then delete):**
@@ -314,6 +334,10 @@ After all phases complete, output:
 - Skills installed: [list or "None matched"] (each mirrored to .claude/skills/)
 - MCP servers added: [list or "None"]
 - Support agent: [created / present] (mirrored to .claude/agents/support-agent.md)
+
+### Phase 4b: Maintainer Automation
+- .github/workflows/maintainer.yml: [installed (biweekly) / declined — on-demand only / already present]
+- Secrets still needed: [ANTHROPIC_API_KEY, CONFLUENCE_* / none]
 
 ### Validation
 Run: scripts/validate.sh .
