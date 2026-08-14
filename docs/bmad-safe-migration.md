@@ -88,13 +88,11 @@ Run the deterministic scaffold. It is **idempotent** — it never overwrites exi
 # └── onboarding.md            ← empty template
 #
 # .github/
-# ├── copilot-instructions.md  ← NEW
-# ├── agents/
-# │   └── support-agent.md     ← NEW (template, Phase 4 fills placeholders)
-# └── instructions/
-#     └── ai-context.instructions.md ← NEW
+# └── agents/
+#     └── support-agent.md     ← NEW (template, Phase 4 fills placeholders)
 #
-# CLAUDE.md                    ← NEW
+# AGENTS.md                    ← NEW (the one authored wiring file)
+# CLAUDE.md                    ← NEW (@AGENTS.md import)
 #
 # _bmad-output/                ← UNTOUCHED
 ```
@@ -203,17 +201,17 @@ my-bmad-project/
 ├── .github/
 │   ├── agents/
 │   │   └── support-agent.md   ← NEW (Phase 4 fills in stack + MCP tools)
-│   ├── copilot-instructions.md ← NEW
-│   ├── instructions/
-│   │   └── ai-context.instructions.md ← NEW
-│   ├── skills/                ← NEW (Phase 4 installs stack skills)
 │   └── workflows/             ← UNCHANGED
 │       └── ci.yml
 │
+├── .agents/skills/            ← NEW (Phase 4 installs stack skills)
+├── .claude/skills/            ← NEW (mirror of .agents/skills/)
+├── standards/writing-rules.md ← NEW (Phase 1)
 ├── .vscode/mcp.json           ← NEW (Phase 4)
 ├── .cursor/mcp.json           ← NEW (Phase 4)
 ├── .mcp.json                  ← NEW (Phase 4)
-├── CLAUDE.md                  ← NEW
+├── AGENTS.md                  ← NEW
+├── CLAUDE.md                  ← NEW (@AGENTS.md import)
 ├── src/                       ← UNCHANGED
 └── package.json               ← UNCHANGED
 ```
@@ -242,9 +240,9 @@ After BMAD-safe migration:
 If something goes wrong, the rollback is safe because BMAD files were never touched:
 
 ```bash
-# Remove only the DEPT additions — BMAD is untouched
-rm -rf .ai/ CLAUDE.md .vscode/mcp.json .cursor/mcp.json .mcp.json
-rm -rf .github/agents/ .github/skills/ .github/instructions/ .github/copilot-instructions.md
+# Remove only the DEPT additions. BMAD is untouched
+rm -rf .ai/ AGENTS.md CLAUDE.md .vscode/mcp.json .cursor/mcp.json .mcp.json
+rm -rf .github/agents/ .agents/skills/ .claude/skills/ standards/writing-rules.md
 
 # Re-run from Phase 1 once issues are resolved
 ./scripts/scaffold.sh .

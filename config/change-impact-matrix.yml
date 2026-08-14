@@ -25,10 +25,13 @@ change_impact_rules:
         action: "Add new service to topology diagram and describe boundaries"
       - file: project-context.md
         severity: moderate
-        action: "Update service inventory and tech stack summary"
+        action: "Update the plain-language purpose line for the new area"
       - file: dependencies.md
         severity: moderate
         action: "Add new service dependencies"
+      - file: .agents/skills/codebase-overview/SKILL.md
+        severity: critical
+        action: "Regenerate the block from architecture.md and mirror to .claude/skills/"
 
   - trigger: "Infrastructure config changed (Terraform, Bicep, Docker, CI/CD)"
     detect_by:
@@ -167,10 +170,9 @@ change_impact_rules:
   # --- Agents & AI Tooling ---
   - trigger: "Agent or AI config changed"
     detect_by:
-      - "changes to .github/agents/, CLAUDE.md, .cursor/rules/"
-      - "changes to .github/copilot-instructions.md"
+      - "changes to AGENTS.md, CLAUDE.md, .github/agents/, .github/prompts/"
       - "changes to MCP config files"
-      - "new skills installed"
+      - "new skills installed in .agents/skills/"
     impacts:
       - file: agent-registry.md
         severity: critical
@@ -196,9 +198,8 @@ conflict_resolution:
   rules:
     - "Sections marked with <!-- human-maintained --> are NEVER auto-updated"
     - "If file has been manually edited since last maintenance, show diff and ask for review"
-    - "Maintenance additions go at the end of sections, not inline"
-    - "When in doubt, append a '## Updates (auto-generated)' section rather than modifying existing content"
-    - "Never remove content — only add, update, or mark as potentially stale"
+    - "Fold an update into the section that owns the topic. Never open a separate 'Updates' or 'Changes' section: standards/writing-rules.md bans it"
+    - "Remove content only in the three cases in standards/writing-rules.md section 5: it breaks a writing rule, repository evidence contradicts it, or a human asked. Otherwise add or update, and never delete a fact just because this agent did not write it"
 
   escalation:
     - severity: critical

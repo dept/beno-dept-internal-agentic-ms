@@ -20,9 +20,10 @@ Generate a complete `.ai/` folder for any repository using evidence from code, c
 Scan for existing AI/agent configurations before generating new files.
 
 **Scan locations:**
-- `.github/agents/`, `.agents/`, `.claude/agents/`, `AGENTS.md`
-- `.github/copilot-instructions.md`, `.github/instructions/`, `CLAUDE.md`, `.cursor/rules/`
-- `.github/prompts/`, `.github/skills/`, `.claude/skills/`
+- `.github/agents/`, `.agents/`, `.claude/agents/`, `AGENTS.md`, `CLAUDE.md`
+- `.github/copilot-instructions.md`, `.github/instructions/`, `.cursor/rules/` (pre-existing only)
+- `.github/prompts/`, `.agents/skills/` (source), `.claude/skills/` (mirror)
+- `.github/skills/` (pre-existing only, standard 1.x layout: move its skills into `.agents/skills/`, re-mirror, delete the old directory)
 - `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`
 
 **Output:** Inventory list (file path, name, tool, scope, purpose)
@@ -107,16 +108,18 @@ Generate all 9 required files + .meta.yml:
 - Rate confidence per section: `Confidence: <0-100>%`
 - Add `Validation Questions` for gaps
 - No empty sections — explicit unknowns instead
-- Present state only: no change narration, no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes. An evidence or confidence note may cite its source files and the date the evidence was gathered, nothing about a prior version (rule and examples in `agents/discovery.agent.md` → *Writing discipline*)
+- Every file obeys `standards/writing-rules.md`, which is the single home for those rules: what never goes in (§1), which file owns which fact (§2, §4), and which tool-enforced rules get written at all (§3). Each file opens with its ownership header
+- `Validation Questions` carry a one-line pointer to the Confluence Open Questions page, not a paragraph about the workflow
 
 ### Step 9: AI Context Wiring + Confluence
 
-Wire all four IDEs to load `.ai/` context (`.ai/` is the shared source; each file is a thin pointer):
-- `.github/copilot-instructions.md` (Copilot — create or append)
-- `CLAUDE.md` (Claude Code — create or append)
-- `AGENTS.md` (Codex + Cursor + universal — create or append)
-- `.github/instructions/ai-context.instructions.md` (Copilot path-scoped — create)
-- `.cursor/rules/ai-context.mdc` (Cursor native, `alwaysApply: true` — create)
+Two wiring files, one of them authored:
+- `AGENTS.md` (the authored file, read by Copilot, Codex and Cursor; create from the template or append the missing sections)
+- `CLAUDE.md` (`@AGENTS.md` import for Claude Code; create it or add the import)
+
+Do not generate `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or
+`.cursor/rules/*.mdc`. Those tools read `AGENTS.md`. Record any that already exist in
+`agent-registry.md` and leave them alone.
 
 Optionally create Confluence pages under `MS/Projects` using a consistent layout. Titles follow the
 collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): landing = project name
@@ -131,14 +134,14 @@ collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): 
 ### Step 10: Stack-Aware Developer Setup
 
 For each detected technology:
-1. Try a vendor skill first via `gh skill search <technology-name> --owner <vendor-org>` then `gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force` — `gh skill` is a real, built-in (preview) GitHub CLI feature. If `gh skill` is unavailable (older `gh`) or returns no authoritative vendor-org match, fall through to generation. Never fabricate a vendor source when the command didn't run.
-2. Generate a code-verified skill so each detected core technology ends with a `.github/skills/<technology-name>/SKILL.md`. `.ai/` says which files to inspect; the skill's symbols/paths/code samples must be verified against actual source (`grep` symbols, `ls` paths, copy from real call sites) — never written from `.ai/` prose or framework convention. Mark anything unverifiable with `Assumption:`.
-3. Emit `.github/skills/codebase-overview/SKILL.md` from `templates/skills/codebase-overview/SKILL.md` (substitute `[PROJECT_NAME]`). Keep it thin: the `description` carries the discovery trigger, the body stays a routing table into `.ai/`, never a copy of it.
+1. Try a vendor skill first via `gh skill search <technology-name> --owner <vendor-org>` then `gh skill install <owner>/<repo> <skill-name> --dir .agents/skills --force`. `gh skill` is a real, built-in (preview) GitHub CLI feature. If `gh skill` is unavailable (older `gh`) or returns no authoritative vendor-org match, fall through to generation. Never fabricate a vendor source when the command didn't run.
+2. Generate a code-verified skill so each detected core technology ends with a `.agents/skills/<technology-name>/SKILL.md`. `.ai/` says which files to inspect; the skill's symbols/paths/code samples must be verified against actual source (`grep` symbols, `ls` paths, copy from real call sites), never from `.ai/` prose or framework convention. Mark anything unverifiable with `Assumption:`.
+3. Emit `.agents/skills/codebase-overview/SKILL.md` from `templates/skills/codebase-overview/SKILL.md` (substitute `[PROJECT_NAME]`). Its `description` carries the discovery trigger; its body carries the repository tree, stack table, placement conventions and high-fan-in symbols copied verbatim from `.ai/architecture.md` into the generated block. Nothing else from `.ai/` is copied in.
 4. Check DEPT MCP registry for servers
 5. Fallback to public MCP registry
 6. Write MCP config to all three IDE files
 7. Generate support-agent with detected tools
-8. Mirror every skill from `.github/skills/` into `.claude/skills/`, and the support agent from `.github/agents/support-agent.agent.md` into `.claude/agents/support-agent.md` (same body + same `name:`, Claude Code frontmatter, no `tools:` restriction). Claude Code reads `.claude/agents/`/`.claude/skills/`, not `.github/`. **Copy or symlink: both are acceptable for skills; the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker — keep `name:` identical so the rows read as one agent; skills/commands don't duplicate.
+8. Mirror every skill from `.agents/skills/` into `.claude/skills/`, and the support agent from `.github/agents/support-agent.agent.md` into `.claude/agents/support-agent.md` (same body + same `name:`, Claude Code frontmatter, no `tools:` restriction). Claude Code reads `.claude/agents/`/`.claude/skills/`, not `.github/`. **Copy or symlink: both are acceptable for skills; the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker; keep `name:` identical so the rows read as one agent; skills/commands don't duplicate.
 
 ## Quality Gates
 
@@ -146,8 +149,9 @@ Before declaring complete:
 - [ ] 9 `.ai/` files generated (no stubs)
 - [ ] `.meta.yml` created with standard version
 - [ ] AI wiring files created/updated
-- [ ] Skill file exists for every detected core technology (or explicit skip reason recorded)
-- [ ] `codebase-overview` skill emitted, and still thin (routing table into `.ai/`, no structural facts of its own)
+- [ ] Skill file exists for every detected core technology (or the skip reason is recorded in the completion summary, never in `.ai/`)
+- [ ] `codebase-overview` skill emitted, its generated block matching the structural sections of `.ai/architecture.md`
+- [ ] Every `.ai/` file passes `standards/writing-rules.md` and opens with its ownership header
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] Support agent created

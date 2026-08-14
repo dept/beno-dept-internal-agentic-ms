@@ -131,13 +131,27 @@ if [ -f "${AI_DIR}/dependencies.md" ]; then
   fi
 fi
 
-# agent-registry.md should reference discovery agent
+# agent-registry.md should list at least one agent, skill, instruction file or MCP server.
+# Checks for a table row naming a configured artifact, not for any one file: the artifacts a
+# project has vary, and a check that names a specific file forces the file to be written about
+# even after it is gone.
 if [ -f "${AI_DIR}/agent-registry.md" ]; then
-  if grep -qi 'discovery' "${AI_DIR}/agent-registry.md" 2>/dev/null; then
-    echo -e "  ${GREEN}✓${NC} agent-registry.md references Discovery Agent"
+  if grep -qE '^\|.*(\.md|\.json|\.agents/|\.claude/|\.github/)' "${AI_DIR}/agent-registry.md" 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} agent-registry.md lists configured agentic artifacts"
     ((PASSED++))
   else
-    echo -e "  ${YELLOW}△${NC} agent-registry.md — no Discovery Agent reference"
+    echo -e "  ${YELLOW}△${NC} agent-registry.md has no agent, skill, or MCP rows"
+    ((WARNED++))
+  fi
+fi
+
+# codebase-overview skill is generated from .ai/architecture.md. Warn when the source is newer
+# than the generated copy. A warning, not a failure: a hand edit to either should not break CI.
+if command -v git &>/dev/null && git -C "$PROJECT_DIR" rev-parse --git-dir &>/dev/null 2>&1; then
+  arch_ts=$(git -C "$PROJECT_DIR" log -1 --format=%ct -- ".ai/architecture.md" 2>/dev/null || echo "")
+  skill_ts=$(git -C "$PROJECT_DIR" log -1 --format=%ct -- ".agents/skills/codebase-overview/SKILL.md" 2>/dev/null || echo "")
+  if [ -n "$arch_ts" ] && [ -n "$skill_ts" ] && [ "$arch_ts" -gt "$skill_ts" ]; then
+    echo -e "  ${YELLOW}△${NC} codebase-overview skill is older than .ai/architecture.md, regenerate it"
     ((WARNED++))
   fi
 fi
@@ -193,11 +207,11 @@ echo ""
 # All warning-level (△): a project may legitimately target a subset of IDEs.
 echo -e "${BLUE}── Multi-Client Wiring ──${NC}"
 
-# Context pointers (one per supported IDE)
+# Context pointers. AGENTS.md is the one authored file, read by Copilot (GitHub and VS Code),
+# Codex and Cursor. CLAUDE.md imports it for Claude Code.
 declare -a WIRING=(
-  ".github/copilot-instructions.md|Copilot"
+  "AGENTS.md|Copilot, Codex, Cursor"
   "CLAUDE.md|Claude Code"
-  "AGENTS.md|Codex + Cursor"
 )
 for entry in "${WIRING[@]}"; do
   path="${entry%%|*}"; label="${entry##*|}"
@@ -210,16 +224,25 @@ for entry in "${WIRING[@]}"; do
   fi
 done
 
-# Cursor native rule (any .mdc under .cursor/rules/)
-if ls "${PROJECT_DIR}"/.cursor/rules/*.mdc >/dev/null 2>&1; then
-  echo -e "  ${GREEN}✓${NC} .cursor/rules/*.mdc (Cursor)"
-  ((PASSED++))
-else
-  echo -e "  ${YELLOW}△${NC} .cursor/rules/*.mdc — missing (Cursor won't auto-load .ai/)"
+# CLAUDE.md imports AGENTS.md rather than repeating it.
+if [ -f "${PROJECT_DIR}/CLAUDE.md" ]; then
+  if grep -q '@AGENTS.md' "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} CLAUDE.md imports AGENTS.md"
+    ((PASSED++))
+  else
+    echo -e "  ${YELLOW}△${NC} CLAUDE.md has no @AGENTS.md import (instructions will drift)"
+    ((WARNED++))
+  fi
+fi
+
+# Skills moved to .agents/skills in standard 2.0.0. Flag the 1.x location if it survives.
+if [ -d "${PROJECT_DIR}/.github/skills" ]; then
+  echo -e "  ${YELLOW}△${NC} .github/skills exists (standard 1.x): move its skills to .agents/skills and delete it"
   ((WARNED++))
 fi
 
-# Mirror parity: .github/* is the source; .claude/* and .cursor/* must mirror it.
+# Mirror parity: .agents/skills is the skill source, .github/* the agent and prompt source;
+# .claude/* and .cursor/* must mirror them.
 # fn: warn if source dir has entries but a mirror is empty/absent.
 # kind = "md" (count *.md files) or "dir" (count subdirs). Predicate is hardcoded
 # per-kind so no glob pattern passes through word-splitting (which would expand vs cwd).
@@ -250,7 +273,7 @@ check_mirror() {
   fi
 }
 check_mirror ".github/agents"  ".claude/agents"   md   "Agents"
-check_mirror ".github/skills"  ".claude/skills"   dir  "Skills (Claude)"
+check_mirror ".agents/skills"  ".claude/skills"   dir  "Skills (Claude)"
 check_mirror ".github/prompts" ".claude/commands" md   "Commands (Claude)"
 check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
 

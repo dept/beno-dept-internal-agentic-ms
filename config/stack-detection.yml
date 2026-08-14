@@ -5,7 +5,7 @@
 # those are discovered live from public registries at runtime.
 #
 # RUNTIME BEHAVIOR:
-#   Skills:  gh skill search <technology-name>   → choose vendor result, then gh skill install <owner>/<repo> <skill-name> --dir .github/skills
+#   Skills:  gh skill search <technology-name>   → choose vendor result, then gh skill install <owner>/<repo> <skill-name> --dir .agents/skills
 #   MCP:     1) curl https://registry.modelcontextprotocol.io/v0/servers?search=<technology-name>
 #            2) fallback: curl https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/config/mcp-registry.yml
 #            → pick official/highest-quality result

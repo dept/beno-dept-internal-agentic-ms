@@ -107,12 +107,12 @@ your-project/
 │   └── onboarding.md              # Setup, access, local dev
 ├── .github/
 │   ├── agents/                    # Copilot agent definitions
-│   ├── copilot-instructions.md    # Copilot → .ai/ wiring
-│   ├── instructions/              # VS Code AI context
-│   ├── prompts/                   # Reusable prompts
-│   └── skills/                    # Superpowers skills
-├── CLAUDE.md                      # Claude → .ai/ wiring
-├── AGENTS.md                      # OpenAI Codex → .ai/ wiring
+│   └── prompts/                   # Reusable prompts
+├── .agents/skills/                # Skills (Copilot, VS Code, Codex, Cursor)
+├── .claude/skills/                # Mirror of .agents/skills/ (Claude Code)
+├── standards/writing-rules.md     # What may be written into .ai/
+├── AGENTS.md                      # The one authored wiring file
+├── CLAUDE.md                      # @AGENTS.md import (Claude Code)
 ├── .vscode/mcp.json               # MCP servers (VS Code)
 ├── .cursor/mcp.json               # MCP servers (Cursor)
 └── .mcp.json                      # MCP servers (Claude Code)
@@ -127,9 +127,9 @@ Once Discovery completes, your `.ai/` folder is live. Next steps:
    ./scripts/validate.sh /path/to/your/project
    ```
 
-2. **Wire AI tools** — Copy or symlink the relevant tool files to your IDE:
-   - `CLAUDE.md` → Claude Code (`/ms-migration` step 3 handles this)
-   - `.github/copilot-instructions.md` → GitHub Copilot
+2. **Wire AI tools**: Phase 3 writes these, check they are present:
+   - `AGENTS.md` → Copilot (github.com and VS Code), Codex, Cursor
+   - `CLAUDE.md` → Claude Code, as an `@AGENTS.md` import
    - `.vscode/mcp.json` → VS Code + MCP servers
    - `.cursor/mcp.json` → Cursor + MCP servers
 
@@ -154,8 +154,9 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | `.ai/` (9 files + `.meta.yml`) | **Keep** | Single source of truth |
 | Maintainer agent (`.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md`) | **Keep** | Ongoing drift maintenance |
 | Support agent (`support-agent.agent.md` + `.claude/agents/support-agent.md`) | **Keep** | Day-to-day dev/support |
-| Wiring (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.github/instructions/`, `.cursor/rules/`) | **Keep** | IDEs auto-load `.ai/` |
-| Stack skills (`.github/skills/` + `.claude/skills/`, incl. `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
+| Wiring (`AGENTS.md` and its `CLAUDE.md` import) | **Keep** | Every harness routes into `.ai/` through it |
+| `standards/writing-rules.md` | **Keep** | The Maintainer applies it on every run |
+| Stack skills (`.agents/skills/` + `.claude/skills/`, including `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
 | MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
@@ -166,7 +167,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | `scripts/graphify-bootstrap.sh` | **Remove** (optional) | One-time pre-pass; keep if re-graphing planned |
 | `graphify-out/` | **Remove** | Ephemeral (already gitignored) |
 
-> **Remove symmetrically.** `validate.sh` compares file counts between each `.github/*` source and its `.claude/*` / `.cursor/*` mirror. Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged.
+> **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills/`). Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
 
 ## Validation
 
@@ -220,15 +221,18 @@ dept-agentic-standards/
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
 │   └── validate.sh                # Quality gate for .ai/ compliance
 ├── standards/
-│   └── agentic-project-standard.md # The formal standard definition
+│   ├── agentic-project-standard.md # The formal standard definition
+│   └── writing-rules.md            # What may be written into .ai/, one home
 └── templates/                     # Templates for all generated files
     ├── meta.template.yml
     ├── project-context.template.md
     ├── architecture.template.md
     ├── ... (9 context templates)
-    ├── copilot-instructions.template.md
+    ├── AGENTS.template.md
     ├── CLAUDE.template.md
-    ├── ai-context.instructions.template.md
+    ├── skills/
+    │   ├── codebase-overview/SKILL.md
+    │   └── confluence-axi/SKILL.md
     └── agents/
         └── support-agent.template.md
 ```

@@ -105,8 +105,9 @@ ARTIFACTS=(
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
   "scripts/validate.sh|scripts/validate.sh"
   "config/standard-version.yml|config/standard-version.yml"
-  ".github/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
-  ".github/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
+  "standards/writing-rules.md|standards/writing-rules.md"
+  ".agents/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
+  ".agents/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
 )
 
 copy_local() {
@@ -218,7 +219,8 @@ for required in \
   ".claude/agents/maintainer.md" \
   "scripts/graphify-bootstrap.sh" \
   "scripts/validate.sh" \
-  ".github/skills/confluence-axi/SKILL.md"
+  "standards/writing-rules.md" \
+  ".agents/skills/confluence-axi/SKILL.md"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
     echo -e "${RED}ERROR:${NC} missing required file after install: ${required}"

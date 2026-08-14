@@ -13,64 +13,40 @@ description: "Phase 3: Wire AI tools to load .ai/ context and create Confluence 
 
 ## Step 6: Wire AI Tools
 
-Create or update wiring files so every AI tool automatically reads `.ai/` context at session start. **`.ai/` is the single shared source of truth**; each file below is a thin *pointer* into it, one per client that only auto-loads its own dotfile.
+Create or update the two wiring files so every AI tool finds `.ai/` context. **`.ai/` is the single shared source of truth**; the wiring files are pointers into it.
 
-Coverage target — the four supported IDEs:
+There is one authored wiring file. Every harness in use reads it:
 
-| IDE | Wiring file it auto-loads |
+| Harness | How it reads `AGENTS.md` |
 |---|---|
-| GitHub Copilot | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md` |
-| Claude Code | `CLAUDE.md` |
-| OpenAI Codex | `AGENTS.md` |
-| Cursor | `.cursor/rules/*.mdc` (also honors `AGENTS.md`) |
+| GitHub Copilot (github.com and VS Code) | Natively, as agent instructions |
+| OpenAI Codex | Natively |
+| Cursor | Natively |
+| Claude Code | Through the `@AGENTS.md` import in `CLAUDE.md` |
 
-`AGENTS.md` is the nearest-to-universal pointer (Codex, Cursor, and Copilot's coding agent all read it) — but each client's own dotfile is the reliable always-on path, so write all of them.
+Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. Those tools read `AGENTS.md`. If a project already has one of them, record it in `.ai/agent-registry.md` and leave it alone.
 
 **Rule:** Check each file first. If it exists, append only. Never overwrite existing content.
 
 > **Wiring files are pointers, not a second source of truth.** `.ai/` is
-> authoritative. A wiring file may carry a SHORT summary of the always-on
-> constraints (so they load with the file), but it must be explicitly marked as a
-> summary of `.ai/coding-standards.md` — never a full restatement that can drift.
-> Keep the summary to terse one-liners (commits, env-var handling); push all
-> detail to `.ai/`. Do not copy whole sections out of `.ai/` into these files.
+> authoritative. `standards/writing-rules.md` §3 sets what may appear in a wiring
+> file: at most five repo-wide class 3 constraints, and nothing a formatter or a
+> type error already fixes. Everything else is a pointer into `.ai/`. §4 gives the
+> full ownership rule for both files.
 
-### File 1: `.github/copilot-instructions.md`
-- **Not present**: create with `.ai/` reading instructions + a short "Behaviour Rules (summary — full detail in `.ai/coding-standards.md`)" block of one-liners
-- **Already present**: append a `## AI Project Context (.ai/)` section
+### File 1: `AGENTS.md` (repository root)
+- **Not present**: create from `templates/AGENTS.template.md`
+- **Already present**: append the missing sections; leave what is there
+- Fill `[PROJECT_SUMMARY]` with two sentences on what the system is, from `.ai/project-context.md`
+- Fill `[SETUP_COMMANDS]` with the install/run commands from `.ai/onboarding.md`
+- Fill `[KEY_CONSTRAINTS_ONE_LINERS]` from `.ai/coding-standards.md`, applying the §3 test to each candidate before writing it
 
 ### File 2: `CLAUDE.md` (repository root)
-- **Not present**: create with same instructions in Claude format
-- **Already present**: append a `## AI Project Context (.ai/)` section
+- **Not present**: create from `templates/CLAUDE.template.md`, which is the `@AGENTS.md` import
+- **Already present**: add the `@AGENTS.md` import line if it is missing, and leave the rest
+- Claude-Code-only lines (a `.claude/skills/` note, for example) may live here. Anything that applies to every harness goes in `AGENTS.md`
 
-### File 3: `.github/instructions/ai-context.instructions.md`
-- **Not present**: create with `applyTo: "**"` frontmatter and concise loading instructions
-- **Already present**: leave unchanged (report as already present)
-
-### File 4: `AGENTS.md` (repository root)
-- For OpenAI Codex, Cursor, and any agent framework that reads `AGENTS.md` by convention (the nearest to a cross-tool standard)
-- **Not present**: create from `templates/AGENTS.template.md` — same `.ai/` loading instructions as `CLAUDE.md`, adapted for Codex format
-- **Already present**: append a `## AI Project Context (.ai/)` section
-- Fill `[SETUP_COMMANDS]` with the relevant install/run commands from `.ai/onboarding.md`
-- Fill `[KEY_CONSTRAINTS_ONE_LINERS]` with terse one-liners from `.ai/coding-standards.md` (commit format, env var rules, type safety, etc.)
-
-### File 5: `.cursor/rules/ai-context.mdc` (Cursor native rules)
-- Cursor's always-on rule format. `AGENTS.md` also works, but a `.mdc` with `alwaysApply: true` is the reliable native path.
-- **Not present**: create with this frontmatter + a short pointer body (do NOT restate `.ai/` content — point to it):
-  ```
-  ---
-  description: Load .ai/ project context before any task
-  alwaysApply: true
-  ---
-  This project keeps machine-readable context in `.ai/`. [Two or three sentences on what the
-  system is and the constraints that apply to every task.] Do not load `.ai/` files up front.
-  Read `.ai/architecture.md` for structure (layout, stack, shared helpers, where new code goes),
-  `.ai/coding-standards.md` before any code change, and the other `.ai/` files when the task
-  touches their area. Flag contradictions between `.ai/` and the codebase.
-  ```
-- **Already present**: leave unchanged (report as already present)
-
-### All wiring files must instruct AI to:
+### Both wiring files must instruct AI to:
 1. Load `.ai/` files **on demand**, never at session start. The wiring file carries a two-to-three sentence summary of what the system is plus the always-on constraints, and a routing table saying which file to read for which kind of task. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
 2. Cross-reference `.ai/` with agents/instructions/skills found in Phase 2
 3. Respect constraints in existing agentic files
@@ -80,7 +56,7 @@ Coverage target — the four supported IDEs:
 
 After wiring is complete, create handover documentation in Confluence.
 
-**Publish path — use the `confluence-axi` skill (primary).** It is installed in Phase 1 at `.github/skills/confluence-axi/` and drives the `confluence-axi` npm CLI (`npx -y confluence-axi ...`), which wraps the Confluence Cloud REST API. Do NOT rely on the Atlassian MCP here: the MCP is only configured in Phase 4, and an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads — so during a single migration run the MCP is not a usable publish path for this step. Verify access first (`npx -y confluence-axi space list` → lists spaces), then create the landing page, capture its id, and create the four subpages under it with `--parent <landingId>`. When updating existing pages, resolve subpages by walking the landing page's children (`npx -y confluence-axi page children <landingId>`) — never a bare title search, because the shared `MS` space collides across projects. `page update` bumps the version automatically (no 409 handling).
+**Publish path: use the `confluence-axi` skill (primary).** It is installed in Phase 1 at `.agents/skills/confluence-axi/` and drives the `confluence-axi` npm CLI (`npx -y confluence-axi ...`), which wraps the Confluence Cloud REST API. Do NOT rely on the Atlassian MCP here: the MCP is only configured in Phase 4, and an MCP added to `.mcp.json` mid-session is not callable until the tool/IDE reloads, so during a single migration run the MCP is not a usable publish path for this step. Verify access first (`npx -y confluence-axi space list` → lists spaces), then create the landing page, capture its id, and create the four subpages under it with `--parent <landingId>`. When updating existing pages, resolve subpages by walking the landing page's children (`npx -y confluence-axi page children <landingId>`), never a bare title search, because the shared `MS` space collides across projects. `page update` bumps the version automatically (no 409 handling).
 
 > **If Confluence access is unavailable** (the `confluence-axi space list` preflight
 > failed — not authed, or the site is unreachable): do NOT skip the
@@ -173,12 +149,10 @@ After wiring is complete, create handover documentation in Confluence.
 ## Verification
 
 Before proceeding to Phase 4, confirm:
-- [ ] `.github/copilot-instructions.md` references `.ai/` folder (Copilot)
-- [ ] `CLAUDE.md` references `.ai/` folder (Claude Code)
-- [ ] `AGENTS.md` references `.ai/` folder (Codex + Cursor + universal)
-- [ ] `.github/instructions/ai-context.instructions.md` exists (Copilot path-scoped)
-- [ ] `.cursor/rules/ai-context.mdc` exists (Cursor native, `alwaysApply: true`)
-- [ ] Confluence pages created (or report why not)
+- [ ] `AGENTS.md` exists, has no unfilled `[PLACEHOLDER]`, and routes into `.ai/` (Copilot, Codex, Cursor)
+- [ ] `CLAUDE.md` contains the `@AGENTS.md` import (Claude Code)
+- [ ] `AGENTS.md` carries at most five constraints, each of them class 3 by the `standards/writing-rules.md` §3 test
+- [ ] Confluence pages created, or the completion summary says what blocked it
 - [ ] No Confluence page instructs a human reader to read `.ai/` files (rule 6b; the landing page's AI tooling status entry and the diagram sync note are the only allowed mentions)
 - [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`
 

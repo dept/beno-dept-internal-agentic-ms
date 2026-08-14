@@ -7,7 +7,7 @@ agent: "Discovery Agent"
 
 > Self-contained phase. Requires Phase 1 (agents installed). Idempotent.
 
-**Execution mode:** run this prompt with the installed **Discovery Agent** from `.github/agents/discovery.agent.md`. If your tool ignores the prompt frontmatter, explicitly select or invoke that agent before continuing. The agent must receive the local repository, any `graphify-out/` artifacts, and the installed `.github/skills/` context.
+**Execution mode:** run this prompt with the installed **Discovery Agent** from `.github/agents/discovery.agent.md`. If your tool ignores the prompt frontmatter, explicitly select or invoke that agent before continuing. The agent must receive the local repository, any `graphify-out/` artifacts, and the installed `.agents/skills/` context.
 
 **Claude Code — real subagent vs. main-thread fallback (timing matters):** Claude Code registers subagents from `.claude/agents/*.md` **at session start**, not mid-session.
 - **Bootstrap path (recommended):** if the migration was set up with `scripts/install.sh` in a terminal *before* launching Claude Code, `.claude/agents/discovery.md` already exists at session start → dispatch a **real Discovery subagent** for this phase (`Agent` / `subagent_type`), sandboxed with its own context.
@@ -25,7 +25,7 @@ agent: "Discovery Agent"
 - No hallucination: mark unknowns explicitly with `Assumption:` tags
 - All claims traceable to source files
 - Rate `Confidence: <0-100>%` per major section
-- Present state only: `.ai/` says what is true today. No change narration, no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes. A confidence note may cite its source files and the date the evidence was gathered, nothing about a prior version (full rule in `agents/discovery.agent.md` → *Writing discipline*)
+- `standards/writing-rules.md` governs every `.ai/` file you write. Read it before writing. §1 says what never goes in, §2 and §4 say which file owns which fact, §3 says which tool-enforced rules get written down at all. It is not restated here
 
 **Exclude from analysis:** `node_modules/`, `.next/`, `dist/`, `build/`, `.turbo/`, `.git/`, `coverage/`, `.cache/`, `.pnpm-store/`
 
@@ -68,8 +68,8 @@ Before generating new files, identify what already exists:
 
 **Scan these locations:**
 - **Agents**: `.github/agents/*.agent.md`, `.agents/`, `.claude/agents/`, `AGENTS.md`
-- **Instructions**: `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `CLAUDE.md`, `.cursor/rules/`
-- **Prompts / Skills**: `.github/prompts/*.prompt.md`, `.github/skills/`, `.claude/skills/`
+- **Instructions**: `CLAUDE.md`, and, where a project already has them, `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.cursor/rules/`
+- **Prompts / Skills**: `.github/prompts/*.prompt.md`, `.agents/skills/` (source), `.claude/skills/` (mirror), and `.github/skills/` where a project migrated under standard 1.x still has it (move those skills to `.agents/skills/`, re-mirror, delete the old directory)
 - **MCP**: `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`, VS Code `mcpServers` settings
 
 **Record findings** (file path, name, tool, scope, purpose). This informs `agent-registry.md` and prevents overwriting.
@@ -121,7 +121,7 @@ Feed any fetched tests into `project-context.md` in Step 5 (see file 1 below).
 Generate all 9 context files and write to `.ai/` directory in repository root.
 
 **Files to create:**
-1. `project-context.md` — what the system is, business capabilities, ownership, environments, one plain-language line per major area, and a `## Key Features (Monitored)` section built from the Step 4b Datadog fetch. Structure stays out of this file: the repository tree and the technology stack table live in `architecture.md`, referenced from here by pointer. Use the Step 4b table schema — **Public ID** (link) · **Type** (Browser/API) · **Name** · **Description** — sorted Browser first, API second, with a one-line note on the split (e.g. "5 browser + 2 API uptime"). This is the single home for key features — it syncs to the Confluence Overview page via `sync_map`. Monitoring *tooling* (that Datadog is the monitor) still belongs in `operational-context.md`; cross-reference, don't duplicate.
+1. `project-context.md`: what the system is, business capabilities, client and team, and a `## Key Features (Monitored)` section built from the Step 4b Datadog fetch. Structure stays out of this file: the repository tree and the technology stack table live in `architecture.md`, referenced from here by pointer, and environments live in `operational-context.md`. Use the Step 4b table schema: **Public ID** (link), **Type** (Browser/API), **Name**, **Description**, sorted Browser first, API second, with a one-line note on the split (for example "5 browser + 2 API uptime"). This is the single home for key features and it syncs to the Confluence Overview page via `sync_map`. Monitoring *tooling* (that Datadog is the monitor) belongs in `operational-context.md`; point at it, don't duplicate.
 2. `architecture.md` — the structural file, and the only home for the repository tree and the technology stack table. Also service boundaries, runtime topology, data flows, external systems, plus two required tables an agent uses to act rather than just describe (see `templates/architecture.template.md`):
    - **High-fan-in symbols (who owns what):** the shared functions/hooks everything depends on, with file path, consumer count, and a one-line role. Take counts from `graphify-out/graph.json` when Graphify ran, else `grep -rc`, and say which.
    - **Placement conventions:** where each kind of new code goes, with a real existing file per row to follow as the pattern.
@@ -141,15 +141,8 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 - Cite source evidence (file paths, config names)
 - Redact secrets and privileged credentials
 
-**Single source of truth (avoid cross-file duplication):**
-Each fact/constraint has exactly ONE home file; other files cross-reference it instead of restating it. This prevents drift and the duplication reviewers flag.
-- Commit conventions, linting, testing, TypeScript/import rules → **only** `coding-standards.md`
-- Tech stack table, repository/monorepo layout, high-fan-in symbols, placement conventions → **only** `architecture.md`
-- Business purpose, ownership, environments, and Key Features (monitored Synthetic flows) → **only** `project-context.md`
-- Deploy pipeline, environments, env-var handling → **only** `operational-context.md`
-- CMS/content model/webhooks/ISR → **only** `cms.md`
-
-If another file needs to mention one of these, write a one-line pointer (e.g. "See `coding-standards.md` → Commit Conventions"), not a copy. `project-context.md` must NOT contain a standalone "Commit Convention" section — point to `coding-standards.md`.
+**One topic, one file:**
+The ownership table in `standards/writing-rules.md` §4 says which file owns which topic. Every file you write here obeys it, and each opens with the ownership header from §2. When a file needs to mention a topic another file owns, write a one-line pointer (for example "See `coding-standards.md` → Commit Conventions"), not a copy. The test for whether something is a pointer or a copy is in §2: if the owning file changed tomorrow, would this text become wrong?
 
 **Quality check:** No empty sections, no placeholders. Every section has content or an explicit unknown statement.
 

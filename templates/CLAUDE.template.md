@@ -1,10 +1,8 @@
-# Project Context — Claude Code
+@AGENTS.md
 
-## Behaviour rules
+<!-- AGENTS.md is the authored instruction file and Claude Code imports it above. Add a line below
+only if it applies to Claude Code and to nothing else: a hook, a permission note, a Claude-specific
+command. Anything true for every harness belongs in AGENTS.md, and anything about the project
+itself belongs in .ai/. -->
 
-1. Only infer facts from source code, config files, and CI/CD.
-2. Never invent service names, endpoints, team members, or environment details.
-3. If something is not found, say: `Unknown — not found in repository`.
-4. Use bullet points and tables. Avoid filler language.
-
-For sustained development or support work, use the Support Agent in `.github/agents/` — it loads project context automatically.
+Skills for this project are in `.claude/skills/`, mirrored from `.agents/skills/`.
