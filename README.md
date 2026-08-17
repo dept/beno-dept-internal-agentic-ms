@@ -291,10 +291,23 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
   `scripts/install.sh` refreshes the project's vendored `config/standard-version.yml` and stamps
   the current version into an existing `.ai/.meta.yml`, so a refreshed project reports what it
   actually runs.
-- **`scripts/validate.sh` reports drift.** It compares the recorded `standard_version` against the
-  vendored `config/standard-version.yml` and warns when the project is behind, naming both
-  versions and the refresh command (`bash scripts/install.sh . --update`). A missing version on
-  either side is a warning, not a failure.
+- **`scripts/version-report.sh` answers "which projects are behind?"** Run it from this repository
+  against one or more project paths. It reads each project's `.ai/.meta.yml` `standard_version`,
+  compares it against the current version in this repository's `config/standard-version.yml`, and
+  prints a table of project, recorded version, current version and behind yes/no. It exits 1 when
+  any project is behind, so a scheduled job can gate on it.
+
+  ```bash
+  ./scripts/version-report.sh ~/work/project-a ~/work/project-b
+  ./scripts/version-report.sh ~/work/*/
+  ```
+
+- **`scripts/validate.sh` is the per-project consistency check.** It compares the recorded
+  `standard_version` against the project's own vendored `config/standard-version.yml` and warns
+  when the two disagree, naming both versions and the refresh command
+  (`bash scripts/install.sh . --update`). A missing version on either side is a warning, not a
+  failure. It runs inside a project and only sees that project's vendored copy, so use
+  `version-report.sh` for the comparison against the current standard.
 
 ## Contributing
 

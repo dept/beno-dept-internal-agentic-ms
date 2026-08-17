@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.1.0"
+  version: "2.1.1"
   release_date: "2026-08-17"
   changelog:
+    - version: "2.1.1"
+      date: "2026-08-17"
+      changes:
+        - "scripts/version-report.sh reports which projects run an outdated standard version, comparing each project's .ai/.meta.yml against this repository's current version. Repository-side tooling, nothing installed into target repositories changes"
     - version: "2.1.0"
       date: "2026-08-17"
       changes:
