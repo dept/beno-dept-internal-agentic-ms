@@ -133,7 +133,10 @@ install_one() {
   local src_rel="$2"
   local dest="${TARGET_DIR}/${dest_rel}"
 
-  if [[ -e "$dest" && $UPDATE -ne 1 ]]; then
+  # The vendored version file is standard-owned bookkeeping, never hand-edited, and a stale
+  # copy would make the drift check in validate.sh compare two equally stale numbers.
+  # It is always refreshed, with or without --update.
+  if [[ -e "$dest" && $UPDATE -ne 1 && "$dest_rel" != "config/standard-version.yml" ]]; then
     echo -e "  ${YELLOW}⊘${NC} ${dest_rel} — already exists, skipping"
     SKIPPED=$((SKIPPED + 1))
     return 0
@@ -203,6 +206,40 @@ mirror_claude_agent() {
 
 mirror_claude_agent ".github/agents/discovery.agent.md" ".claude/agents/discovery.md"
 mirror_claude_agent ".github/agents/maintainer.agent.md" ".claude/agents/maintainer.md"
+
+# Stamp the freshly installed standard version into an existing .ai/.meta.yml, so a project
+# that is re-installed or refreshed reports the version it actually runs, not the one its first
+# migration wrote. No .meta.yml yet (first migration) means nothing to stamp: the Discovery Agent
+# and scripts/scaffold.sh create it with the current version.
+stamp_meta_version() {
+  local meta="${TARGET_DIR}/.ai/.meta.yml"
+  local version_file="${TARGET_DIR}/config/standard-version.yml"
+  [[ -f "$meta" && -f "$version_file" ]] || return 0
+
+  local version recorded
+  version=$(grep -E '^[[:space:]]+version:' "$version_file" | head -1 \
+    | sed 's/.*version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
+  [[ -n "$version" ]] || return 0
+
+  grep -qE '^[[:space:]]*standard_version:' "$meta" || {
+    echo -e "  ${YELLOW}⊘${NC} .ai/.meta.yml has no standard_version field, not stamping"
+    return 0
+  }
+
+  recorded=$(grep -E '^[[:space:]]*standard_version:' "$meta" | head -1 \
+    | sed 's/.*standard_version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
+  if [[ "$recorded" == "$version" ]]; then
+    echo -e "  ${GREEN}✓${NC} .ai/.meta.yml already records standard ${version}"
+    return 0
+  fi
+
+  sed -E "s|^([[:space:]]*standard_version:).*|\1 \"${version}\"|" "$meta" > "${meta}.tmp"
+  mv "${meta}.tmp" "$meta"
+  echo -e "  ${GREEN}↻${NC} .ai/.meta.yml standard_version: ${recorded:-unset} → ${version}"
+  UPDATED=$((UPDATED + 1))
+}
+
+stamp_meta_version
 
 echo ""
 echo -e "${BLUE}── Verification ──${NC}"

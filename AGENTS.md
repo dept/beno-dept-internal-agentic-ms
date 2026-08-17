@@ -28,6 +28,9 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
 - **A file-layout change is a breaking change.** Bump `config/standard-version.yml` and add a
   changelog entry naming what moved, so a repository migrated under an older version can be told
   what to do.
+- **Every standard-content change bumps the version.** `.github/workflows/version-bump.yml` fails a
+  PR that touches standard content without changing the `version` field. See the Versioning section
+  of `README.md` for what counts as standard content and how a project reports its version.
 - **`scripts/validate.sh` runs against target repositories, not this one.** Check it with
   `bash -n scripts/validate.sh` and then run it against a locally migrated clone.
 

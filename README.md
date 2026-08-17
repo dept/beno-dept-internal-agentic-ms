@@ -277,11 +277,31 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
 - Lagging indicators (monthly): staleness, MTTR improvement, developer NPS
 - Red flags and automated collection methods
 
+## Versioning
+
+`config/standard-version.yml` is the single source of truth for the standard's version.
+
+- **Every change to standard content bumps it.** Standard content is everything the standard
+  installs into a target repository: agents, prompts, templates, standards, scripts and config.
+  The `.github/workflows/version-bump.yml` check fails a pull request that changes standard
+  content without changing the `version` field, so bump the field and add a changelog entry in
+  the same PR. Repo-only changes (`docs/`, `examples/`, `README.md`, `AGENTS.md`, CI) do not
+  need a bump.
+- **Every migrated project reports its version.** `.ai/.meta.yml` carries `standard_version`.
+  `scripts/install.sh` refreshes the project's vendored `config/standard-version.yml` and stamps
+  the current version into an existing `.ai/.meta.yml`, so a refreshed project reports what it
+  actually runs.
+- **`scripts/validate.sh` reports drift.** It compares the recorded `standard_version` against the
+  vendored `config/standard-version.yml` and warns when the project is behind, naming both
+  versions and the refresh command (`bash scripts/install.sh . --update`). A missing version on
+  either side is a warning, not a failure.
+
 ## Contributing
 
 1. Clone this repo
 2. Make changes to templates, agents, or config
-3. Bump version in `config/standard-version.yml` if changing the standard
+3. Bump version in `config/standard-version.yml` if changing the standard (CI enforces this, see
+   [Versioning](#versioning))
 4. Test with `./scripts/scaffold.sh` on a sample project
 5. Validate with `./scripts/validate.sh`
 6. Open a PR

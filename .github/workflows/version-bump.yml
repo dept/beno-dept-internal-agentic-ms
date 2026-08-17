@@ -1,0 +1,50 @@
+name: Standard version bump
+
+on:
+  pull_request:
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require a version bump when standard content changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          VERSION_FILE="config/standard-version.yml"
+
+          # Standard content is everything the standard installs into a target repository.
+          # Repo-only files (docs, examples, CI, the readme and wiring files) do not need a bump,
+          # and neither does a change limited to the version file itself.
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          standard_changed=$(printf '%s\n' "$changed" \
+            | grep -Ev '^(docs/|examples/|\.github/|README\.md|AGENTS\.md|CLAUDE\.md|\.gitignore$)' \
+            | grep -v "^${VERSION_FILE}$" || true)
+
+          if [ -z "$standard_changed" ]; then
+            echo "No standard content changed, version bump not required."
+            exit 0
+          fi
+
+          echo "Standard content changed:"
+          printf '  %s\n' $standard_changed
+
+          # The top-level `version:` field only. Changelog entries are list items
+          # (`- version:`) and do not satisfy the requirement on their own.
+          if git diff -U0 "$BASE_SHA" "$HEAD_SHA" -- "$VERSION_FILE" \
+            | grep -qE '^\+[[:space:]]+version:'; then
+            new_version=$(grep -E '^[[:space:]]+version:' "$VERSION_FILE" | head -1 \
+              | sed 's/.*version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
+            echo "Version bumped to ${new_version}."
+            exit 0
+          fi
+
+          echo "::error::This PR changes standard content but does not bump 'standard.version' in ${VERSION_FILE}. Bump it and add a changelog entry."
+          exit 1
