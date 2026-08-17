@@ -287,6 +287,10 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
   content without changing the `version` field, so bump the field and add a changelog entry in
   the same PR. Repo-only changes (`docs/`, `examples/`, `README.md`, `AGENTS.md`, CI) do not
   need a bump.
+- **One bump per pull request, not per commit.** While a PR is open and unmerged, further commits
+  on that branch amend the changelog entry for the version being released; they never add another
+  version. A new version number is only introduced by a PR that does not already carry an
+  unreleased bump.
 - **Every migrated project reports its version.** `.ai/.meta.yml` carries `standard_version`.
   `scripts/install.sh` refreshes the project's vendored `config/standard-version.yml` and stamps
   the current version into an existing `.ai/.meta.yml`, so a refreshed project reports what it
