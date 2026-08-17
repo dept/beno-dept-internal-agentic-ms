@@ -42,11 +42,15 @@ validation:
       should_contain:
         - "|"                     # Should have a table
     agent-registry.md:
-      should_contain:
-        - "Discovery"             # Must reference the discovery agent
+      # A row naming a configured artifact. Not a specific filename: naming one forces the
+      # registry to keep writing about a file the project may no longer have.
+      should_match: '^\|.*(\.md|\.json|\.agents/|\.claude/|\.github/)'
 
   # Staleness detection
   staleness:
     warn_after_days: 30           # Yellow flag
     critical_after_days: 90       # Red flag
     check_git_activity: true      # Compare .ai/ last commit vs repo last commit
+    # Generated-artifact freshness: warn when the source is newer than the generated copy.
+    generated_from:
+      .agents/skills/codebase-overview/SKILL.md: .ai/architecture.md

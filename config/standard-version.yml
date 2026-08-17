@@ -3,9 +3,18 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "1.0.0"
-  release_date: "2026-06-17"
+  version: "2.0.0"
+  release_date: "2026-08-14"
   changelog:
+    - version: "2.0.0"
+      date: "2026-08-14"
+      changes:
+        - "Breaking: skills move from .github/skills/ to .agents/skills/, mirrored to .claude/skills/. Every harness in use reads .agents/skills; Codex reads only that path"
+        - "Breaking: .github/copilot-instructions.md and .github/instructions/ai-context.instructions.md are no longer generated. AGENTS.md is the one authored wiring file and Copilot reads it as agent instructions"
+        - "Breaking: CLAUDE.md is an import of AGENTS.md rather than a copy of its rules"
+        - "New: standards/writing-rules.md, the single home for the .ai/ writing rules, installed into target repositories and referenced from every agent, prompt and template"
+        - "codebase-overview skill carries structural content generated from .ai/architecture.md instead of a routing table"
+        - "Ownership header in all nine .ai/ templates: one topic, one owning file"
     - version: "1.0.0"
       date: "2026-06-17"
       changes:

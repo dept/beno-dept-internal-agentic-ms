@@ -94,10 +94,10 @@ The `[Project Name]` page is the top-level Confluence entry point. It should let
 
 - **Context files:** [e.g. `.ai/` directory with N context documents]
 - **Agents:** [e.g. Discovery, Maintainer, Support in `.github/agents/`]
-- **Skills:** [e.g. N skills in `.github/skills/`]
-- **Code graph:** [e.g. Graphify — X nodes, Y edges]
+- **Skills:** [e.g. N skills in `.agents/skills/`, mirrored to `.claude/skills/`]
+- **Code graph:** [e.g. Graphify with X nodes, Y edges]
 - **MCP servers:** [e.g. list of configured integrations]
-- **Instructions:** [e.g. `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`]
+- **Instructions:** [e.g. `AGENTS.md`, `CLAUDE.md`]
 
 ## Key contacts
 > [!WARNING]

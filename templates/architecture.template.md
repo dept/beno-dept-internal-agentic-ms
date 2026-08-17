@@ -17,32 +17,28 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 - **Placement conventions** (see below)
 - Structural discovery notes when Graphify materially helped identify boundaries or hotspots
 
-## Boundary with `project-context.md`
-
-`architecture.md` is the structural file: layout, stack, boundaries, and the two tables below.
-`project-context.md` is the business file: what the system is for, key features, ownership.
-Never restate the repository tree or the technology stack table there; point at this file instead.
-
 ## Writing rules
 
-**Describe the codebase as it is today. Never narrate change.** This file is agent-read context, not
-a changelog. Do not write what changed, when it changed, or what moved where: no commit references,
-no dates of previous versions, no notes about a prior state of the repository or of this file. These
-lines are all wrong here:
+`standards/writing-rules.md` governs this file. Read it before writing. It is not restated here.
 
-- "inherited unchanged from the 2026-07-14 version of this file"
-- "this section was rewritten on 2026-07-31"
-- "commit X deleted this file, it is now restored"
-- "three sections previously carried here have moved to `project-context.md`"
+## Ownership header
 
-The change history lives in git and in the PR that made the change, which is where a human reads it.
-An agent reading this file mid-task needs the current truth and nothing else.
+The generated file opens with this block, immediately after the H1:
 
-Evidence and confidence notes are the one exception, in one direction only: cite the source files a
-claim was derived from and the date that evidence was gathered, because that is a fact about the
-evidence. `Confidence: 85% (source: turbo.json, pnpm-workspace.yaml, verified 2026-08-12)` is
-correct. A note that names an earlier version of this file, a commit, or a prior repository state is
-not, however it is phrased.
+> **Owned by this file:** the annotated repository tree, the technology stack table, service and
+> trust boundaries, the runtime and data-flow diagram, high-fan-in symbols, and placement
+> conventions. This is the authoritative source, and the only home for the tree and the stack
+> table. `.agents/skills/codebase-overview/SKILL.md` carries a generated copy of the structural
+> sections; edit them here, never there.
+> **Not carried here:** business purpose and ownership (`project-context.md`); tool configuration
+> (`coding-standards.md`); dependency versions and vendor risk (`dependencies.md`); any URL
+> (`onboarding.md`).
+
+## Regenerated downstream
+
+Changing the annotated tree, the stack table, the placement conventions, or the high-fan-in table
+means `.agents/skills/codebase-overview/SKILL.md` and its `.claude/skills/` mirror are regenerated
+in the same pass. `scripts/validate.sh` warns when the skill is older than this file.
 
 ## High-fan-in symbols (who owns what)
 
@@ -94,7 +90,8 @@ same place a team member would have put it.
 - Does every row of the high-fan-in table name a symbol and path that exist, with the source of its consumer count stated?
 - Does the placement table cover the kinds of change this project actually receives, with a real example file per row?
 - Does `project-context.md` avoid restating the repository tree and the technology stack table?
-- Is the file free of change narration: no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" notes? (An evidence date on a confidence note is fine.)
+- Does the file pass every rule in `standards/writing-rules.md`?
+- Does the generated block in `.agents/skills/codebase-overview/SKILL.md` match the sections it was generated from?
 - If Graphify highlighted service boundaries, dependency clusters, or hotspots, were those findings verified against repository evidence before being documented?
 
 ## Missing Information

@@ -80,15 +80,18 @@ Scan these locations:
 - `AGENTS.md` (root)
 
 **Instructions**
-- `.github/copilot-instructions.md`
-- `.github/instructions/*.instructions.md`
+- `AGENTS.md` (root)
 - `CLAUDE.md` (root)
-- `.cursor/rules/`
+- `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.cursor/rules/` (pre-existing only; this standard does not generate them)
 
 **Prompts / Skills**
 - `.github/prompts/*.prompt.md`
-- `.github/skills/`
-- `.claude/skills/`
+- `.agents/skills/` (the source)
+- `.claude/skills/` (the mirror)
+- `.github/skills/` (pre-existing only, from a repository migrated under standard 1.x). When one is
+  found, move its skills into `.agents/skills/`, re-mirror to `.claude/skills/`, and delete the old
+  directory. `agent-registry.md` then lists the skills at their current paths and says nothing about
+  the move.
 
 **MCP configuration**
 - `.vscode/mcp.json` (VS Code / Copilot)
@@ -140,6 +143,7 @@ Document all findings in `agent-registry.md` under a dedicated **Existing Agenti
 ### 7) Coding Standards Discovery
 - Infer formatting, linting, testing, branching, and PR conventions.
 - Record quality gates and mandatory checks.
+- Apply the three-way test in `standards/writing-rules.md` §3 to every tool-enforced rule before writing it. Most rules a linter or formatter enforces are not written down at all; what gets recorded is the commands, the config paths, the configs that resolve outside the repository, the conflicts between configs, and the rules an agent could not recover from a tool error. Conventions no tool checks are written out in full.
 - Detect the accessibility target (a11y tooling, `aria`/semantic patterns, contrast/lint rules, documented WCAG level). Record it in `coding-standards.md`; if none is documented, note the DEPT baseline of **WCAG 2.2 Level AA** as the assumed target.
 
 ### 8) `.ai` Folder Generation
@@ -160,32 +164,19 @@ Each file must include:
 - `Confidence: <0-100>%` per major section
 - `Validation Questions` section for unresolved gaps
 
-#### Writing discipline: present state only, never change narration
+#### Writing discipline
 
-`.ai/` files are agent-read context. They state what is true about the codebase **today** and
-nothing else. Never write what changed, when it changed, or what moved where: no commit references,
-no dates of previous versions, no notes about a prior state of the repository or of the file. Every
-one of these is wrong inside `.ai/`:
+**Read `standards/writing-rules.md` before writing any `.ai/` file, and apply it to every file you
+write.** It is the single home for these rules and they are not repeated here or anywhere else.
+Four things it governs, and which section to look in:
 
-- "inherited unchanged from the 2026-07-14 version of this file"
-- "this section was rewritten on 2026-07-31"
-- "commit X deleted this file, it is now restored"
-- "three sections previously carried here have moved to `architecture.md`"
+- What never goes in a `.ai/` file: absence, removal, process and dates, self-correction (§1).
+- Which file owns which fact, and how to write a pointer instead of a copy (§2, §4).
+- Which tool-enforced rules get written into `coding-standards.md` at all (§3). Most do not.
+- The three cases where existing content is removed rather than updated (§5).
 
-The change history lives in git and in the PR that carried the change, which is where a human reads
-it. An agent loading a `.ai/` file mid-task needs the current truth; narration of how the file got
-this way is noise it has to read past, and it goes stale the moment the next change lands.
-
-**Evidence and confidence notes are the one exception, in one direction only.** They may cite the
-source files a claim was derived from and the date that evidence was gathered, because that is a
-fact about the evidence, not about a previous version of the file:
-`Confidence: 85% (source: turbo.json, pnpm-workspace.yaml, verified 2026-08-12)`. A note that names
-an earlier version of the file, a commit, or a prior repository state is change narration however it
-is phrased, including when it is dressed up as provenance.
-
-This applies to every `.ai/` file, and to the boundary pointers between `project-context.md` and
-`architecture.md` in particular: point at the other file because that is where the fact lives, never
-because it used to live here.
+The ownership header at the top of each generated file comes from the §4 table, and each
+`templates/*.template.md` carries the exact block for its file.
 
 ### Handover and Access Links
 
@@ -202,29 +193,20 @@ If any GitHub/environment/Keeper link cannot be verified, prompt the user for th
 
 ### 9) AI Context Wiring
 
-After generating `.ai/`, create or update wiring files so every supported IDE (Copilot, Claude Code, Codex, Cursor) automatically reads the project context. `.ai/` is the single shared source; each file below is a thin pointer into it. **Check if each file exists first** — if it does, append; never overwrite.
+After generating `.ai/`, create or update the wiring files so every supported harness reads the project context. There are two, and only one of them is authored. **Check if each file exists first**: if it does, append; never overwrite.
 
-**`.github/copilot-instructions.md`** (Copilot)
-- Not present: create with a short project summary, an on-demand `.ai/` routing table (which file to read for which kind of task), and behaviour rules.
-- Already present: append a `## AI Project Context (.ai/)` section at the end.
+**`AGENTS.md`** (repository root, the one authored wiring file)
+- Every harness in use reads it: Copilot on the GitHub website and in VS Code as agent instructions, Codex and Cursor natively, Claude Code through the import below.
+- Not present: create from `templates/AGENTS.template.md`, filling the project summary, setup commands and key-constraint one-liners from `.ai/`.
+- Already present: append the `.ai/` routing table and the setup section it lacks, and leave the rest alone.
 
-**`CLAUDE.md`** (Claude Code, repository root)
-- Same append-or-create logic as above.
+**`CLAUDE.md`** (repository root, an import)
+- Not present: create from `templates/CLAUDE.template.md`. It is `@AGENTS.md` plus any Claude-Code-only line.
+- Already present: add the `@AGENTS.md` import at the top if it is missing, and remove anything below it that `AGENTS.md` now says (a duplicated rule is a second source of truth, see `standards/writing-rules.md` §2).
 
-**`AGENTS.md`** (Codex + Cursor + universal, repository root)
-- Nearest-to-universal pointer — Codex, Cursor, and Copilot's coding agent read it.
-- Not present: create from `templates/AGENTS.template.md`, filling setup commands + key-constraint one-liners from `.ai/`.
-- Already present: append a `## AI Project Context (.ai/)` section.
+Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. They target tools that already read `AGENTS.md`, and a generated copy is one more file to keep in sync. If a project already has them, leave them in place, record them in `agent-registry.md`, and do not extend them.
 
-**`.github/instructions/ai-context.instructions.md`** (Copilot path-scoped)
-- Not present: create with `applyTo: "**"` frontmatter and concise `.ai/` loading instructions.
-- Already present: leave unchanged — report as already present in the completion summary.
-
-**`.cursor/rules/ai-context.mdc`** (Cursor native rules)
-- Not present: create with `alwaysApply: true` frontmatter + a short pointer body (do NOT restate `.ai/` — point to it).
-- Already present: leave unchanged — report as already present.
-
-In all wiring files, instruct the AI to:
+In the wiring files, instruct the AI to:
 1. Load `.ai/` files **on demand**, never at session start. The wiring file carries a two-to-three sentence summary of what the system is plus the always-on constraints, and a routing table saying which file to read for which kind of task. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
 2. Cross-reference `.ai/` content with any existing agents, instructions, and prompts found in step 0
 3. Respect constraints and scopes defined in existing agentic files
@@ -272,7 +254,7 @@ Use `config/stack-detection.yml` from this standards repository as detection hin
 
 #### Step B — Add a skill per technology (vendor-fetch first, else generate code-verified)
 
-For each detected technology, produce `.github/skills/<technology-name>/SKILL.md`.
+For each detected technology, produce `.agents/skills/<technology-name>/SKILL.md`.
 
 **Step B1 — try a vendor skill via `gh skill`.** `gh skill` is a real, built-in (preview) GitHub CLI feature — use it when available:
 
@@ -281,7 +263,7 @@ For each detected technology, produce `.github/skills/<technology-name>/SKILL.md
 gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json name,repository,path
 
 # Install an authoritative result into the project skills folder
-gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
+gh skill install <owner>/<repo> <skill-name> --dir .agents/skills --force
 ```
 
 Rules: only accept vendor-org results (e.g. `vercel/`, `shopify/`, `github/`), not individual accounts. `gh skill` is preview and may be absent on older `gh` — if `gh skill --help` fails, or search returns no authoritative match, fall through to Step B2. Do **not** fabricate a "vendor skill" source when the command didn't actually run.
@@ -292,14 +274,14 @@ Rules: only accept vendor-org results (e.g. `vercel/`, `shopify/`, `github/`), n
 2. **Real paths only.** Confirm every path with `ls`/glob before writing it. Never infer a route/dir from framework convention (e.g. `app/[locale]/`) without checking it exists.
 3. **Copy code from real call sites.** Base each code sample on an actual usage found in the repo (`grep` the call, read the file).
 4. **No empty/stub sections.** Every heading has real content or is omitted.
-5. **No restated global constraints.** Rules already in `.ai/` or `copilot-instructions.md` (commits, `process.env`, deploy target) get a one-line pointer, not a re-documentation.
+5. **No restated global constraints.** Rules already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) get a one-line pointer, not a re-documentation. `standards/writing-rules.md` §2 applies to skill bodies as it does to `.ai/`.
 6. **Scope matches frontmatter.** Don't add off-topic sections; the body must stay within the skill's declared scope.
 7. **Mark residual uncertainty honestly.** If something genuinely can't be verified, write `Assumption:` — never state an unverified guess as fact.
 
 **Verification is your process, not the skill's content.** Do the grep/`ls`/read to convince *yourself*, then write only the clean fact. The skill must NOT carry verification residue:
 - No line numbers anywhere (`file.ts:271`) — they rot on the next edit. Reference a file or directory by path only, and only when it's real guidance.
 - No "verified via" / "used in" evidence columns, no citations, no `grep`-proof.
-- No negative trivia ("there is no `getOptimizelyClient()`", "X does not exist") — just state what the project *does* use.
+- No negative trivia ("there is no `getOptimizelyClient()`", "X does not exist"): state what the project *does* use. This is `standards/writing-rules.md` §1 applied to a skill body, including its one exception: an absence that changes what an agent would do is written as the instruction, never as the absence.
 - No meta-commentary about `.ai/` being wrong — if `.ai/` contradicts code, fix `.ai/`, don't narrate the conflict inside a skill.
 A skill reads as a clean set of facts a developer can act on, not an audit report.
 
@@ -324,26 +306,31 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 ```
 
 **Rules:**
-1. Skip if a skill with that name already exists in `.github/skills/` (unless regenerating).
-2. There must be a `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
-3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary.
+1. Skip if a skill with that name already exists in `.agents/skills/` (unless regenerating).
+2. There must be a `.agents/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
+3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary, which is where skipped technologies are reported. Nothing about a skip goes into `.ai/`.
 4. **Self-check before finishing each skill:** re-grep every symbol and re-`ls` every path you wrote. A skill that references anything you could not locate fails the phase — fix or remove it.
-5. **Mirror to Claude Code:** put the finished skill at `.claude/skills/<technology-name>/` as well. `.github/skills/` is Copilot-only: Claude Code reads `.claude/skills/` and will not see anything left only in `.github/`. SKILL.md's frontmatter format is identical across both, so no rewrite is involved. `.github/skills/` stays the source of truth.
+5. **Mirror to Claude Code:** put the finished skill at `.claude/skills/<technology-name>/` as well. `.agents/skills/` is read by Copilot, VS Code, Codex and Cursor, but not by Claude Code, which reads `.claude/skills/`. SKILL.md's frontmatter format is identical across all of them, so no rewrite is involved. `.agents/skills/` stays the source of truth.
 
-   **A copy and a symlink are both acceptable.** A symlink (`ln -s ../../.github/skills/<name> .claude/skills/<name>`) cannot drift, so it needs no re-copy when the source changes. A copy is the safer default for a team with Windows checkouts: git without symlink support materialises a link as a plain text file holding the target path, which turns the mirrored skill into a one-line file naming a path. Pick one per project and stay consistent; if you copy, re-copy the mirror whenever the source changes. `scripts/validate.sh` counts both (it uses `find -L`).
+   **A copy and a symlink are both acceptable.** A symlink (`ln -s ../../.agents/skills/<name> .claude/skills/<name>`) cannot drift, so it needs no re-copy when the source changes. A copy is the safer default for a team with Windows checkouts: git without symlink support materialises a link as a plain text file holding the target path, which turns the mirrored skill into a one-line file naming a path. Pick one per project and stay consistent; if you copy, re-copy the mirror whenever the source changes. `scripts/validate.sh` counts both (it uses `find -L`).
 
 #### Step B3: the `codebase-overview` skill
 
-Alongside the technology skills, emit `.github/skills/codebase-overview/SKILL.md` from
+Alongside the technology skills, emit `.agents/skills/codebase-overview/SKILL.md` from
 `templates/skills/codebase-overview/SKILL.md`, substituting `[PROJECT_NAME]`. Mirror it to
 `.claude/skills/codebase-overview/` like the rest.
 
-It is deliberately thin. The `description` frontmatter is what makes an agent discover it before
-exploring the tree, so that line does the work; the body stays a routing table into `.ai/` and
-carries no structural facts of its own. Do not paste the repository tree, the stack table, or the
-diagram into it. `.ai/architecture.md` is the single source of truth, and a second copy would
-drift, land on the wrong Confluence page, and leave harnesses with no skill loader (Codex, Cursor)
-without the content. Adding sections here is the failure mode to avoid, not an improvement.
+Its `description` frontmatter is what makes an agent discover it before exploring the tree, so that
+line must stay specific to this project. Its body is **generated from `.ai/architecture.md`**: copy
+the annotated repository tree, the technology stack table, the placement conventions and the
+high-fan-in symbols into the generated block verbatim, between the markers the template carries.
+
+`.ai/architecture.md` remains the single editable source. The skill is a derived artifact: an agent
+that finds the two disagreeing fixes `.ai/architecture.md` and regenerates, never the other way
+round, and `scripts/validate.sh` warns when the skill is older than its source. Copy those four
+sections and nothing else. Every other topic gets the one pointer line the template already carries,
+because a loaded skill stays in context for the rest of the session and an unbounded body costs
+every turn.
 
 #### Step C — Find and add MCP servers
 
@@ -545,14 +532,14 @@ Before finalising, verify:
 2. Every major claim cites a source file path or config reference.
 3. Unknowns are listed as questions, not silent omissions.
 4. No secrets are included.
-5. All wiring files created/updated for the four IDEs — `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.github/instructions/ai-context.instructions.md`, `.cursor/rules/ai-context.mdc`.
+5. Both wiring files created/updated: `AGENTS.md` authored, `CLAUDE.md` importing it with `@AGENTS.md`. No generated copy of either was created for another tool.
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
-8. `codebase-overview` skill emitted with `[PROJECT_NAME]` substituted, and still thin: a routing table into `.ai/`, with no repository tree, stack table, or diagram pasted into it.
+8. `codebase-overview` skill emitted with `[PROJECT_NAME]` substituted, and its generated block carries the repository tree, stack table, placement conventions and high-fan-in symbols copied from `.ai/architecture.md` unchanged.
 9. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
 10. Every skill mirrored to `.claude/skills/` (copy or symlink); `.claude/agents/support-agent.md` created mirroring the Copilot support agent's body.
 11. `architecture.md` carries the repository tree, the technology stack table, the high-fan-in symbol table, and the placement conventions; `project-context.md` restates none of them.
-12. No `.ai/` file narrates change: no commit references, no dates of previous versions, no "moved to", "was rewritten", or "restored" notes. An evidence date on a confidence note is the one allowed date.
+12. Every `.ai/` file passes `standards/writing-rules.md`: no banned sentence from §1, no fact owned by another file restated (§2), no tool-enforced rule that fails the §3 test, and an ownership header from §4 at the top of each.
 
 ## Completion Summary
 
@@ -567,8 +554,9 @@ Output after all files are written:
 [list each file with action: created / appended / already present]
 
 ### Skills installed
-[list each .github/skills/<name>/SKILL.md created, including codebase-overview, or "None matched"]
+[list each .agents/skills/<name>/SKILL.md created, including codebase-overview, or "None matched"]
 [note: each mirrored to .claude/skills/<name>/, say whether by copy or symlink]
+[list any detected technology that got no skill, with the reason. This summary is the only place a skip is recorded]
 
 ### MCP servers added
 [list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]

@@ -44,10 +44,13 @@ Fetch these files from the DEPT Agentic Standards repository:
 | Graphify Bootstrap Helper | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/graphify-bootstrap.sh` | `scripts/graphify-bootstrap.sh` |
 | Validator | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/validate.sh` | `scripts/validate.sh` |
 | Standard version | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/config/standard-version.yml` | `config/standard-version.yml` |
-| Confluence skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/SKILL.md` | `.github/skills/confluence-axi/SKILL.md` |
-| Confluence skill setup | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/references/setup.md` | `.github/skills/confluence-axi/references/setup.md` |
+| Writing rules | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/standards/writing-rules.md` | `standards/writing-rules.md` |
+| Confluence skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/SKILL.md` | `.agents/skills/confluence-axi/SKILL.md` |
+| Confluence skill setup | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/references/setup.md` | `.agents/skills/confluence-axi/references/setup.md` |
 
-**Action:** Create `.github/agents/`, `.github/prompts/`, `.github/skills/confluence-axi/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` are executable. (The `confluence-axi` skill bundles no script — it drives the `confluence-axi` npm CLI via `npx`, so nothing to chmod.)
+**Action:** Create `.github/agents/`, `.github/prompts/`, `.agents/skills/confluence-axi/`, `standards/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` are executable. (The `confluence-axi` skill bundles no script: it drives the `confluence-axi` npm CLI via `npx`, so nothing to chmod.)
+
+`standards/writing-rules.md` is the file every later phase points at when it says what may be written into `.ai/`. Install it before Phase 2 runs.
 
 **Mirror Discovery + Maintainer agents to Claude Code:** Claude Code auto-loads subagents from `.claude/agents/*.md`, with different frontmatter (`name`, `description`; no `tools:` list — Claude Code subagents inherit all available tools by default, so drop the Copilot `tools: [...]` line entirely).
 
@@ -61,7 +64,7 @@ Write:
 
 Body prose is tool-agnostic already (references `.ai/`, evidence rules, workflow steps) — only the frontmatter changes. `.github/agents/` stays the source; re-copy the body on any future edit.
 
-**Mirror to Claude Code:** Copy the `confluence-axi` skill verbatim (SKILL.md unchanged — Claude Code uses the same `name`/`description` frontmatter format) to `.claude/skills/confluence-axi/`. This keeps Claude Code's skill auto-discovery (`.claude/skills/`) in sync with Copilot's (`.github/skills/`) without a second source of truth — one install, two locations.
+**Mirror to Claude Code:** Copy the `confluence-axi` skill verbatim (SKILL.md unchanged: Claude Code uses the same `name`/`description` frontmatter format) to `.claude/skills/confluence-axi/`. `.agents/skills/` is read by Copilot, VS Code, Codex and Cursor; Claude Code reads `.claude/skills/` only. One install, two locations, one source of truth.
 
 **Mirror prompts as slash commands for Claude Code + Cursor:** `.github/prompts/*.prompt.md` is Copilot's `@workspace /name` format. Claude Code auto-loads slash commands from `.claude/commands/<name>.md`, and Cursor from `.cursor/commands/<name>.md` — same trigger UX (`/ms-migration`, `/ms-install`, ...), different folder + frontmatter. For each installed prompt, write both mirrors:
 
@@ -88,9 +91,10 @@ Before proceeding to Phase 2, confirm:
 - [ ] `.claude/commands/` and `.cursor/commands/` each contain the 5 mirrored slash commands (`ms-migration`, `ms-install`, `ms-discover`, `ms-integrate`, `ms-stack-tooling`)
 - [ ] `scripts/graphify-bootstrap.sh` exists and is executable
 - [ ] `scripts/validate.sh` exists and is executable
-- [ ] `.github/skills/confluence-axi/` exists (SKILL.md + references/setup.md; no bundled script — it wraps the `confluence-axi` npm CLI)
+- [ ] `standards/writing-rules.md` exists
+- [ ] `.agents/skills/confluence-axi/` exists (SKILL.md + references/setup.md; no bundled script, it wraps the `confluence-axi` npm CLI)
 - [ ] `.claude/skills/confluence-axi/` mirrors the same files (Claude Code auto-load)
-- [ ] No other skills yet — stack-specific skills are added in Phase 4
+- [ ] No other skills yet; stack-specific skills are added in Phase 4
 
 ## Completion Signal
 

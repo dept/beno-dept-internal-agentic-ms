@@ -28,33 +28,22 @@ Trigger this agent:
 6. **A missing target is a critical gap, not a skipped step** (see below)
 7. **Present state only**: `.ai/` says what is true today, never what changed (see below)
 
-## No change narration in `.ai/`
+## The writing rules
 
-`.ai/` files are agent-read context describing the codebase **as it is today**. You edit them every
-week, unattended, and you are the most likely source of drift here, so this rule is absolute:
-nothing you write into a `.ai/` file may narrate change. No commit references, no dates of previous
-versions, no explanation of what moved where or why. Every one of these is wrong inside `.ai/`:
+**`standards/writing-rules.md` governs everything you write into `.ai/`.** Read it at the start of
+every run. It is the single home for these rules and they are not repeated here.
 
-- "inherited unchanged from the 2026-07-14 version of this file"
-- "this section was rewritten on 2026-07-31"
-- "commit X deleted this file, it is now restored"
-- "three sections previously carried here have moved to `architecture.md`"
+You are the most likely source of the drift it prevents. You edit these files every week,
+unattended, your job is diff-driven, and Phase 6 makes you describe changes. So the failure mode is
+specific and predictable: **the description of a change belongs in the Phase 6 summary and the PR,
+never in the file.** The file gets the new fact stated plainly, as if it had always been true. The
+summary gets what changed, why, and the evidence.
 
-You will feel the pull toward these lines, because your job is diff-driven and Phase 6 makes you
-describe changes. **That description belongs in the PR summary, not in the file.** The file gets the
-new fact stated plainly, as if it had always been true; the summary table gets what changed, why,
-and the evidence. A human reads history in git and in the PR. An agent loading `.ai/` mid-task needs
-the current truth, and narration goes stale the moment the next change lands.
+That covers the *Missing target files* case below and a human later restoring a file: the report of
+a deletion goes in the Phase 6 summary, never as a line inside `.ai/`.
 
-**Evidence and confidence notes are the one exception, in one direction only.** They may cite the
-source files a claim was derived from and the date that evidence was gathered, because that is a
-fact about the evidence, not about a previous version of the file:
-`Confidence: 90% (source: services/orders/package.json, verified 2026-08-12)`. A note that names an
-earlier version of the file, a commit, or a prior repository state is change narration however it is
-phrased, including when it is dressed up as provenance.
-
-This also applies when you act on *Missing target files* below and when a human later restores a
-file: the report of a deletion goes in the Phase 6 summary, never as a line inside `.ai/`.
+You are also the agent that removes content that breaks these rules. Section 5 of the writing rules
+says when you may delete and when you may not. Read it before you remove anything.
 
 ## Missing target files
 
@@ -165,7 +154,12 @@ Before editing any `.ai/` file:
 
 1. **Check for human-maintained markers**: Skip any section wrapped in `<!-- human-maintained -->` ... `<!-- /human-maintained -->`
 2. **Check for manual edits since last maintenance**: If the file was edited outside this agent (different author in git log), present a diff for review rather than auto-updating
-3. **Append, don't replace**: When adding new information, add to end of relevant section. Never delete existing content unless it's provably wrong (e.g., references a deleted file)
+3. **Default to adding, and delete only in the three cases below.** When adding new information, add it to the section that owns the topic. Do not delete existing content except when:
+   - **it breaks a rule in `standards/writing-rules.md`**: change narration, a fact this file does not own restated from another, a tool-enforced rule that fails the §3 test, an absence that fails the "an agent that did not know this would ___" test. Rule-breaking content is wrong by definition, so remove it outright, and leave no note saying you did (that note would break the rules in turn);
+   - **repository evidence contradicts it**: it names a file, symbol, command, or environment that does not exist. Replace it with what is there;
+   - **a human asked you to remove it in this run.**
+
+   Outside those three, leave it. Content that is merely old, merely unfamiliar, or merely not something you would have written is not yours to remove: a person may have added it by hand and you cannot see their reason. When you cannot confirm a fact from evidence and it breaks no rule, keep it and flag the uncertainty next to it.
 4. **Mark uncertainty**: If update confidence is below 80%, add it as a `> ⚠️ Potential update (confidence: X%):` block rather than inline
 
 ### 4b: Update Format
@@ -175,10 +169,18 @@ accumulate and rot the files. The audit trail lives in git blame (who/when) and 
 summary (what/why/source). For each update: edit the content directly, and record the date +
 evidence source in the Phase 6 PR summary table instead of in the file.
 
-The same reason bans the prose version, not just the comment stamps: no sentence inside a `.ai/`
-file may say what changed, when, or what moved where. Write the new fact as current truth and put
-the change in the summary. See *No change narration in `.ai/`* above for the full rule and the
+The same reason bans the prose version, not just the comment stamps. Write the new fact as current
+truth and put the change in the summary. `standards/writing-rules.md` §1 has the full rule and the
 evidence-note exception.
+
+### 4d: Regenerate the codebase-overview skill
+
+When this run changes the repository tree, the technology stack table, the placement conventions or
+the high-fan-in symbols in `.ai/architecture.md`, regenerate
+`.agents/skills/codebase-overview/SKILL.md` from those sections in the same run and mirror it to
+`.claude/skills/codebase-overview/`. Copy the sections verbatim into the generated block; the
+markers in the file show its bounds. `.ai/architecture.md` is the editable source, the skill is the
+derived copy, and `scripts/validate.sh` warns when the copy is older than its source.
 
 ### 4c: Confidence Re-scoring
 
@@ -293,7 +295,8 @@ Setup is not part of this agent's runtime job — the full workflow (permissions
 Before completing, verify:
 - [ ] All critical-severity findings resolved or escalated
 - [ ] Every missing `.ai/` file or `sync_map` source reported as a critical gap: none silently skipped, none recreated unprompted
-- [ ] No change narration written into any `.ai/` file: no commit references, no dates of previous versions, no "moved to"/"was rewritten"/"restored" prose. The change belongs in the Phase 6 summary; an evidence date on a confidence note is the one allowed date
+- [ ] Every `.ai/` file this run touched passes `standards/writing-rules.md`, and any rule-breaking content found there was removed rather than left in place. The change itself belongs in the Phase 6 summary
+- [ ] `.agents/skills/codebase-overview/SKILL.md` regenerated and mirrored if this run changed the structural sections of `.ai/architecture.md`
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
 - [ ] Human-maintained sections untouched

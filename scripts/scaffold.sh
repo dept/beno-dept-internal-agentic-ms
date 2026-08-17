@@ -234,31 +234,23 @@ echo ""
 # These files instruct AI coding assistants to read the .ai/ folder.
 echo -e "${BLUE}── Wiring IDE configurations ──${NC}"
 
-# GitHub Copilot — custom instructions
-if [ -f "${TEMPLATES_DIR}/copilot-instructions.template.md" ]; then
-  copy_if_new "${TEMPLATES_DIR}/copilot-instructions.template.md" \
-    "${PROJECT_DIR}/.github/copilot-instructions.md" \
-    ".github/copilot-instructions.md"
+# AGENTS.md: the one authored instruction file. Read by Copilot (GitHub and VS Code),
+# Codex and Cursor natively, and by Claude Code through the import in CLAUDE.md.
+if [ -f "${TEMPLATES_DIR}/AGENTS.template.md" ]; then
+  copy_if_new "${TEMPLATES_DIR}/AGENTS.template.md" \
+    "${PROJECT_DIR}/AGENTS.md" \
+    "AGENTS.md"
 else
-  echo -e "  ${YELLOW}△${NC} copilot-instructions.template.md not found — skipping"
+  echo -e "  ${YELLOW}△${NC} AGENTS.template.md not found, skipping"
 fi
 
-# Claude Code — CLAUDE.md project instructions
+# Claude Code: CLAUDE.md, an import of AGENTS.md
 if [ -f "${TEMPLATES_DIR}/CLAUDE.template.md" ]; then
   copy_if_new "${TEMPLATES_DIR}/CLAUDE.template.md" \
     "${PROJECT_DIR}/CLAUDE.md" \
     "CLAUDE.md"
 else
-  echo -e "  ${YELLOW}△${NC} CLAUDE.template.md not found — skipping"
-fi
-
-# VS Code / GitHub Copilot Chat — ai-context instructions
-if [ -f "${TEMPLATES_DIR}/ai-context.instructions.template.md" ]; then
-  copy_if_new "${TEMPLATES_DIR}/ai-context.instructions.template.md" \
-    "${PROJECT_DIR}/.github/instructions/ai-context.instructions.md" \
-    ".github/instructions/ai-context.instructions.md"
-else
-  echo -e "  ${YELLOW}△${NC} ai-context.instructions.template.md not found — skipping"
+  echo -e "  ${YELLOW}△${NC} CLAUDE.template.md not found, skipping"
 fi
 
 echo ""

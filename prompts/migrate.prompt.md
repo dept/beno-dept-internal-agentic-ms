@@ -14,8 +14,8 @@ After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
 - ✓ Discovery and Maintainer agents installed and ready to use, in both Copilot (`.github/agents/`) and Claude Code (`.claude/agents/`) formats
 - ✓ Migration slash commands installed for Copilot (`@workspace /ms-migration`), Claude Code + Cursor (`/ms-migration` from `.claude/commands/` + `.cursor/commands/`); Codex runs it by reading the prompt file referenced in `AGENTS.md`
-- ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification) — referenced as agent guidance, not installed as files
-- ✓ All four IDEs wired to auto-load `.ai/` context: Copilot (`.github/copilot-instructions.md`), Claude (`CLAUDE.md`), Codex (`AGENTS.md`), Cursor (`.cursor/rules/ai-context.mdc`)
+- ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification), referenced as agent guidance, not installed as files
+- ✓ Every harness wired to `.ai/` context through one authored file: `AGENTS.md` (Copilot on github.com and in VS Code, Codex, Cursor) and `CLAUDE.md`, which imports it (Claude Code)
 - ✓ Confluence handover pages created (or staged as drafts when Confluence access is unavailable)
 - ✓ Client **key features** (Datadog Synthetic tests) fetched by `client:<name>` tag and added to `.ai/project-context.md` + the Confluence Overview page (or `[To fill in]` when Datadog access is unavailable)
 - ✓ Stack-specific skills (Phase 4) and MCP servers installed
@@ -231,7 +231,7 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
 **Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Mirrors agents/prompts/skill to Claude Code (`.claude/agents/`, `.claude/commands/`, `.claude/skills/`) so both Copilot and Claude Code auto-load them.
-**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh` and `scripts/validate.sh` exist, `.github/skills/confluence-axi/` exists (mirrored in `.claude/skills/`). Other (stack) skills are added in Phase 4.
+**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` exists (mirrored in `.claude/skills/`). Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
@@ -246,8 +246,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 3: Integration
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/03-integrate.prompt.md`
-**Does:** Wires all four IDEs (Copilot, Claude, Codex, Cursor) to auto-load `.ai/`, creates Confluence documentation
-**Verify before continuing:** `.github/copilot-instructions.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/ai-context.mdc` all reference `.ai/`; Confluence pages published via the `confluence-axi` skill (or staged as `.ai/confluence/` drafts if access was unavailable — see Preflight)
+**Does:** Writes the two wiring files (`AGENTS.md` and its `CLAUDE.md` import) so every harness finds `.ai/`, creates Confluence documentation
+**Verify before continuing:** `AGENTS.md` routes into `.ai/` with no unfilled placeholders, `CLAUDE.md` contains the `@AGENTS.md` import; Confluence pages published via the `confluence-axi` skill (or staged as `.ai/confluence/` drafts if access was unavailable, see Preflight)
 
 ### Phase 4: Stack-Aware Tooling
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/04-stack-tooling.prompt.md`
@@ -281,8 +281,9 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - `.ai/` (9 files + `.meta.yml`) — single source of truth
 - `.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md` — ongoing drift maintenance
 - `.github/agents/support-agent.agent.md` + `.claude/agents/support-agent.md`
-- Wiring: `.github/copilot-instructions.md`, `.github/instructions/`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/ai-context.mdc`
-- Stack skills under `.github/skills/` + `.claude/skills/` (incl. `confluence-axi`, used by the Maintainer to re-sync Confluence)
+- Wiring: `AGENTS.md` (the authored file) and `CLAUDE.md` (its import)
+- `standards/writing-rules.md`: the rules the Maintainer applies on every run
+- Stack skills under `.agents/skills/` + `.claude/skills/` (including `confluence-axi`, used by the Maintainer to re-sync Confluence)
 - Datadog MCP (in the MCP configs) — used to fetch/refresh key features via browser OAuth
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
@@ -296,11 +297,13 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - `scripts/graphify-bootstrap.sh` — one-time structural pre-pass. Keep only if periodic re-graphing is planned.
 - `graphify-out/` — ephemeral (already gitignored).
 
-**Do not remove** anything if the migration reported WARNINGS/NOT COMPLIANT or Confluence was only staged — resolve those first.
+**Do not remove** anything if the migration reported WARNINGS/NOT COMPLIANT or Confluence was only staged: resolve those first.
 
-**Remove symmetrically.** `scripts/validate.sh` compares *file counts* between each `.github/*` source and its `.claude/*` / `.cursor/*` mirror and warns if they diverge. So delete an artifact from **all** of source + mirrors together (e.g. discovery agent from both `.github/agents/` and `.claude/agents/`; each phase prompt from `.github/prompts/`, `.claude/commands/`, and `.cursor/commands/`). Deleting from one side only will introduce a new "mirror out of sync" warning.
+**Remove symmetrically.** `scripts/validate.sh` compares *file counts* between each source directory and its mirror and warns if they diverge. So delete an artifact from **all** of source + mirrors together (for example the discovery agent from both `.github/agents/` and `.claude/agents/`; each phase prompt from `.github/prompts/`, `.claude/commands/`, and `.cursor/commands/`; each skill from both `.agents/skills/` and `.claude/skills/`). Deleting from one side only will introduce a new "mirror out of sync" warning.
 
-**Verify before finishing:** re-run `scripts/validate.sh .` after cleanup — it must still report the same (or better) status. Removing install-time artifacts must not drop any COMPLIANT check or add a warning.
+**Nothing about this cleanup is written into `.ai/`.** No "removed during Phase 5" note, no *Cleanup* section, no row in `agent-registry.md` for something that is no longer there. `agent-registry.md` lists what is present after the cleanup, and the deletions are described in this run's completion summary and in the pull request. `standards/writing-rules.md` §1 is the rule.
+
+**Verify before finishing:** re-run `scripts/validate.sh .` after cleanup: it must still report the same status or better. Removing install-time artifacts must not drop any COMPLIANT check or add a warning.
 
 ---
 
@@ -323,11 +326,9 @@ After all phases complete, output:
 - Confidence: [average % across files]
 
 ### Phase 3: Integration
-- Copilot wiring (.github/copilot-instructions.md): [created / appended / present]
-- Claude wiring (CLAUDE.md): [created / appended / present]
-- Codex wiring (AGENTS.md): [created / appended / present]
-- Cursor wiring (.cursor/rules/ai-context.mdc): [created / present]
-- Confluence: [created / skipped]
+- AGENTS.md (Copilot, Codex, Cursor): [created / appended / present]
+- CLAUDE.md (@AGENTS.md import): [created / import added / present]
+- Confluence: [created / staged as drafts / skipped, with the reason]
 
 ### Phase 4: Stack-Aware Tooling
 - Technologies detected: [count]

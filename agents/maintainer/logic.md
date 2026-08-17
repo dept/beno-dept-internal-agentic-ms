@@ -60,9 +60,10 @@ Assign staleness level: Critical / Moderate / Minor / Current
 Apply changes with conflict resolution:
 1. **Skip** sections marked `<!-- human-maintained -->`
 2. **Diff-review** files manually edited since last maintenance
-3. **Append** new information (never delete unless provably wrong)
+3. **Add** new information to the section that owns the topic. Delete only in the three cases in `standards/writing-rules.md` §5: it breaks a writing rule, repository evidence contradicts it, or a human asked. Never delete a fact just because you did not write it
 4. **Low-confidence updates** go in `> ⚠️ Potential update:` blocks
 5. **Cite sources** in the Phase 6 PR summary (date + `path/to/file:LINE`) — NOT as inline `<!-- ... -->` comments, which rot the files. Git blame + the PR are the audit trail.
+6. **Regenerate** `.agents/skills/codebase-overview/SKILL.md` (and its `.claude/skills/` mirror) when the structural sections of `.ai/architecture.md` changed
 
 ### Phase 5: Gap Detection
 
@@ -108,9 +109,9 @@ page whose only delta would be the "Last synced" line.
 
 1. `<!-- human-maintained -->` sections are NEVER auto-updated
 2. Files edited by humans since last maintenance → show diff, request review
-3. Additions go at end of sections, not inline
-4. When uncertain, append `## Updates (auto-generated)` section
-5. Never remove content — add, update, or mark as potentially stale
+3. Additions go into the section that owns the topic. Never open an `## Updates` or `## Changes` section: `standards/writing-rules.md` bans it
+4. When uncertain about a fact, keep it and mark it as unverified rather than removing it
+5. Remove content only in the three cases in `standards/writing-rules.md` §5: it breaks a writing rule, repository evidence contradicts it, or a human asked
 
 ## Escalation Levels
 
@@ -128,4 +129,6 @@ page whose only delta would be the "Last synced" line.
 - [ ] Human-maintained sections untouched
 - [ ] `.meta.yml` updated (only alongside real content changes)
 - [ ] No PR opened for a bookkeeping-only diff
+- [ ] Touched `.ai/` files pass `standards/writing-rules.md`
+- [ ] `codebase-overview` skill regenerated if `.ai/architecture.md` structure changed
 - [ ] Change summary generated

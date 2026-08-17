@@ -95,15 +95,15 @@ If a result looks authoritative (vendor org, relevant skill name/path), install 
 
 ```bash
 # Install the skill into the project skills folder
-gh skill install <owner>/<repo> <skill-name> --dir .github/skills --force
+gh skill install <owner>/<repo> <skill-name> --dir .agents/skills --force
 ```
 
 **Rules:**
-- Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`) — not individual accounts
-- Skip if a skill with that name already exists in `.github/skills/`
+- Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`), not individual accounts
+- Skip if a skill with that name already exists in `.agents/skills/`
 - If no suitable match is found on GitHub, generate a minimal skill from `.ai/` evidence (see Fallback section below)
-- There must be a resulting `.github/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why the technology was skipped
-- Record each result (installed / skipped / generated fallback)
+- There must be a resulting `.agents/skills/<technology-name>/SKILL.md` for every detected core technology unless the technology was skipped
+- Record each result (installed / skipped / generated fallback) in the completion summary for this run, not in `.ai/`
 
 **Fallback — generate skill from project evidence:**
 
@@ -132,38 +132,43 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 - **Real paths only.** Every path must be confirmed with `ls`/glob. Do not invent route segments like `app/[locale]/` unless that directory exists.
 - **Copy, don't imagine.** Base each code sample on a real call site found in the repo; cite the file you took it from.
 - **No empty sections.** Every heading has real content or is omitted. Do not emit stub headings.
-- **Don't restate global constraints.** Rules already in `.ai/` or `copilot-instructions.md` (commits, `process.env`, deploy target) are referenced with a one-line pointer, not re-documented per skill.
+- **Don't restate global constraints.** Rules already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) are referenced with a one-line pointer, not re-documented per skill. `standards/writing-rules.md` §2 is the test.
 - **State scope precisely.** A skill's frontmatter scope and body must match — don't add off-topic sections (e.g. Docker build steps inside a framework skill) unless the skill's stated scope covers them.
 
-**Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.github/skills/` — either vendor-fetched or evidence-generated fallback.
+**Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.agents/skills/`, either vendor-fetched or evidence-generated fallback.
 
 ## Step 9.3: The `codebase-overview` Skill
 
-Alongside the technology skills, emit `.github/skills/codebase-overview/SKILL.md` from
+Alongside the technology skills, emit `.agents/skills/codebase-overview/SKILL.md` from
 `templates/skills/codebase-overview/SKILL.md`, substituting `[PROJECT_NAME]`. It is mirrored in
 Step 9.4 like every other skill.
 
-Keep it thin. The `description` frontmatter is what makes an agent discover it before exploring the
-tree, so that line carries the value; the body stays a routing table into `.ai/`. Do not paste the
-repository tree, the stack table, or the architecture diagram into it. `.ai/architecture.md` is the
-single source of truth: a second copy drifts, publishes to the wrong Confluence page, and is
-invisible to harnesses with no skill loader (Codex, Cursor). Growing this file is the failure mode,
-not the goal.
+The `description` frontmatter is what makes an agent discover the skill before it starts exploring
+the tree. The body is generated from `.ai/architecture.md`: copy the repository tree, the technology
+stack table, the placement conventions and the high-fan-in symbols verbatim into the block between
+the `BEGIN GENERATED FROM .ai/architecture.md` and `END GENERATED FROM .ai/architecture.md` markers.
+Copy nothing else from `.ai/`; every other topic gets at most a one-line pointer to the file that
+owns it.
+
+`.ai/architecture.md` remains the single source of truth and the only file edited by hand. The
+generated block is a derived copy that is rewritten whenever those sections change (Maintainer Agent
+Phase 4d), so an agent whose harness loads skills but not `.ai/` still gets the structure. Editing
+the generated block instead of `.ai/architecture.md` is the failure mode.
 
 ## Step 9.4: Mirror Skills to Other Clients
 
-`.github/skills/` is read by GitHub Copilot. It is not auto-discovered by Claude Code (`.claude/skills/`) or Continue/Kilocode-style clients (`.continue/skills/`, `.kilocode/skills/`). SKILL.md's `name`/`description` frontmatter is the same format across all of these, so no translation is needed.
+`.agents/skills/` is read by GitHub Copilot, VS Code, Codex and Cursor. It is not auto-discovered by Claude Code, which reads `.claude/skills/` only. SKILL.md's `name`/`description` frontmatter is the same format across all of these, so no translation is needed.
 
 Mirror every skill installed or generated in Steps 9 and 9.3 to `.claude/skills/<skill-name>/`.
 
-**Rule:** `.github/skills/` stays the single source of truth for content; the mirror is never hand-edited independently. A copy and a symlink are both acceptable: the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5. If you copy, re-copy whenever the source changes; if a directory already exists at the mirror path with identical content, skip.
+**Rule:** `.agents/skills/` stays the single source of truth for content; the mirror is never hand-edited independently. A copy and a symlink are both acceptable: the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5. If you copy, re-copy whenever the source changes; if a directory already exists at the mirror path with identical content, skip.
 
 ## Step 9.5: Update agent-registry.md with Installed Skills
 
-After installing all skills, append a "Phase 4 Skills" section to `.ai/agent-registry.md`. Read the file first, merge, never overwrite existing content.
+After installing all skills, merge a "Skills" section into `.ai/agent-registry.md`. Read the file first, merge, never overwrite existing content.
 
 ```markdown
-### Phase 4 Skills (stack-specific, installed YYYY-MM-DD)
+### Skills
 
 | Skill | Source | Purpose |
 |---|---|---|
@@ -172,8 +177,8 @@ After installing all skills, append a "Phase 4 Skills" section to `.ai/agent-reg
 
 - Use the `description` field from each skill's YAML frontmatter as the Purpose
 - Source: "Vendor skill" if fetched via `gh skill install`, "Generated from project evidence" if fallback-generated
-- Include every skill installed or generated in this phase — no silent omissions
-- If a technology was skipped, add a row with "Skipped — [reason]" in Purpose column
+- List every skill the project has, whether it was installed in this run or already present
+- A technology that was skipped has no row. The skip and its reason go in this run's completion summary. `standards/writing-rules.md` §1 is why: `agent-registry.md` records what is wired up, not what an agent chose not to do
 
 ## Step 10: Find and Install MCP Servers
 
@@ -217,7 +222,7 @@ After writing MCP configs, update the `## MCP Servers` section in `.ai/agent-reg
 ```markdown
 ## MCP Servers
 
-Installed by Phase 4 (YYYY-MM-DD). Config in `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`.
+Config in `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`.
 
 | Server key | Package | Transport | Purpose |
 |---|---|---|---|
@@ -240,7 +245,7 @@ Create `.github/agents/support-agent.agent.md` if not already present.
    - `github/*` — GitHub API (issues, PRs, code search)
 
 2. **Installed skills** (from Phase 4 Step 9):
-   - Parse `.github/skills/` directory
+   - Parse `.agents/skills/` directory
    - For each skill, list its available tools in agent definition
    - Example: skill `superpowers:systematic-debugging` provides `debug/*` tools
 
@@ -285,14 +290,14 @@ Keep `name:` **identical to the `.github/agents/support-agent.agent.md` source**
 
 ## Verification
 
-- [ ] A skill file exists for every detected core technology (or an explicit skip reason is documented)
-- [ ] Every code sample in a generated skill uses only symbols/imports verified to exist (grep/exports), and every path was confirmed with `ls`/glob — no invented APIs or route segments
-- [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/`/`copilot-instructions.md` (pointer only)
-- [ ] Testing skill installed only if test files exist AND framework is detected — not otherwise
+- [ ] A skill file exists for every detected core technology, and any skipped technology is named with its reason in this run's completion summary
+- [ ] Every code sample in a generated skill uses only symbols/imports verified to exist (grep/exports), and every path was confirmed with `ls`/glob: no invented APIs or route segments
+- [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/` or `AGENTS.md` (pointer only)
+- [ ] Testing skill installed only if test files exist AND framework is detected, not otherwise
 - [ ] No generic `test-driven-development` skill installed (it's methodology-prescriptive, not evidence-based)
-- [ ] `codebase-overview` skill emitted, `[PROJECT_NAME]` substituted, and still thin (routing table into `.ai/`, no repository tree/stack table/diagram pasted in)
-- [ ] `.ai/agent-registry.md` has a "Phase 4 Skills" section listing every skill installed or skipped
-- [ ] MCP servers installed (or documented why not)
+- [ ] `codebase-overview` skill emitted, `[PROJECT_NAME]` substituted, and its generated block carries the repository tree, stack table, placement conventions and high-fan-in symbols verbatim from `.ai/architecture.md`
+- [ ] `.ai/agent-registry.md` has a "Skills" section listing every skill the project has
+- [ ] MCP servers installed where the registry has an entry; anything not installed is named in this run's completion summary
 - [ ] MCP config written to all 3 IDE files
 - [ ] `.ai/agent-registry.md` `## MCP Servers` section updated with installed servers
 - [ ] Project support agent created
