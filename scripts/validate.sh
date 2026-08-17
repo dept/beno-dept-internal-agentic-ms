@@ -158,6 +158,49 @@ fi
 
 echo ""
 
+# ── 3b. Standard Version Drift ─────────────────────────────
+# .ai/.meta.yml records the standard version the project runs; config/standard-version.yml is the
+# copy the standard vendored in at install time. When the recorded version is older, the project
+# needs a refresh. All warning-level: a missing version on either side is not a compliance failure.
+echo -e "${BLUE}── Standard Version ──${NC}"
+
+read_version_field() {
+  # $1 = file, $2 = field name (version | standard_version)
+  # A missing file or a missing field is an empty string and a success status. Without the
+  # trailing `|| true`, grep's no-match exit code propagates through pipefail and set -e kills
+  # the script inside the command substitution, with no error message.
+  local file="$1" field="$2"
+  [ -f "$file" ] || return 0
+  grep -E "^[[:space:]]*${field}:" "$file" 2>/dev/null | head -1 \
+    | sed "s/.*${field}:[[:space:]]*//; s/\"//g" | tr -d '[:space:]' || true
+}
+
+RECORDED_VERSION=$(read_version_field "${AI_DIR}/.meta.yml" "standard_version")
+CURRENT_VERSION=$(read_version_field "${PROJECT_DIR}/config/standard-version.yml" "version")
+
+if [ -z "$RECORDED_VERSION" ] || [ "$RECORDED_VERSION" = "null" ]; then
+  echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records no standard_version, cannot check for drift"
+  ((WARNED++))
+elif [ -z "$CURRENT_VERSION" ]; then
+  echo -e "  ${YELLOW}△${NC} config/standard-version.yml missing or has no version, cannot check for drift"
+  ((WARNED++))
+elif [ "$RECORDED_VERSION" = "$CURRENT_VERSION" ]; then
+  echo -e "  ${GREEN}✓${NC} standard ${CURRENT_VERSION} (matches config/standard-version.yml)"
+  ((PASSED++))
+else
+  oldest=$(printf '%s\n%s\n' "$RECORDED_VERSION" "$CURRENT_VERSION" | sort -V | head -1)
+  if [ "$oldest" = "$RECORDED_VERSION" ]; then
+    echo -e "  ${YELLOW}△${NC} project is on standard ${RECORDED_VERSION}, current is ${CURRENT_VERSION}"
+    echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
+    ((WARNED++))
+  else
+    echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records standard ${RECORDED_VERSION}, ahead of the vendored ${CURRENT_VERSION}"
+    ((WARNED++))
+  fi
+fi
+
+echo ""
+
 # ── 4. Staleness Check ─────────────────────────────────────
 echo -e "${BLUE}── Staleness Check ──${NC}"
 
