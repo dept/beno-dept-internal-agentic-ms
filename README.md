@@ -167,6 +167,12 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | `scripts/graphify-bootstrap.sh` | **Remove** (optional) | One-time pre-pass; keep if re-graphing planned |
 | `graphify-out/` | **Remove** | Ephemeral (already gitignored) |
 
+> **A version refresh does not bring the removed artifacts back.** `scripts/install.sh` treats the
+> discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only:
+> in a project that has a `.ai/.meta.yml` it neither creates nor refreshes them, and it lists what it
+> skipped and why in its summary. Everything in the **Keep** rows above is refreshed as usual. The
+> installer never deletes anything, so removing them stays your explicit choice.
+
 > **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills/`). Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
 
 ## Validation

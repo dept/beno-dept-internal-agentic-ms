@@ -202,6 +202,7 @@ After generating `.ai/`, create or update the wiring files so every supported ha
 
 **`CLAUDE.md`** (repository root, an import)
 - Not present: create from `templates/CLAUDE.template.md`. It is `@AGENTS.md` plus any Claude-Code-only line.
+- A real file, never a symlink to `AGENTS.md`: a write aimed at `CLAUDE.md` follows the link and overwrites `AGENTS.md`, and a Windows checkout without symlink support materialises the link as a one-line text file holding the path, so the project silently loses its instructions. Already a symlink: replace it with a real file carrying the import. (This is unlike the `.claude/skills/` mirror, where a copy and a symlink are both acceptable, see Step B rule 5.)
 - Already present: add the `@AGENTS.md` import at the top if it is missing, and remove anything below it that `AGENTS.md` now says (a duplicated rule is a second source of truth, see `standards/writing-rules.md` §2).
 
 Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. They target tools that already read `AGENTS.md`, and a generated copy is one more file to keep in sync. If a project already has them, leave them in place, record them in `agent-registry.md`, and do not extend them.

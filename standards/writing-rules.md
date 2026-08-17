@@ -185,7 +185,7 @@ each file's ownership header.
 | `agent-registry.md` | The agents, skills, MCP servers and instruction files present now, one row each, with what each is for; governance rules for using them | Anything about how they got there: install dates, migration phases, what was removed, skipped, or did not exist before (§1) |
 | `.meta.yml` | Standard version, generation and maintenance stamps, the Confluence `sync_map` and resolved page IDs | Prose. Any fact about the codebase |
 | `AGENTS.md` | The one authored wiring file. Two sentences on what the project is; setup and check commands; up to five class 3 repo-wide constraints; the index into `.ai/` and into skills | Any class 1 or class 2 rule; any fact that lives in a `.ai/` file, restated |
-| `CLAUDE.md` | One line: `@AGENTS.md`, plus Claude-Code-only lines if any exist | Everything else. It is an import, not a copy |
+| `CLAUDE.md` | One line: `@AGENTS.md`, plus Claude-Code-only lines if any exist, in a real file | Everything else. It is an import, not a copy, and never a symlink to `AGENTS.md` |
 | `.agents/skills/codebase-overview/SKILL.md` | A description that triggers discovery, plus the structural content generated from `.ai/architecture.md`: annotated tree, stack table, placement conventions, high-fan-in symbols | Facts not present in `.ai/architecture.md`; a routing table into the other `.ai/` files beyond one pointer line; hand edits inside the generated block |
 | `.agents/skills/<technology>/SKILL.md` | How this project uses that technology, with code copied from real call sites | Global constraints already in `.ai/` (pointer only); line numbers; evidence residue; negative trivia |
 | `.claude/skills/` | Mirror of `.agents/skills/`, copy or symlink | Divergent content |

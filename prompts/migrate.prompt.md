@@ -297,6 +297,8 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - `scripts/graphify-bootstrap.sh` — one-time structural pre-pass. Keep only if periodic re-graphing is planned.
 - `graphify-out/` — ephemeral (already gitignored).
 
+**A later version refresh does not undo this cleanup.** `bash scripts/install.sh . --update` treats the discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only and installs neither in a project that has a `.ai/.meta.yml`, naming what it skipped in its summary. The runtime set above is refreshed as usual.
+
 **Do not remove** anything if the migration reported WARNINGS/NOT COMPLIANT or Confluence was only staged: resolve those first.
 
 **Remove symmetrically.** `scripts/validate.sh` compares *file counts* between each source directory and its mirror and warns if they diverge. So delete an artifact from **all** of source + mirrors together (for example the discovery agent from both `.github/agents/` and `.claude/agents/`; each phase prompt from `.github/prompts/`, `.claude/commands/`, and `.cursor/commands/`; each skill from both `.agents/skills/` and `.claude/skills/`). Deleting from one side only will introduce a new "mirror out of sync" warning.

@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.1.0"
+  version: "2.2.0"
   release_date: "2026-08-17"
   changelog:
+    - version: "2.2.0"
+      date: "2026-08-17"
+      changes:
+        - "scripts/install.sh classifies each installed artifact as durable or bootstrap-only. The discovery agent, the phase prompts 01-04 and scripts/graphify-bootstrap.sh are bootstrap-only: they are never installed or refreshed in a project that has a .ai/.meta.yml, and --update never creates one that is absent, so a version refresh no longer undoes the migrate prompt's Phase 5 cleanup. The installer summary names every skipped artifact and its reason, and deletes nothing"
+        - "CLAUDE.md is a real file holding the @AGENTS.md import and never a symlink to AGENTS.md, stated in the standard, the writing rules, the Discovery Agent, the integrate prompt and the CLAUDE.md template. A write aimed at the symlink overwrites AGENTS.md, and a Windows checkout without symlink support turns it into a one-line file holding the path. The .claude/skills/ mirror is unchanged: a copy and a symlink both stay acceptable there"
     - version: "2.1.0"
       date: "2026-08-17"
       changes:

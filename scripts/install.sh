@@ -110,6 +110,62 @@ ARTIFACTS=(
   ".agents/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
 )
 
+# Bootstrap-only artifacts: they exist to carry a project through its first migration and Phase 5
+# of the migrate prompt offers to delete them afterwards. Reinstalling them on every version
+# refresh would hand the clutter back permanently, so they are never created in a project that has
+# already migrated (a `.ai/.meta.yml` exists) and --update never creates one that is absent.
+# Everything else in ARTIFACTS is durable and always refreshed.
+BOOTSTRAP_ONLY=(
+  ".github/prompts/01-install.prompt.md"
+  ".github/prompts/02-discover.prompt.md"
+  ".github/prompts/03-integrate.prompt.md"
+  ".github/prompts/04-stack-tooling.prompt.md"
+  ".github/agents/discovery.agent.md"
+  ".claude/agents/discovery.md"
+  "scripts/graphify-bootstrap.sh"
+)
+
+MIGRATED=0
+[[ -f "${TARGET_DIR}/.ai/.meta.yml" ]] && MIGRATED=1
+# Newline-separated "dest_rel|reason" lines, not an array: bash 3.2 (the macOS default) errors on
+# an empty array expansion under `set -u`.
+BOOTSTRAP_SKIPPED=""
+
+is_bootstrap_only() {
+  local dest_rel="$1" entry
+  for entry in "${BOOTSTRAP_ONLY[@]}"; do
+    [[ "$entry" == "$dest_rel" ]] && return 0
+  done
+  return 1
+}
+
+was_bootstrap_skipped() {
+  case "$BOOTSTRAP_SKIPPED" in
+    *"$1|"*) return 0 ;;
+  esac
+  return 1
+}
+
+# Returns 0 (skip this artifact) with the reason printed and recorded, 1 (install it as usual).
+skip_bootstrap() {
+  local dest_rel="$1" dest="$2" reason=""
+
+  is_bootstrap_only "$dest_rel" || return 1
+
+  if [[ $MIGRATED -eq 1 ]]; then
+    reason="project already migrated (.ai/.meta.yml present), bootstrap-only artifact"
+  elif [[ $UPDATE -eq 1 && ! -e "$dest" ]]; then
+    reason="bootstrap-only artifact absent in target, --update never creates one"
+  else
+    return 1
+  fi
+
+  echo -e "  ${YELLOW}⊘${NC} ${dest_rel} — skipped: ${reason}"
+  BOOTSTRAP_SKIPPED="${BOOTSTRAP_SKIPPED}${dest_rel}|${reason}"$'\n'
+  SKIPPED=$((SKIPPED + 1))
+  return 0
+}
+
 copy_local() {
   local src_rel="$1"
   local dest="$2"
@@ -132,6 +188,10 @@ install_one() {
   local dest_rel="$1"
   local src_rel="$2"
   local dest="${TARGET_DIR}/${dest_rel}"
+
+  if skip_bootstrap "$dest_rel" "$dest"; then
+    return 0
+  fi
 
   # The vendored version file is standard-owned bookkeeping, never hand-edited, and a stale
   # copy would make the drift check in validate.sh compare two equally stale numbers.
@@ -182,6 +242,10 @@ mirror_claude_agent() {
   local claude_rel="$2"   # e.g. .claude/agents/discovery.md
   local github_dest="${TARGET_DIR}/${github_rel}"
   local claude_dest="${TARGET_DIR}/${claude_rel}"
+
+  if skip_bootstrap "$claude_rel" "$claude_dest"; then
+    return 0
+  fi
 
   [[ -f "$github_dest" ]] || return 0
 
@@ -262,12 +326,16 @@ for required in \
   ".agents/skills/confluence-axi/SKILL.md"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
+    # A bootstrap-only artifact this run deliberately did not install is not a failure.
+    if was_bootstrap_skipped "$required"; then
+      continue
+    fi
     echo -e "${RED}ERROR:${NC} missing required file after install: ${required}"
     exit 1
   fi
 done
 
-if [[ ! -x "${TARGET_DIR}/scripts/graphify-bootstrap.sh" ]]; then
+if [[ -f "${TARGET_DIR}/scripts/graphify-bootstrap.sh" && ! -x "${TARGET_DIR}/scripts/graphify-bootstrap.sh" ]]; then
   echo -e "${RED}ERROR:${NC} scripts/graphify-bootstrap.sh is not executable"
   exit 1
 fi
@@ -278,6 +346,15 @@ echo -e "${BLUE}── Summary ──${NC}"
 echo -e "  Created: ${GREEN}${CREATED}${NC}"
 echo -e "  Updated: ${GREEN}${UPDATED}${NC}"
 echo -e "  Skipped: ${YELLOW}${SKIPPED}${NC}"
+if [[ -n "$BOOTSTRAP_SKIPPED" ]]; then
+  echo ""
+  echo -e "  ${YELLOW}Bootstrap-only artifacts not installed:${NC}"
+  while IFS='|' read -r skipped_rel skipped_reason; do
+    [[ -n "$skipped_rel" ]] || continue
+    echo -e "    ⊘ ${skipped_rel} — ${skipped_reason}"
+  done <<< "$BOOTSTRAP_SKIPPED"
+  echo "  Nothing was deleted. Removing artifacts a project still has stays an explicit operator choice."
+fi
 echo ""
 echo "Next: run /ms-migration in your AI tool from ${TARGET_DIR}."
 echo "If your tool does not support slash prompts directly, open .github/prompts/migrate.prompt.md and follow it."

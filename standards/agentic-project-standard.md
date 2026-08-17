@@ -71,6 +71,13 @@ GitHub website and in VS Code; Codex and Cursor read it natively; Claude Code re
 `.cursor/rules/*.mdc`. A project that already has one of those keeps it, recorded in
 `agent-registry.md`.
 
+`CLAUDE.md` is a real file holding that import, never a symlink to `AGENTS.md`, for two reasons. A
+write aimed at `CLAUDE.md` follows the link and overwrites `AGENTS.md`, which has already destroyed
+authored content in a real repository. And on a Windows checkout without symlink support git
+materialises the link as a plain text file containing the path `AGENTS.md`, so the harness reads a
+one-line file and the project silently loses its instructions. (The `.claude/skills/` mirror is a
+separate case: there a copy or a symlink are both allowed, see Skills below.)
+
 What may go into a wiring file, and what belongs in `.ai/` instead, is in
 `standards/writing-rules.md` §3 and §4.
 
