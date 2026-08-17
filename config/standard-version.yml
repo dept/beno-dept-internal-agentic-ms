@@ -3,23 +3,16 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.1.2"
+  version: "2.1.0"
   release_date: "2026-08-17"
   changelog:
-    - version: "2.1.2"
-      date: "2026-08-17"
-      changes:
-        - "Fix: reading a missing version field no longer aborts scripts/validate.sh, scripts/version-report.sh or the stamp step in scripts/install.sh. Under set -euo pipefail a no-match grep exited the script inside the command substitution, silently skipping every later check"
-    - version: "2.1.1"
-      date: "2026-08-17"
-      changes:
-        - "scripts/version-report.sh reports which projects run an outdated standard version, comparing each project's .ai/.meta.yml against this repository's current version. Repository-side tooling, nothing installed into target repositories changes"
     - version: "2.1.0"
       date: "2026-08-17"
       changes:
         - "CI check on pull requests fails when standard content changes without a bump of standard.version"
         - "scripts/install.sh always refreshes the vendored config/standard-version.yml and stamps the current version into an existing .ai/.meta.yml"
-        - "scripts/validate.sh reports version drift between .ai/.meta.yml and the vendored config/standard-version.yml"
+        - "scripts/validate.sh reports version drift between .ai/.meta.yml and the vendored config/standard-version.yml, as a per-project consistency check"
+        - "scripts/version-report.sh reports which projects run an outdated standard version, comparing each project's .ai/.meta.yml against this repository's current version"
     - version: "2.0.0"
       date: "2026-08-14"
       changes:

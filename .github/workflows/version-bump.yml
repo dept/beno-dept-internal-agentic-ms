@@ -34,7 +34,8 @@ jobs:
           fi
 
           echo "Standard content changed:"
-          printf '  %s\n' $standard_changed
+          # Quoted and piped: an unquoted expansion would word-split and glob the path list.
+          printf '%s\n' "$standard_changed" | sed 's/^/  /'
 
           # The top-level `version:` field only. Changelog entries are list items
           # (`- version:`) and do not satisfy the requirement on their own.
