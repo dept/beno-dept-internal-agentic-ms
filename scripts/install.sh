@@ -216,9 +216,11 @@ stamp_meta_version() {
   local version_file="${TARGET_DIR}/config/standard-version.yml"
   [[ -f "$meta" && -f "$version_file" ]] || return 0
 
+  # `|| true` on every read: a no-match grep would otherwise propagate through pipefail and
+  # set -e, killing the installer inside the command substitution with no error message.
   local version recorded
   version=$(grep -E '^[[:space:]]+version:' "$version_file" | head -1 \
-    | sed 's/.*version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
+    | sed 's/.*version:[[:space:]]*//; s/"//g' | tr -d '[:space:]' || true)
   [[ -n "$version" ]] || return 0
 
   grep -qE '^[[:space:]]*standard_version:' "$meta" || {
@@ -227,7 +229,7 @@ stamp_meta_version() {
   }
 
   recorded=$(grep -E '^[[:space:]]*standard_version:' "$meta" | head -1 \
-    | sed 's/.*standard_version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
+    | sed 's/.*standard_version:[[:space:]]*//; s/"//g' | tr -d '[:space:]' || true)
   if [[ "$recorded" == "$version" ]]; then
     echo -e "  ${GREEN}✓${NC} .ai/.meta.yml already records standard ${version}"
     return 0

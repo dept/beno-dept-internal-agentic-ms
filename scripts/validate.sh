@@ -166,10 +166,13 @@ echo -e "${BLUE}── Standard Version ──${NC}"
 
 read_version_field() {
   # $1 = file, $2 = field name (version | standard_version)
+  # A missing file or a missing field is an empty string and a success status. Without the
+  # trailing `|| true`, grep's no-match exit code propagates through pipefail and set -e kills
+  # the script inside the command substitution, with no error message.
   local file="$1" field="$2"
   [ -f "$file" ] || return 0
   grep -E "^[[:space:]]*${field}:" "$file" 2>/dev/null | head -1 \
-    | sed "s/.*${field}:[[:space:]]*//; s/\"//g" | tr -d '[:space:]'
+    | sed "s/.*${field}:[[:space:]]*//; s/\"//g" | tr -d '[:space:]' || true
 }
 
 RECORDED_VERSION=$(read_version_field "${AI_DIR}/.meta.yml" "standard_version")

@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.1.1"
+  version: "2.1.2"
   release_date: "2026-08-17"
   changelog:
+    - version: "2.1.2"
+      date: "2026-08-17"
+      changes:
+        - "Fix: reading a missing version field no longer aborts scripts/validate.sh, scripts/version-report.sh or the stamp step in scripts/install.sh. Under set -euo pipefail a no-match grep exited the script inside the command substitution, silently skipping every later check"
     - version: "2.1.1"
       date: "2026-08-17"
       changes:

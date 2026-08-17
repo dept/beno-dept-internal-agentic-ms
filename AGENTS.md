@@ -31,6 +31,9 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
 - **Every standard-content change bumps the version.** `.github/workflows/version-bump.yml` fails a
   PR that touches standard content without changing the `version` field. See the Versioning section
   of `README.md` for what counts as standard content and how a project reports its version.
+- **Every script runs under `set -euo pipefail`.** A `grep ... | head | sed` reader that finds
+  nothing exits non-zero, and inside `$(...)` that kills the whole script with no message, skipping
+  every later check. End such pipelines with `|| true` when a no-match is a legitimate result.
 - **`scripts/validate.sh` runs against target repositories, not this one.** Check it with
   `bash -n scripts/validate.sh` and then run it against a locally migrated clone.
 
