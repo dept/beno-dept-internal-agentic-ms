@@ -29,10 +29,10 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   symlink support turns the link into a one-line file holding the path. The `.claude/skills/`
   mirror is the separate case where a copy and a symlink are both allowed.
 - **`scripts/install.sh` classifies artifacts.** `ARTIFACTS` is the install list and
-  `BOOTSTRAP_ONLY` names the subset that exists only to bootstrap an unmigrated project (discovery
-  agent, phase prompts `01`-`04`, `graphify-bootstrap.sh`). A project with a `.ai/.meta.yml` never
-  gets those installed or refreshed, so a version refresh does not undo the migrate prompt's Phase 5
-  cleanup. The installer never deletes: that stays the operator's choice.
+  `BOOTSTRAP_ONLY` names the subset that exists only to bootstrap an unmigrated project (the migrate
+  prompt and its `ms-migration` command, the discovery agent, phase prompts `01`-`04`,
+  `graphify-bootstrap.sh`). A project with a `.ai/.meta.yml` never gets those installed or
+  refreshed, so a version refresh does not undo the migrate prompt's Phase 5 cleanup. The installer never deletes: that stays the operator's choice.
 - **A file-layout change is a breaking change.** Bump `config/standard-version.yml` and add a
   changelog entry naming what moved, so a repository migrated under an older version can be told
   what to do.

@@ -111,11 +111,16 @@ ARTIFACTS=(
 )
 
 # Bootstrap-only artifacts: they exist to carry a project through its first migration and Phase 5
-# of the migrate prompt offers to delete them afterwards. Reinstalling them on every version
-# refresh would hand the clutter back permanently, so they are never created in a project that has
-# already migrated (a `.ai/.meta.yml` exists) and --update never creates one that is absent.
+# of the migrate prompt offers to delete them afterwards. The migration entry point itself belongs
+# here too: a migrated project runs a full re-run from the standards repository bootstrap, so the
+# prompt and its /ms-migration command are dead weight in the slash-command palette.
+# Reinstalling any of them on every version refresh would hand the clutter back permanently, so
+# they are never created in a project that has already migrated (a `.ai/.meta.yml` exists) and
+# --update never creates one that is absent.
 # Everything else in ARTIFACTS is durable and always refreshed.
 BOOTSTRAP_ONLY=(
+  ".github/prompts/migrate.prompt.md"
+  ".claude/commands/ms-migration.md"
   ".github/prompts/01-install.prompt.md"
   ".github/prompts/02-discover.prompt.md"
   ".github/prompts/03-integrate.prompt.md"
@@ -356,5 +361,10 @@ if [[ -n "$BOOTSTRAP_SKIPPED" ]]; then
   echo "  Nothing was deleted. Removing artifacts a project still has stays an explicit operator choice."
 fi
 echo ""
-echo "Next: run /ms-migration in your AI tool from ${TARGET_DIR}."
-echo "If your tool does not support slash prompts directly, open .github/prompts/migrate.prompt.md and follow it."
+if [[ $MIGRATED -eq 1 ]]; then
+  echo "Next: nothing. ${TARGET_DIR} has already migrated and its .ai/ context is refreshed."
+  echo "A full re-run is started from the standards repository bootstrap, not from a vendored copy of the prompt."
+else
+  echo "Next: run /ms-migration in your AI tool from ${TARGET_DIR}."
+  echo "If your tool does not support slash prompts directly, open .github/prompts/migrate.prompt.md and follow it."
+fi

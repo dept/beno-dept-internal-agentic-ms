@@ -288,16 +288,16 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
 - `.github/workflows/maintainer.yml` — if installed in Phase 4b
-- `.claude/commands/ms-migration.md` + `.cursor/commands/ms-migration.md` (single entry point for a future full re-run)
 
 **Safe to remove after a successful migration (ask, then delete):**
 - `.ai/confluence/*.md` drafts — **only once published** (`.meta.yml` `confluence.published: true` with real page `id`s). The Maintainer syncs Confluence from the `.ai/` files via `sync_map`, never from these drafts.
 - Discovery agent (`.github/agents/discovery.agent.md`, `.claude/agents/discovery.md`) — needed only for initial bootstrap / a full re-discovery; the Maintainer handles incremental updates and does not invoke it. Keep only if you want a cheap re-bootstrap.
-- Phase prompts `01`–`04` and their command mirrors (`.claude/commands/ms-install|ms-discover|ms-integrate|ms-stack-tooling.md`, same under `.cursor/commands/`) — one-time steps that otherwise clutter the slash-command palette permanently. Keep `ms-migration` only.
+- Phase prompts `01`–`04` and their command mirrors (`.claude/commands/ms-install|ms-discover|ms-integrate|ms-stack-tooling.md`, same under `.cursor/commands/`) — one-time steps that otherwise clutter the slash-command palette permanently.
+- The migration entry point itself: `.github/prompts/migrate.prompt.md` and its `.claude/commands/ms-migration.md` and `.cursor/commands/ms-migration.md` mirrors — one-time too. A full re-run is started from the standards repository bootstrap (`bash <(curl -fsSL .../scripts/install.sh) .`), which reinstalls a current copy of the prompt, so a vendored copy is a stale slash command in the palette forever.
 - `scripts/graphify-bootstrap.sh` — one-time structural pre-pass. Keep only if periodic re-graphing is planned.
 - `graphify-out/` — ephemeral (already gitignored).
 
-**A later version refresh does not undo this cleanup.** `bash scripts/install.sh . --update` treats the discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only and installs neither in a project that has a `.ai/.meta.yml`, naming what it skipped in its summary. The runtime set above is refreshed as usual.
+**A later version refresh does not undo this cleanup.** `bash scripts/install.sh . --update` treats the migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only and installs none of them in a project that has a `.ai/.meta.yml`, naming what it skipped in its summary. The runtime set above is refreshed as usual.
 
 **Do not remove** anything if the migration reported WARNINGS/NOT COMPLIANT or Confluence was only staged: resolve those first.
 

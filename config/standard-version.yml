@@ -3,14 +3,9 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.2.0"
+  version: "2.1.0"
   release_date: "2026-08-17"
   changelog:
-    - version: "2.2.0"
-      date: "2026-08-17"
-      changes:
-        - "scripts/install.sh classifies each installed artifact as durable or bootstrap-only. The discovery agent, the phase prompts 01-04 and scripts/graphify-bootstrap.sh are bootstrap-only: they are never installed or refreshed in a project that has a .ai/.meta.yml, and --update never creates one that is absent, so a version refresh no longer undoes the migrate prompt's Phase 5 cleanup. The installer summary names every skipped artifact and its reason, and deletes nothing"
-        - "CLAUDE.md is a real file holding the @AGENTS.md import and never a symlink to AGENTS.md, stated in the standard, the writing rules, the Discovery Agent, the integrate prompt and the CLAUDE.md template. A write aimed at the symlink overwrites AGENTS.md, and a Windows checkout without symlink support turns it into a one-line file holding the path. The .claude/skills/ mirror is unchanged: a copy and a symlink both stay acceptable there"
     - version: "2.1.0"
       date: "2026-08-17"
       changes:
@@ -18,6 +13,9 @@ standard:
         - "scripts/install.sh always refreshes the vendored config/standard-version.yml and stamps the current version into an existing .ai/.meta.yml"
         - "scripts/validate.sh reports version drift between .ai/.meta.yml and the vendored config/standard-version.yml, as a per-project consistency check"
         - "scripts/version-report.sh reports which projects run an outdated standard version, comparing each project's .ai/.meta.yml against this repository's current version"
+        - "scripts/install.sh classifies each installed artifact as durable or bootstrap-only. The migrate prompt, the ms-migration command, the discovery agent, the phase prompts 01-04 and scripts/graphify-bootstrap.sh are bootstrap-only: they are never installed or refreshed in a project that has a .ai/.meta.yml, and --update never creates one that is absent, so a version refresh no longer undoes the migrate prompt's Phase 5 cleanup. The installer summary names every skipped artifact and its reason, and deletes nothing"
+        - "The migration entry point is one-time: a migrated project removes the migrate prompt and its ms-migration command mirrors, and starts a full re-run from the standards repository bootstrap instead"
+        - "CLAUDE.md is a real file holding the @AGENTS.md import and never a symlink to AGENTS.md, stated in the standard, the writing rules, the Discovery Agent, the integrate prompt and the CLAUDE.md template. A write aimed at the symlink overwrites AGENTS.md, and a Windows checkout without symlink support turns it into a one-line file holding the path. The .claude/skills/ mirror is unchanged: a copy and a symlink both stay acceptable there"
     - version: "2.0.0"
       date: "2026-08-14"
       changes:

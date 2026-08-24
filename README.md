@@ -160,18 +160,19 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
-| `.claude/commands/ms-migration.md` + `.cursor/commands/ms-migration.md` | **Keep** | Single entry point for a full re-run |
 | `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
 | Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
 | Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
+| Migrate prompt + `ms-migration` command mirrors (`.github/prompts/migrate.prompt.md`, `.claude/commands/`, `.cursor/commands/`) | **Remove** (optional) | One-time too; a full re-run starts from the standards repo bootstrap, which installs a current copy |
 | `scripts/graphify-bootstrap.sh` | **Remove** (optional) | One-time pre-pass; keep if re-graphing planned |
 | `graphify-out/` | **Remove** | Ephemeral (already gitignored) |
 
 > **A version refresh does not bring the removed artifacts back.** `scripts/install.sh` treats the
-> discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only:
-> in a project that has a `.ai/.meta.yml` it neither creates nor refreshes them, and it lists what it
-> skipped and why in its summary. Everything in the **Keep** rows above is refreshed as usual. The
-> installer never deletes anything, so removing them stays your explicit choice.
+> migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and
+> `scripts/graphify-bootstrap.sh` as bootstrap-only: in a project that has a `.ai/.meta.yml` it
+> neither creates nor refreshes them, and it lists what it skipped and why in its summary.
+> Everything in the **Keep** rows above is refreshed as usual. The installer never deletes anything,
+> so removing them stays your explicit choice.
 
 > **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills/`). Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
 
