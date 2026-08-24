@@ -231,7 +231,7 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
 **Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Builds the Claude Code mirrors with `scripts/mirror-claude.sh` (`.claude/skills` as a symlink to `.agents/skills`, and one symlink per agent in `.claude/agents/`) and copies the prompts into `.claude/commands/`, so both Copilot and Claude Code auto-load them.
-**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` exists and resolves through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
+**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` and `.agents/skills/context-ownership/` exist and resolve through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
@@ -283,6 +283,7 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - `.github/agents/support.agent.md` + `.claude/agents/support.md`
 - Wiring: `AGENTS.md` (the authored file) and `CLAUDE.md` (its import)
 - `standards/writing-rules.md`: the rules the Maintainer applies on every run
+- `.agents/skills/context-ownership/`: the per-section procedure for those rules, applied on every documentation edit
 - Stack skills under `.agents/skills/` (including `confluence-axi`, used by the Maintainer to re-sync Confluence), reached by Claude Code through the `.claude/skills` symlink
 - Datadog MCP (in the MCP configs) — used to fetch/refresh key features via browser OAuth
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)

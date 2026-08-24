@@ -157,7 +157,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | Support agent (`support.agent.md` + `.claude/agents/support.md`) | **Keep** | Day-to-day dev/support |
 | Wiring (`AGENTS.md` and its `CLAUDE.md` import) | **Keep** | Every harness routes into `.ai/` through it |
 | `standards/writing-rules.md` | **Keep** | The Maintainer applies it on every run |
-| Stack skills (`.agents/skills/`, including `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
+| Stack skills (`.agents/skills/`, including `confluence-axi` and `context-ownership`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` and applies `context-ownership` on every documentation edit |
 | MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
@@ -187,8 +187,10 @@ Verify any project's `.ai/` folder meets the standard:
 ```
 
 Checks: required files present, content quality, placeholder detection, staleness, mirror parity,
-and reference integrity (every standard-owned path named in `.ai/`, the wiring files and the skills
-must resolve; a broken one fails the run).
+reference integrity (every standard-owned path named in `.ai/`, the wiring files and the skills
+must resolve; a broken one fails the run), and single-source integrity (a `## ` heading claimed by
+two `.ai/` files fails the run; a command line repeated across files warns). The ownership rule
+those last checks enforce is `standards/writing-rules.md` §2, and §4b says which file owns what.
 
 Run with no argument in this repository and it validates the standard's own references instead:
 
@@ -256,7 +258,8 @@ dept-agentic-standards/
     ├── CLAUDE.template.md
     ├── skills/
     │   ├── codebase-overview/SKILL.md
-    │   └── confluence-axi/SKILL.md
+    │   ├── confluence-axi/SKILL.md
+    │   └── context-ownership/SKILL.md
     ├── workflows/maintainer.yml
     └── agents/support.template.md
         └── support.template.md

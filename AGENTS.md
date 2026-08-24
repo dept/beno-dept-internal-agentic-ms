@@ -15,6 +15,13 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   what may be written into `.ai/`, wiring files and skills. Templates, agents, prompts and logic
   files carry a pointer to it and never a copy. Restating a rule there is the failure the rules
   exist to prevent, and a reviewer will treat a second copy as a defect.
+- **One fact has one owning `.ai/` file, and the writer needs a map to find it.** The rule is
+  `standards/writing-rules.md` §2 and the topic-to-file map is §4b. §4 answers "what does this file
+  own"; §4b answers "where does this fact go", which is the question that actually gets asked, and
+  the reason duplication kept shipping when only §4 existed. A change to who owns a topic lands in
+  §4b, the owning file's §4 row, and the Phase 2 prompt's per-file list, or the three disagree and
+  the prompt wins because it is what an agent reads while writing. `scripts/validate.sh` enforces
+  the mechanical half: a `## ` heading in two `.ai/` files fails, a repeated command line warns.
 - **Every agent is defined twice.** `agents/<name>.agent.md` is the harness-facing wrapper and
   `agents/<name>/logic.md` is the tool-agnostic workflow. A behaviour change lands in both or the
   two drift.

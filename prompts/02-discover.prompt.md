@@ -25,7 +25,8 @@ agent: discovery
 - No hallucination: mark unknowns explicitly with `Assumption:` tags
 - All claims traceable to source files
 - Rate `Confidence: <0-100>%` per major section
-- `standards/writing-rules.md` governs every `.ai/` file you write. Read it before writing. §1 says what never goes in, §2 and §4 say which file owns which fact, §3 says which tool-enforced rules get written down at all. It is not restated here
+- `standards/writing-rules.md` governs every `.ai/` file you write. Read it before writing. §1 says what never goes in, §2 is the single-source rule and §4b is the topic-to-file ownership map, §3 says which tool-enforced rules get written down at all. It is not restated here
+- The `context-ownership` skill in `.agents/skills/context-ownership/` is the working procedure for §2 and §4b: use it for every section you are about to write
 
 **Exclude from analysis:** `node_modules/`, `.next/`, `dist/`, `build/`, `.turbo/`, `.git/`, `coverage/`, `.cache/`, `.pnpm-store/`
 
@@ -125,13 +126,13 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 2. `architecture.md` — the structural file, and the only home for the repository tree and the technology stack table. Also service boundaries, runtime topology, data flows, external systems, plus two required tables an agent uses to act rather than just describe (see `templates/architecture.template.md`):
    - **High-fan-in symbols (who owns what):** the shared functions/hooks everything depends on, with file path, consumer count, and a one-line role. Take counts from `graphify-out/graph.json` when Graphify ran, else `grep -rc`, and say which.
    - **Placement conventions:** where each kind of new code goes, with a real existing file per row to follow as the pattern.
-3. `runbooks.md` — operational procedures, incident response, common issues and fixes
-4. `dependencies.md` — critical vendors, lock-in risks, upgrade paths
-5. `cms.md` — CMS SDKs, content models, webhooks, caching, publishing flow
-6. `operational-context.md` — deployment pipeline, environments, promotion flow, rollback strategy, monitoring
-7. `coding-standards.md` — conventions, quality gates, testing, branching, PR requirements
+3. `runbooks.md` — procedures someone executes, written as steps: incident triage, **rollback**, scheduled operations, known failure signatures, escalation. It describes no pipeline, no environment table, no image and no monitoring wiring: those are `operational-context.md`, referenced by pointer
+4. `dependencies.md` — direct dependency inventory, critical vendors, lock-in risks, upgrade paths, and the single home for **toolchain version floors** (language runtime, package manager, SDK) and for **framework version constraints** with the reason for each. No other file states a version floor
+5. `cms.md` — CMS SDKs, content models, webhooks, publishing and preview flow, and the single home for **the cache layers a published change has to pass and how each is purged or revalidated**. CMS environment variables are `operational-context.md`, by pointer
+6. `operational-context.md` — environments and what each is for, the branch to variable group to environment mapping, deploy pipeline stages, container image details, the environment-variable and secret model with the variable tables, monitoring and alerting wiring including the sampling ratio per environment, hosting model. This is the single home for all of those. **Rollback goes in `runbooks.md` as steps, not here**; what belongs here is the pipeline fact it follows from (for example that the pipeline has no rollback stage)
+7. `coding-standards.md` — what each quality gate enforces and which command runs it, config file locations by path, commit message and branch naming convention, accessibility target, testing and PR expectations. It carries **no command cheatsheet** (that is `onboarding.md`) and **no branch-to-environment table** (that is `operational-context.md`)
 8. `agent-registry.md` — existing agents, instructions, skills, MCP servers found in Step 3
-9. `onboarding.md` — GitHub, environment, and Keeper references collected in Step 4, plus a **Platform Access Links** section listing the detected CMS admin and cloud/hosting console URLs (or `[Fill in]` for a detected platform whose URL is unconfirmed). This is the single home for platform access links; `cms.md` and `operational-context.md` cross-reference it rather than restating URLs.
+9. `onboarding.md` — GitHub, environment, and Keeper references collected in Step 4, the **command cheatsheet** (every command a developer or an agent runs, one row each with what it does, in one table and nowhere else), plus a **Platform Access Links** section listing the detected CMS admin and cloud/hosting console URLs (or `[Fill in]` for a detected platform whose URL is unconfirmed). This is the single home for platform access links; `cms.md` and `operational-context.md` cross-reference it rather than restating URLs.
 
 **For each file:**
 - Extract evidence from code, config, CI/CD, and infrastructure files
@@ -141,8 +142,54 @@ Generate all 9 context files and write to `.ai/` directory in repository root.
 - Cite source evidence (file paths, config names)
 - Redact secrets and privileged credentials
 
-**One topic, one file:**
-The ownership table in `standards/writing-rules.md` §4 says which file owns which topic. Every file you write here obeys it, and each opens with the ownership header from §2. When a file needs to mention a topic another file owns, write a one-line pointer (for example "See `coding-standards.md` → Commit Conventions"), not a copy. The test for whether something is a pointer or a copy is in §2: if the owning file changed tomorrow, would this text become wrong?
+**One fact, one home. This is the rule this phase breaks most often.**
+
+Every fact you are about to write has exactly one owning file. `standards/writing-rules.md` §4b is
+the topic-to-file map: look the topic up there **before** writing the section, not after. §4 gives
+each file's full remit, and each file opens with its ownership header.
+
+Work in this order so there is always something to point at:
+
+1. Write each owning section in its owning file first, complete, with the evidence.
+2. Then go through the other files and write the pointers, one line each.
+
+**A `.ai/` file is not self-contained and must not be made so.** Writing each file complete for its
+own audience is what produced, in a real migrated repository, the same eight build steps under two
+headings, one container image described across six files, one toolchain version floor in seven, and
+three drifted copies of one command list. The reader follows the pointer.
+
+Three shapes, and only the first is allowed between two `.ai/` files (§2 has the full rule):
+
+- **Pointer**, zero facts: ``Environments: `operational-context.md` -> *Environments*.`` Always allowed.
+- **Constraint line**, one fact with the owning file named in the same line. Allowed in `AGENTS.md`
+  and skill bodies only, never between two `.ai/` files.
+- **Restatement**, two or more facts, or one with no owner named: a filtered copy of the owner's
+  table, a "short summary", "see also" plus three sentences of content. Never allowed. Delete it.
+
+Two tests, both must pass: *if the owning file changed tomorrow, would this text become wrong?* and
+*could a reader answer the question from this file alone, without opening the owner?* A yes to
+either, in a file that is not the owner, means you wrote a restatement.
+
+**A `## ` heading claims its topic.** Before adding one, check that no other `.ai/` file already
+carries that exact heading. The only heading that legitimately repeats is `## Validation Questions`.
+
+**Do not do these**, each one is a duplication a previous migration shipped:
+
+| Do not write | Where it goes instead |
+|---|---|
+| A second environments or branch-to-variable-group table anywhere outside `operational-context.md` | pointer to `operational-context.md` |
+| Rollback steps in `operational-context.md` | `runbooks.md` |
+| The build or pipeline stages in `runbooks.md` under a different heading | pointer to `operational-context.md` |
+| The container image (base image, prune command, run user, port, entrypoint) in `project-context.md`, `architecture.md`, `dependencies.md` or a skill | pointer to `operational-context.md` |
+| A CMS-filtered copy of the environment variable table in `cms.md` | pointer to `operational-context.md` |
+| The Node, package manager or SDK version floor in any file other than `dependencies.md` | pointer to `dependencies.md` |
+| A command list in `coding-standards.md`, `AGENTS.md` or a skill | `onboarding.md` owns the one cheatsheet |
+| The commit prefix rule, the accessibility target or a framework version constraint written out twice | `coding-standards.md` for the first two, `dependencies.md` for the third; elsewhere a pointer, or in `AGENTS.md` one constraint line naming the owner |
+| Monitoring sampling ratios in `runbooks.md` | pointer to `operational-context.md` |
+
+**Check yourself before finishing this phase:** run `bash scripts/validate.sh .` and resolve every
+Single-Source Integrity failure. It fails on a `## ` heading claimed by two `.ai/` files and warns
+on a command line repeated across files.
 
 **Quality check:** No empty sections, no placeholders. Every section has content or an explicit unknown statement.
 
@@ -162,6 +209,7 @@ Before proceeding to Phase 3, confirm:
 - [ ] `.ai/.meta.yml` exists with correct metadata
 - [ ] Confidence scores are present in each file
 - [ ] No secrets or credentials in any file
+- [ ] `bash scripts/validate.sh .` reports no Single-Source Integrity failure, and every warning it prints is either fixed or is a deliberate owner-naming block in `AGENTS.md` or a skill
 
 ## Completion Signal
 

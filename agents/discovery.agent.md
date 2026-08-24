@@ -129,7 +129,8 @@ Document all findings in `agent-registry.md` under a dedicated **Existing Agenti
 
 ### 4) Deployment Discovery
 - Inspect CI/CD workflows, IaC, deployment scripts, and environment files.
-- Document promotion flow (dev/test/stage/prod) and rollback strategy.
+- Document promotion flow (dev/test/stage/prod), the branch to variable group to environment mapping, the pipeline stages in order, and the container image (base image, build stages, run user, exposed port, entrypoint). All of that is `operational-context.md`, and it is the single home for each.
+- Rollback belongs in `runbooks.md`, written as steps. `operational-context.md` states only the pipeline fact it follows from (for example that the pipeline has no rollback stage). Do not write it in both.
 
 ### 5) CMS Discovery
 - Detect CMS SDKs, content models, webhooks, preview pipelines.
@@ -170,9 +171,22 @@ write.** It is the single home for these rules and they are not repeated here or
 Four things it governs, and which section to look in:
 
 - What never goes in a `.ai/` file: absence, removal, process and dates, self-correction (§1).
-- Which file owns which fact, and how to write a pointer instead of a copy (§2, §4).
+- Which file owns which fact, and how to write a pointer instead of a copy (§2, §4, and the
+  topic-to-file map in §4b).
 - Which tool-enforced rules get written into `coding-standards.md` at all (§3). Most do not.
 - The three cases where existing content is removed rather than updated (§5).
+
+**A `.ai/` file is not self-contained.** Look every topic up in §4b before you write its section,
+write each owning section first, then write the one-line pointers into the other files. Between two
+`.ai/` files a pointer is the only allowed shape: the one-line constraint line that names its owner
+is for `AGENTS.md` and skill bodies alone. The `context-ownership` skill in
+`.agents/skills/context-ownership/` is the working procedure for this and you apply it to every
+section you write.
+
+When you have written the folder, run `bash scripts/validate.sh .` and clear every Single-Source
+Integrity failure before you report the phase complete. It fails on a `## ` heading claimed by two
+`.ai/` files (only `## Validation Questions` may repeat) and warns on a command line repeated
+across files.
 
 The ownership header at the top of each generated file comes from the §4 table, and each
 `templates/*.template.md` carries the exact block for its file.
@@ -274,7 +288,7 @@ Rules: only accept vendor-org results (e.g. `vercel/`, `shopify/`, `github/`), n
 2. **Real paths only.** Confirm every path with `ls`/glob before writing it. Never infer a route/dir from framework convention (e.g. `app/[locale]/`) without checking it exists.
 3. **Copy code from real call sites.** Base each code sample on an actual usage found in the repo (`grep` the call, read the file).
 4. **No empty/stub sections.** Every heading has real content or is omitted.
-5. **No restated global constraints.** Rules already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) get a one-line pointer, not a re-documentation. `standards/writing-rules.md` §2 applies to skill bodies as it does to `.ai/`.
+5. **No restated global constraints.** A rule already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) gets one **constraint line** at most: one line, stating the instruction, naming the owning `.ai/` file inline, as in ``Tailwind is v3, not v4: `dependencies.md` is authoritative.`` Without the named owner it is a restatement. Two lines on one topic is a restatement. No command cheatsheet, no version floors, no deploy or image details in a skill body: those get a pointer to their owner in `standards/writing-rules.md` §4b. §2 applies to skill bodies as it does to `.ai/`.
 6. **Scope matches frontmatter.** Don't add off-topic sections; the body must stay within the skill's declared scope.
 7. **Mark residual uncertainty honestly.** If something genuinely can't be verified, write `Assumption:` — never state an unverified guess as fact.
 
@@ -535,7 +549,7 @@ Before finalising, verify:
 9. `support.agent.md` created, with no `tools:` line: the agent has every tool the harness offers, MCP servers included.
 10. `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, and `.claude/agents/support.md` symlinks to `.github/agents/support.agent.md`.
 11. `architecture.md` carries the repository tree, the technology stack table, the high-fan-in symbol table, and the placement conventions; `project-context.md` restates none of them.
-12. Every `.ai/` file passes `standards/writing-rules.md`: no banned sentence from §1, no fact owned by another file restated (§2), no tool-enforced rule that fails the §3 test, and an ownership header from §4 at the top of each.
+12. Every `.ai/` file passes `standards/writing-rules.md`: no banned sentence from §1, no fact owned by another file restated (§2, owners in §4b), no tool-enforced rule that fails the §3 test, and an ownership header from §4 at the top of each. `bash scripts/validate.sh .` reports no Single-Source Integrity failure.
 
 ## Completion Summary
 

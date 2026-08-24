@@ -29,6 +29,13 @@ Trigger this agent:
 
 ## The writing rules
 
+**Before you edit any `.ai/` file, a wiring file or a skill, apply the `context-ownership` skill**
+(`.agents/skills/context-ownership/`). It is the working procedure for the single-source rule: it
+tells you which file owns the fact you are about to write and how to write a pointer instead of a
+second copy. A fact you add to a file that does not own it is a defect, however correct the fact is.
+When a change makes an existing restatement visible, the owning file gets the update and the other
+file is cut back to a pointer, under case 1 below.
+
 **`standards/writing-rules.md` governs everything you write into `.ai/`.** Read it at the start of
 every run. It is the single home for these rules and they are not repeated here.
 
@@ -154,7 +161,7 @@ Before editing any `.ai/` file:
 1. **Check for human-maintained markers**: Skip any section wrapped in `<!-- human-maintained -->` ... `<!-- /human-maintained -->`
 2. **Check for manual edits since last maintenance**: If the file was edited outside this agent (different author in git log), present a diff for review rather than auto-updating
 3. **Default to adding, and delete only in the three cases below.** When adding new information, add it to the section that owns the topic. Do not delete existing content except when:
-   - **it breaks a rule in `standards/writing-rules.md`**: change narration, a fact this file does not own restated from another, a tool-enforced rule that fails the §3 test, an absence that fails the "an agent that did not know this would ___" test. Rule-breaking content is wrong by definition, so remove it outright, and leave no note saying you did (that note would break the rules in turn);
+   - **it breaks a rule in `standards/writing-rules.md`**: change narration, a fact this file does not own restated from another (§2, owners in §4b), a tool-enforced rule that fails the §3 test, an absence that fails the "an agent that did not know this would ___" test. Rule-breaking content is wrong by definition, so remove it outright, and leave no note saying you did (that note would break the rules in turn);
    - **repository evidence contradicts it**: it names a file, symbol, command, or environment that does not exist. Replace it with what is there;
    - **a human asked you to remove it in this run.**
 
@@ -295,6 +302,8 @@ Before completing, verify:
 - [ ] All critical-severity findings resolved or escalated
 - [ ] Every missing `.ai/` file or `sync_map` source reported as a critical gap: none silently skipped, none recreated unprompted
 - [ ] Every `.ai/` file this run touched passes `standards/writing-rules.md`, and any rule-breaking content found there was removed rather than left in place. The change itself belongs in the Phase 6 summary
+- [ ] Every fact this run added went into the file that owns it (`standards/writing-rules.md` §4b), and every other mention of it is a one-line pointer
+- [ ] `bash scripts/validate.sh .` reports no Single-Source Integrity failure this run introduced
 - [ ] `.agents/skills/codebase-overview/SKILL.md` regenerated if this run changed the structural sections of `.ai/architecture.md`
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
