@@ -7,10 +7,10 @@ set -euo pipefail
 # `.agents/skills/` and `.github/agents/`. Both mirrors used to be maintained by hand and both
 # drifted in real projects, so neither is authored any more:
 #
-#   .agents/skills/            -> .claude/skills            a relative symlink, nothing to re-copy
-#   .github/agents/<n>.agent.md -> .claude/agents/<n>.md    a derived file, regenerated every run
+#   .claude/skills            -> ../.agents/skills                   one relative symlink
+#   .claude/agents/<n>.md     -> ../../.github/agents/<n>.agent.md   one relative symlink per agent
 #
-# Idempotent: run it after adding, editing or deleting a skill or an agent, and on every
+# Idempotent: run it after adding or deleting a skill or an agent, and on every
 # `scripts/install.sh . --update` refresh, which calls it for you.
 #
 # Usage:
@@ -78,66 +78,117 @@ sync_skills() {
   CHANGED=$((CHANGED + 1))
 }
 
-# ── Agents: a derived file, not a second hand-maintained one ───────────────────
-# The two cannot be a symlink: Claude Code subagent frontmatter is `name` + `description`
-# (+ optional `model`), while the .github source also carries the Copilot `tools:` list.
-# So the body is copied verbatim and only the frontmatter is rewritten, deterministically.
-# Claude Code subagents inherit every available tool, so dropping `tools:` loses nothing.
-derive_agent() {
-  local src="$1" dest="$2"
+# ── Agents: one symlink per agent, same as skills ──────────────────────────────
+# Both harnesses treat agent frontmatter the same way: `tools:` is optional and omitting it means
+# the agent has every available tool, and each ignores keys it does not know. The standard's agents
+# do not restrict tools, so the source carries no `tools:` line and one file is valid for both.
+# A symlink may be named differently from its target, so `<role>.md` pointing at
+# `<role>.agent.md` in another directory is fine.
+link_agent() {
+  local name="$1"
+  local mirror="${ROOT}/.claude/agents/${name}.md"
+  local link_target="../../.github/agents/${name}.agent.md"
 
-  awk '
-    NR == 1 && $0 == "---" { print; infm = 1; next }
-    infm && $0 == "---" {
-      # Canonical field order, so the output does not depend on the source ordering.
-      if (name != "")  print name
-      if (desc != "")  print desc
-      if (model != "") print model
-      print "---"
-      infm = 0
-      next
-    }
-    infm && /^name:/        { name  = $0; next }
-    infm && /^description:/ { desc  = $0; next }
-    infm && /^model:/       { model = $0; next }
-    infm { next }   # tools:, its continuation lines and any other harness-only field
-    { print }
-  ' "$src" > "${dest}.tmp"
-
-  if [[ -f "$dest" ]] && cmp -s "${dest}.tmp" "$dest"; then
-    rm "${dest}.tmp"
-    echo -e "  ${GREEN}✓${NC} ${dest#$ROOT/} (up to date)"
-    return 0
+  if [[ -L "$mirror" ]]; then
+    if [[ "$(readlink "$mirror")" == "$link_target" ]]; then
+      echo -e "  ${GREEN}✓${NC} .claude/agents/${name}.md -> ${link_target}"
+      return 0
+    fi
+    rm "$mirror"
+  elif [[ -f "$mirror" ]]; then
+    # A hand-maintained copy from an older standard. If its body matches the source, nothing is
+    # lost by replacing it with the link. If it does not, the two have drifted and only a human
+    # can say which text is right, so it stays where it is and is reported.
+    if body_matches "$mirror" "${ROOT}/.github/agents/${name}.agent.md"; then
+      rm "$mirror"
+      echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md was a copy with the same body, replaced by a symlink"
+    else
+      echo -e "  ${RED}✗${NC} .claude/agents/${name}.md has drifted from .github/agents/${name}.agent.md. Nothing was changed: reconcile the two bodies into the .github/ source, delete the copy, and run this script again"
+      return 0
+    fi
   fi
 
-  local verb="derived"
-  if [[ -f "$dest" ]]; then verb="re-derived, it had drifted"; fi
-  mv "${dest}.tmp" "$dest"
-  echo -e "  ${GREEN}↻${NC} ${dest#$ROOT/} (${verb})"
+  mkdir -p "${ROOT}/.claude/agents"
+  if ln -s "$link_target" "$mirror" 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} .claude/agents/${name}.md -> ${link_target} (created)"
+  else
+    cp "${ROOT}/.github/agents/${name}.agent.md" "$mirror"
+    echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md copied, this checkout cannot create symlinks, so re-run this script after every agent change"
+  fi
   CHANGED=$((CHANGED + 1))
+}
+
+# Everything after the frontmatter block, which is the whole of an agent definition.
+body_matches() {
+  local a b
+  a="$(awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm {print}' "$1")"
+  b="$(awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm {print}' "$2")"
+  [[ "$a" == "$b" ]]
+}
+
+# Legacy names from before the standard settled on the role name alone. The old file has to go,
+# not sit beside the new one: two files whose frontmatter carries the same `name:` register as two
+# agents under one name, which is exactly the duplicate that bit a client repository
+# (`.claude/agents/maintainer-agent.md` next to `.claude/agents/maintainer.md`).
+rename_legacy_sources() {
+  local src_dir="$1"
+  local src base target
+
+  for src in "$src_dir"/*.md; do
+    [[ -f "$src" ]] || continue
+    base="$(basename "$src")"
+    case "$base" in
+      *-agent.agent.md) target="${base%-agent.agent.md}.agent.md" ;;   # support-agent.agent.md
+      *.agent.md)       continue ;;
+      *-agent.md)       target="${base%-agent.md}.agent.md" ;;         # support-agent.md
+      *)                target="${base%.md}.agent.md" ;;               # support.md, no extension
+    esac
+    if [[ -e "${src_dir}/${target}" ]]; then
+      echo -e "  ${YELLOW}△${NC} .github/agents/${base} and .github/agents/${target} both exist, left alone: delete the one you do not want"
+      continue
+    fi
+    mv "$src" "${src_dir}/${target}"
+    echo -e "  ${YELLOW}△${NC} .github/agents/${base} renamed to ${target} (the standard names an agent by its role alone)"
+    CHANGED=$((CHANGED + 1))
+  done
 }
 
 sync_agents() {
   local src_dir="${ROOT}/.github/agents"
   local mirror_dir="${ROOT}/.claude/agents"
-  local src name
+  local src name legacy_of
 
   [[ -d "$src_dir" ]] || return 0
+  rename_legacy_sources "$src_dir"
   mkdir -p "$mirror_dir"
 
   for src in "$src_dir"/*.agent.md; do
     [[ -f "$src" ]] || continue
-    name="$(basename "$src" .agent.md)"
-    derive_agent "$src" "${mirror_dir}/${name}.md"
+    link_agent "$(basename "$src" .agent.md)"
   done
 
-  # An agent that exists only in the mirror is reported, never deleted: it may be a Claude-only
-  # subagent a project added on purpose. Removing the pair is the operator's call.
   local mirrored
   for mirrored in "$mirror_dir"/*.md; do
-    [[ -f "$mirrored" ]] || continue
+    [[ -e "$mirrored" ]] || continue
     name="$(basename "$mirrored" .md)"
     if [[ -f "${src_dir}/${name}.agent.md" ]]; then continue; fi
+
+    # A mirror left over from the old `<role>-agent` naming, whose renamed source is now linked.
+    # It is a stale copy of a file we still have, and leaving it registers the agent twice.
+    legacy_of="${name%-agent}"
+    if [[ "$legacy_of" != "$name" && -f "${src_dir}/${legacy_of}.agent.md" ]]; then
+      if [[ -L "$mirrored" ]] || body_matches "$mirrored" "${src_dir}/${legacy_of}.agent.md"; then
+        rm "$mirrored"
+        echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md removed: stale copy of .claude/agents/${legacy_of}.md (it would register a second agent under the same name)"
+        CHANGED=$((CHANGED + 1))
+      else
+        echo -e "  ${RED}✗${NC} .claude/agents/${name}.md is the old name of ${legacy_of} and its body has drifted. Nothing was changed: reconcile it into .github/agents/${legacy_of}.agent.md and delete it, or it registers a second agent under the same name"
+      fi
+      continue
+    fi
+
+    # Anything else that exists only in the mirror is reported, never deleted: it may be a
+    # Claude-only subagent a project added on purpose. Removing the pair is the operator's call.
     echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md has no .github/agents/${name}.agent.md source, left in place"
   done
 }

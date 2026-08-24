@@ -1,7 +1,6 @@
 ---
 description: "Use when bootstrapping a new project's .ai folder, generating project context, running repository discovery, creating architecture documentation, or setting up AI-ready project documentation from scratch."
-name: "Discovery Agent"
-tools: [read, search, edit, execute, web]
+name: discovery
 ---
 
 You are a Discovery Agent for DEPT Managed Services.
@@ -468,19 +467,16 @@ Populate from `.ai/` evidence — no generic placeholders.
 
 #### Support agent
 
-After all skills are installed, create `.github/agents/support-agent.agent.md` if not already present.
+After all skills are installed, create `.github/agents/support.agent.md` if not already present.
 
-**Tools to include:**
-- Always: `read`, `edit`, `search`, `execute`, `web`, `agent`
-- For every MCP server added to `.vscode/mcp.json`: add `<server-key>/*` (e.g. `contentful/*`, `vercel/*`, `nextjs/*`)
-- Always add `github/*` (GitHub MCP — available by default in VS Code Copilot)
-- If a browser-testing or devtools MCP was installed (e.g. `playwright/*`, `chrome-devtools/*`): add those too
+No `tools:` line: both Copilot and Claude Code read an agent without one as having every available
+tool, including every MCP server wired into the project, and one file with no harness-specific
+frontmatter is what lets the Claude Code mirror be a symlink to this file.
 
 ```markdown
 ---
 description: "Support agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
-name: "Support Agent"
-tools: [read, edit, search, execute, web, agent, github/*, [ADDITIONAL_MCP_TOOLS]]
+name: support
 ---
 
 You are the support agent for **[PROJECT_NAME]**.
@@ -511,14 +507,13 @@ Load `.ai/` files on demand, only when the task needs them, not all at once. `.a
 ```markdown
 ---
 description: "Support agent for Acme. Use for feature development, debugging, support tasks, and code changes in this Next.js + Contentful + Vercel project. Skills: nextjs, contentful, vercel."
-name: "Support Agent"
-tools: [read, edit, search, execute, web, agent, github/*, contentful/*, vercel/*, nextjs/*]
+name: support
 ---
 ```
 
-**Mirror to Claude Code:** run `bash scripts/mirror-claude.sh`. It derives `.claude/agents/support-agent.md` from the `.github/agents/support-agent.agent.md` you just wrote: same body, Claude Code frontmatter (`name` and `description`, no `tools:` line, since Claude Code subagents inherit all available tools). Never write that file by hand, and never edit it: the edit belongs in the `.github/` source, and the next run of the script carries it over. The transform and the reason it is not a symlink are in `standards/agentic-project-standard.md` -> Claude Code mirrors.
+**Mirror to Claude Code:** run `bash scripts/mirror-claude.sh`. It points `.claude/agents/support.md` at the `.github/agents/support.agent.md` you just wrote, as a relative symlink. There is no second copy to write and none to keep in step: `standards/agentic-project-standard.md` -> Claude Code mirrors.
 
-Keeping `name:` identical to the source (`"Support Agent"`) is what the transform does, and it matters: VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/` and lists the agent twice, so matching names makes the two picker rows read as one agent. This duplication is expected (both folders serve different clients) and can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
+`name:` is the role in lowercase (`support`), which is what Claude Code's naming rule allows and what both harnesses show in their pickers. VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/`, so the agent is listed twice; it is literally one file, so the two rows carry the same name. This can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
 
 ## Output Format
 
@@ -537,8 +532,8 @@ Before finalising, verify:
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
 8. `codebase-overview` skill emitted with `[PROJECT_NAME]` substituted, and its generated block carries the repository tree, stack table, placement conventions and high-fan-in symbols copied from `.ai/architecture.md` unchanged.
-9. `support-agent.agent.md` created with correct `tools` list — including `execute`, `web`, `agent`, `github/*`, and a `<key>/*` entry for every MCP server installed.
-10. `scripts/mirror-claude.sh` run: `.claude/skills` is a symlink to `.agents/skills`, and `.claude/agents/support-agent.md` is derived from the Copilot support agent.
+9. `support.agent.md` created, with no `tools:` line: the agent has every tool the harness offers, MCP servers included.
+10. `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, and `.claude/agents/support.md` symlinks to `.github/agents/support.agent.md`.
 11. `architecture.md` carries the repository tree, the technology stack table, the high-fan-in symbol table, and the placement conventions; `project-context.md` restates none of them.
 12. Every `.ai/` file passes `standards/writing-rules.md`: no banned sentence from §1, no fact owned by another file restated (§2), no tool-enforced rule that fails the §3 test, and an ownership header from §4 at the top of each.
 
@@ -564,7 +559,7 @@ Output after all files are written:
 
 ### Support agent
 [created / already present]
-[.claude/agents/support-agent.md derived by scripts/mirror-claude.sh]
+[.claude/agents/support.md -> ../../.github/agents/support.agent.md, created by scripts/mirror-claude.sh]
 
 ### Existing agentic setup found
 [list files found in step 0, or "None"]

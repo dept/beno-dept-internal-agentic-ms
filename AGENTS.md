@@ -22,12 +22,19 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   Codex reads only that path), `.claude/skills` is a relative symlink to it (Claude Code reads only
   that path). `.github/skills/` is the standard 1.x layout and appears only as something to migrate
   away from.
-- **Nothing under `.claude/` is authored.** `scripts/mirror-claude.sh` rebuilds both Claude mirrors:
-  the `.claude/skills` symlink, and one derived `.claude/agents/<name>.md` per
-  `.github/agents/<name>.agent.md` (frontmatter rewritten, body verbatim). `scripts/install.sh`
-  runs it on install and on every `--update`. A change to an agent lands in the `.github/` source;
-  a second hand-maintained copy is the drift this replaced. The rule is stated once in
+- **Nothing under `.claude/` is a file.** Both Claude mirrors are relative symlinks:
+  `.claude/skills` -> `.agents/skills`, and `.claude/agents/<role>.md` ->
+  `.github/agents/<role>.agent.md`. `scripts/mirror-claude.sh` creates and repairs them, and
+  `scripts/install.sh` runs it on install and on every `--update`. Agent frontmatter is
+  `description` and `name` only: `tools:` is optional in both harnesses and omitting it means all
+  tools, so no harness-specific field remains and one file serves both. The rule is stated once in
   `standards/agentic-project-standard.md` -> Claude Code mirrors.
+- **An agent is named by its role alone.** `.github/agents/<role>.agent.md` and
+  `.claude/agents/<role>.md`: discovery, maintainer, support, with `name:` the same role in
+  lowercase. No `-agent` suffix on either side, and `.github/agents/` stays the source because it
+  is the only repository-level location the GitHub cloud coding agent reads.
+  `scripts/mirror-claude.sh` renames legacy sources and removes the stale mirror, so an old name
+  never survives as a second registered agent.
 - **Wiring layout:** `AGENTS.md` is the one authored wiring file and every harness reads it, Claude
   Code through the `@AGENTS.md` import that is the whole of `CLAUDE.md`. The standard generates no
   `.github/copilot-instructions.md`, no `.github/instructions/*.instructions.md` and no

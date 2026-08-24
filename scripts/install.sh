@@ -233,14 +233,14 @@ for artifact in "${ARTIFACTS[@]}"; do
   install_one "$dest_rel" "$src_rel"
 done
 
-# Rebuild the Claude Code mirrors: `.claude/skills` as a symlink to `.agents/skills`, and one
-# derived `.claude/agents/<name>.md` per `.github/agents/<name>.agent.md`. Neither is authored,
-# so both are rebuilt on every run, with or without --update: that is what makes a refresh
-# repair a mirror that drifted. Installing the agent mirrors here, before the migration session
-# runs, is also what lets Phase 2 dispatch a real Discovery subagent on the first run.
+# Create the Claude Code mirrors: `.claude/skills` -> `.agents/skills`, and one
+# `.claude/agents/<role>.md` -> `.github/agents/<role>.agent.md` per agent. Both are relative
+# symlinks, so this runs on every install with or without --update and converts a project still
+# carrying copies. Linking the agents here, before the migration session runs, is also what lets
+# Phase 2 dispatch a real Discovery subagent on the first run.
 #
-# Bootstrap-only artifacts need no special case any more: a derived mirror exists exactly when
-# its source does, so a project that removed the discovery agent in Phase 5 gets no mirror back.
+# Bootstrap-only artifacts need no special case any more: a link exists exactly when its source
+# does, so a project that removed the discovery agent in Phase 5 gets no mirror back.
 echo ""
 echo -e "${BLUE}── Claude Code mirrors ──${NC}"
 if [[ -f "${REPO_DIR}/scripts/mirror-claude.sh" ]]; then

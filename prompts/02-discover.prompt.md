@@ -1,6 +1,6 @@
 ---
 description: "Phase 2: Analyze the repository and generate complete .ai/ context files."
-agent: "Discovery Agent"
+agent: discovery
 ---
 
 # Phase 2: Discovery & Analysis

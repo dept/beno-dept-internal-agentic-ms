@@ -59,13 +59,13 @@ Fetch these files from the DEPT Agentic Standards repository:
 bash scripts/mirror-claude.sh
 ```
 
-It points `.claude/skills` at `.agents/skills` as a relative symlink, so the `confluence-axi` skill you just installed (and every skill Phase 4 adds) is visible to Claude Code with nothing to re-copy. It also derives `.claude/agents/discovery.md` and `.claude/agents/maintainer.md` from the two `.github/agents/*.agent.md` sources: body verbatim, frontmatter rewritten to Claude Code's `name` and `description` (no `tools:` list, since Claude Code subagents inherit all available tools).
+It points `.claude/skills` at `.agents/skills` as a relative symlink, so the `confluence-axi` skill you just installed (and every skill Phase 4 adds) is visible to Claude Code with nothing to re-copy. It also points `.claude/agents/discovery.md` and `.claude/agents/maintainer.md` at the two `.github/agents/*.agent.md` sources, the same way.
 
-**Do not write any file under `.claude/agents/` or `.claude/skills/` by hand, and never edit one.** They are derived. An edit belongs in the `.github/agents/` or `.agents/skills/` source, and the next run of the script carries it over. The full rule is in `standards/agentic-project-standard.md` -> Claude Code mirrors.
+**Do not write any file under `.claude/agents/` or `.claude/skills/`.** Both are symlinks, so an edit made there lands in the source anyway, and a file created there is a second copy that will drift. The full rule is in `standards/agentic-project-standard.md` -> Claude Code mirrors.
 
 > **Note:** if the migration was bootstrapped via `scripts/install.sh` (the one-liner), the installer already ran this script, so the step is a no-op idempotent check. It still matters when the migration is run in-session (Option B: fetch the prompt directly without running the installer first), where no installer ran.
 
-The transform keeps `name:` identical to the source (e.g. `name: "Discovery Agent"`, not `discovery-agent`), and that matters: VS Code Copilot default-scans BOTH `.github/agents/` and `.claude/agents/`, so each agent shows **twice** in its picker; the matching `name:` makes the two rows carry the same label (clearly one agent) rather than looking like two different agents. This duplication is expected and cannot be disabled (no setting un-scans a VS Code default location); a developer can hide the extra row via the eye icon in VS Code's *Agent Customizations* editor if desired.
+VS Code Copilot default-scans BOTH `.github/agents/` and `.claude/agents/`, so each agent shows **twice** in its picker. It is one file behind both rows, under one `name:`, so they read as one agent. This duplication is expected and cannot be disabled (no setting un-scans a VS Code default location); a developer can hide the extra row via the eye icon in VS Code's *Agent Customizations* editor if desired.
 
 **Mirror prompts as slash commands for Claude Code + Cursor:** `.github/prompts/*.prompt.md` is Copilot's `@workspace /name` format. Claude Code auto-loads slash commands from `.claude/commands/<name>.md`, and Cursor from `.cursor/commands/<name>.md` — same trigger UX (`/ms-migration`, `/ms-install`, ...), different folder + frontmatter. For each installed prompt, write both mirrors:
 
@@ -77,7 +77,7 @@ The transform keeps `name:` identical to the source (e.g. `name: "Discovery Agen
 | `.github/prompts/03-integrate.prompt.md` | `.claude/commands/ms-integrate.md` | `.cursor/commands/ms-integrate.md` |
 | `.github/prompts/04-stack-tooling.prompt.md` | `.claude/commands/ms-stack-tooling.md` | `.cursor/commands/ms-stack-tooling.md` |
 
-Body content carries over unchanged (it's already tool-agnostic prose). Keep `description`/`argument-hint` from the source frontmatter; drop `agent:` (Copilot-only — Claude Code invokes the Discovery Agent via its own `.claude/agents/discovery.md`, referenced by name in the body instead).
+Body content carries over unchanged (it's already tool-agnostic prose). Keep `description`/`argument-hint` from the source frontmatter; drop `agent:` (Copilot-only — Claude Code invokes the Discovery Agent via `.claude/agents/discovery.md`, referenced by name in the body instead).
 
 **OpenAI Codex:** Codex has no project-level command/agent/skill folders — it reads `AGENTS.md` (created in Phase 3) and any file you point it at. No mirror to write here; `AGENTS.md` references the migrate prompt so Codex users run it via "read `.github/prompts/migrate.prompt.md` and follow it."
 
@@ -87,7 +87,7 @@ Body content carries over unchanged (it's already tool-agnostic prose). Keep `de
 
 Before proceeding to Phase 2, confirm:
 - [ ] `.github/agents/` contains 2 agent files
-- [ ] `.claude/agents/` contains `discovery.md` + `maintainer.md`, derived from the same 2 agents
+- [ ] `.claude/agents/` contains `discovery.md` + `maintainer.md`, each a symlink to its `.github/agents/*.agent.md` source
 - [ ] `.github/prompts/` contains `migrate.prompt.md` and `01-04` phase prompts
 - [ ] `.claude/commands/` and `.cursor/commands/` each contain the 5 mirrored slash commands (`ms-migration`, `ms-install`, `ms-discover`, `ms-integrate`, `ms-stack-tooling`)
 - [ ] `scripts/graphify-bootstrap.sh` exists and is executable

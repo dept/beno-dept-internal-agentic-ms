@@ -89,7 +89,7 @@ Run the deterministic scaffold. It is **idempotent** — it never overwrites exi
 #
 # .github/
 # └── agents/
-#     └── support-agent.md     ← NEW (template, Phase 4 fills placeholders)
+#     └── support.agent.md   ← NEW (template, Phase 4 fills placeholders)
 #
 # AGENTS.md                    ← NEW (the one authored wiring file)
 # CLAUDE.md                    ← NEW (@AGENTS.md import)
@@ -200,7 +200,7 @@ my-bmad-project/
 │
 ├── .github/
 │   ├── agents/
-│   │   └── support-agent.md   ← NEW (Phase 4 fills in stack + MCP tools)
+│   │   └── support.agent.md ← NEW (Phase 4 fills in stack + MCP tools)
 │   └── workflows/             ← UNCHANGED
 │       └── ci.yml
 │
@@ -231,7 +231,7 @@ After BMAD-safe migration:
 - [ ] `.ai/runbooks.md` covers BMAD's operational procedures (or notes gaps)
 - [ ] `.ai/agent-registry.md` documents BMAD agents from `.bmad-core/`
 - [ ] Validation script passes: `./scripts/validate.sh .`
-- [ ] Support agent is present at `.github/agents/support-agent.md`
+- [ ] Support agent is present at `.github/agents/support.agent.md`
 
 ---
 

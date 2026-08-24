@@ -106,28 +106,54 @@ same agent whose bodies had diverged by 85 lines in another).
 | Mirror | Form | Rebuilt by |
 |---|---|---|
 | `.claude/skills` | one relative symlink to `.agents/skills` | nothing to rebuild, it cannot drift |
-| `.claude/agents/<name>.md` | derived from `.github/agents/<name>.agent.md` | `scripts/mirror-claude.sh` |
+| `.claude/agents/<role>.md` | one relative symlink to `.github/agents/<role>.agent.md` | nothing to rebuild, it cannot drift |
 | `.claude/commands/<name>.md`, `.cursor/commands/<name>.md` | copied from `.github/prompts/<name>.prompt.md` | the phase prompts, on change |
 
-`scripts/mirror-claude.sh` rebuilds both Claude mirrors and is idempotent. `scripts/install.sh`
-runs it on install and on every `--update` refresh, so a refresh repairs a derived agent copy that
-was hand-edited and converts a project still carrying a copied `.claude/skills/` directory.
-Run it yourself after adding, editing or deleting a skill or an agent.
+`scripts/mirror-claude.sh` creates and repairs both Claude mirrors and is idempotent.
+`scripts/install.sh` runs it on install and on every `--update` refresh, so a refresh converts a
+project still carrying copied `.claude/skills/` and `.claude/agents/*.md` files. Run it yourself
+after adding or deleting a skill or an agent; an *edit* needs nothing, both mirrors are links.
 
-The agent mirror cannot be a symlink: Claude Code subagent frontmatter is `name` and `description`
-(plus an optional `model`), while the `.github/` source also carries the Copilot `tools:` list. The
-transform keeps the body verbatim and rewrites the frontmatter to those fields in that order.
-Claude Code subagents inherit every available tool, so dropping `tools:` restricts nothing. Nobody
-edits a `.claude/agents/*.md` file: the edit belongs in the `.github/agents/` source and the next
-run of the script carries it over.
+**Agent frontmatter is one file's worth.** `tools:` is optional in both harnesses and omitting it
+means the agent has every available tool, MCP servers included, so the standard's agents carry no
+`tools:` line. A Copilot-format list would be actively wrong on the Claude side, where `tools`
+expects Claude tool names, and each harness ignores frontmatter keys it does not know. That leaves
+`description` and `name` only, valid for both, so the agent mirror is a symlink like the skill
+mirror rather than a generated file. An agent that genuinely needed a restricted Copilot tool set
+would be the one case for a per-agent transform; none of the standard's agents does.
+
+**Agent file names:** an agent is named by its role alone, on both sides:
+`.github/agents/<role>.agent.md` and `.claude/agents/<role>.md`, giving `discovery`, `maintainer`
+and `support`. The directory already says these are agents, so a `-agent` suffix repeated the word
+(`support-agent.agent.md`), and the two sides used different names for the same agent. A symlink
+may be named differently from its target, so the `.agent.md` to `.md` difference is not a problem;
+the extension on the source stays because it is what VS Code's agent-file convention uses, and
+GitHub's cloud coding agent matches any `.md` under `.github/agents/`. The `name:` value is the
+same role in lowercase (`support`, not `"Support Agent"`), which is what Claude Code's naming rule
+allows and what both pickers show.
+`scripts/mirror-claude.sh` migrates a project still on the old names: it renames a legacy
+`.github/agents/<role>-agent.agent.md` (or an extension-less `<role>-agent.md`) to
+`<role>.agent.md`, and removes the stale `.claude/agents/<role>-agent.md` left behind, because two
+mirror files carrying the same `name:` register as two agents under one name.
+
+**Why `.github/agents/` stays the source:** it is the only location the GitHub cloud Copilot coding
+agent reads for repository-level agents (the alternatives are org-level and enterprise-level
+repositories, not this repository). VS Code defaults to `.github/agents` and also detects
+`.claude/agents`, and its `chat.agentFilesLocations` setting only adds further locations, so it is a
+machine or workspace setting rather than repository content. Moving the source under `.agents/`
+would therefore need per-developer settings and still leave the cloud agent unconfigurable, forcing
+a third copy. One authored file per agent is worth more than folder symmetry with skills.
 
 Nothing is ever deleted silently. A skill found only in a copied `.claude/skills/` directory is
-moved into `.agents/skills/` and reported; a `.claude/agents/*.md` with no source is reported and
-left in place. On a checkout that cannot create symlinks (Windows without developer mode) the
-script falls back to copying `.claude/skills/` and says so, and that project has to re-run it after
-every skill change. `scripts/validate.sh` counts a symlinked mirror correctly, it uses `find -L`.
+moved into `.agents/skills/` and reported. A `.claude/agents/<role>.md` copy is replaced by the
+symlink only when its body already matches the source; when the two have drifted the script changes
+nothing and says so, because only a human can decide which text is right. A `.claude/agents/*.md`
+with no source is reported and left in place. On a checkout that cannot create symlinks (Windows
+without developer mode) the script falls back to copying and says so, and that project has to
+re-run it after every change. `scripts/validate.sh` counts a symlinked mirror correctly, it uses
+`find -L`.
 
-**Known duplication — agents in VS Code:** VS Code Copilot default-scans **both** `.github/agents/` and `.claude/agents/`, so every agent appears **twice** in its agent picker. This is intentional and unavoidable — `.github/agents/` serves the github.com cloud Copilot coding agent, `.claude/agents/` serves Claude Code, and VS Code happens to read both. There is no setting to un-scan a default location. To mitigate: (1) each `.claude/agents/*.md` mirror keeps the **same `name:` frontmatter** as its `.github/agents/*.agent.md` source, so the two picker rows carry the identical label (clearly one agent, not two); (2) a developer bothered by the duplicate can hide one row via the eye icon in VS Code's *Agent Customizations* editor (gear icon in the Chat view). Prompt-commands (`.claude/commands/`) and skills (`.claude/skills/`) do **not** duplicate — VS Code does not default-scan those Claude folders.
+**Known duplication — agents in VS Code:** VS Code Copilot default-scans **both** `.github/agents/` and `.claude/agents/`, so every agent appears **twice** in its agent picker. This is intentional and unavoidable — `.github/agents/` serves the github.com cloud Copilot coding agent, `.claude/agents/` serves Claude Code, and VS Code happens to read both. There is no setting to un-scan a default location. To mitigate: (1) `.claude/agents/*.md` is a symlink to the `.github/agents/*.agent.md` source, so the two picker rows are the same file under the same `name:` (clearly one agent, not two); (2) a developer bothered by the duplicate can hide one row via the eye icon in VS Code's *Agent Customizations* editor (gear icon in the Chat view). Prompt-commands (`.claude/commands/`) and skills (`.claude/skills/`) do **not** duplicate — VS Code does not default-scan those Claude folders.
 
 ## Governance Principles
 
