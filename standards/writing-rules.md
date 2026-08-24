@@ -189,7 +189,7 @@ each file's ownership header.
 | `.agents/skills/codebase-overview/SKILL.md` | A description that triggers discovery, plus the structural content generated from `.ai/architecture.md`: annotated tree, stack table, placement conventions, high-fan-in symbols | Facts not present in `.ai/architecture.md`; a routing table into the other `.ai/` files beyond one pointer line; hand edits inside the generated block |
 | `.agents/skills/<technology>/SKILL.md` | How this project uses that technology, with code copied from real call sites | Global constraints already in `.ai/` (pointer only); line numbers; evidence residue; negative trivia |
 | `.claude/skills` | Symlink to `.agents/skills/` | Any hand-written content, it belongs in the source |
-| `.github/agents/<role>.agent.md` | The one authored file for an agent: `description` and a lowercase `name`, then the agent's instructions | A `tools:` line (omitting it means every available tool in both harnesses, and a Copilot-format list is wrong on the Claude side); any other harness-specific frontmatter key |
+| `.github/agents/<role>.agent.md` | The one authored file for an agent: `description` and a `name` in display form (`Support Agent`), then the agent's instructions | A `tools:` line (omitting it means every available tool in both harnesses, and a Copilot-format list is wrong on the Claude side); any other harness-specific frontmatter key |
 | `.claude/agents/<role>.md` | Symlink to `.github/agents/<role>.agent.md` | Any content at all, it belongs in the source |
 
 Every harness in use reads `AGENTS.md`: Claude Code through the `@AGENTS.md` import in `CLAUDE.md`,

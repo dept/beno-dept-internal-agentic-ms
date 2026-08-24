@@ -23,5 +23,5 @@ To add a new agent template:
 
 1. Create a `.template.md` file in this directory
 2. Use `[PLACEHOLDER_NAME]` syntax for values that should be filled during generation
-3. Follow the agent definition format (see `support.template.md`): `description` and a lowercase `name`, no `tools:` line, so the one file is valid for Copilot and Claude Code alike
+3. Follow the agent definition format (see `support.template.md`): `description` and a `name` in display form (`Support Agent`), no `tools:` line, so the one file is valid for Copilot and Claude Code alike
 4. Update the Discovery Agent logic to populate the new template

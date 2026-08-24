@@ -1,6 +1,6 @@
 ---
 description: "Use when bootstrapping a new project's .ai folder, generating project context, running repository discovery, creating architecture documentation, or setting up AI-ready project documentation from scratch."
-name: discovery
+name: Discovery Agent
 ---
 
 You are a Discovery Agent for DEPT Managed Services.
@@ -476,7 +476,7 @@ frontmatter is what lets the Claude Code mirror be a symlink to this file.
 ```markdown
 ---
 description: "Support agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
-name: support
+name: Support Agent
 ---
 
 You are the support agent for **[PROJECT_NAME]**.
@@ -507,13 +507,13 @@ Load `.ai/` files on demand, only when the task needs them, not all at once. `.a
 ```markdown
 ---
 description: "Support agent for Acme. Use for feature development, debugging, support tasks, and code changes in this Next.js + Contentful + Vercel project. Skills: nextjs, contentful, vercel."
-name: support
+name: Support Agent
 ---
 ```
 
 **Mirror to Claude Code:** run `bash scripts/mirror-claude.sh`. It points `.claude/agents/support.md` at the `.github/agents/support.agent.md` you just wrote, as a relative symlink. There is no second copy to write and none to keep in step: `standards/agentic-project-standard.md` -> Claude Code mirrors.
 
-`name:` is the role in lowercase (`support`), which is what Claude Code's naming rule allows and what both harnesses show in their pickers. VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/`, so the agent is listed twice; it is literally one file, so the two rows carry the same name. This can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
+`name:` is the display form (`Support Agent`): it is the string a human reads in both pickers, and the filename already carries the machine-facing role. Claude Code documents lowercase-and-hyphens, but a name with spaces and capitals registers and loads: verified in a client repository, where `Maintainer Agent` and `Support Agent` both appear as loadable subagents. VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/`, so the agent is listed twice; it is literally one file, so the two rows carry the same name. This can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
 
 ## Output Format
 

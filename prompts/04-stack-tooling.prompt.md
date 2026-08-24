@@ -257,7 +257,7 @@ Do list what the project has in the body, where it is documentation rather than 
   - `[MCP_SERVERS_TABLE]` → table of MCP servers (name, tools, purpose)
   - `[TECH_STACK_DETAILS]` → detailed tech stack from `.ai/architecture.md`
   - `[CONSTRAINTS]` → notable items from `.ai/` files (monorepo layout, deploy constraints, gotchas)
-- Leave the frontmatter at `description` and `name: support`. Add no `tools:` line.
+- Leave the frontmatter at `description` and `name: Support Agent`. Add no `tools:` line.
 
 **Quality checks:**
 - All MCP servers in config files are listed in agent
@@ -275,7 +275,7 @@ bash scripts/mirror-claude.sh
 
 It creates `.claude/agents/support.md` as a relative symlink to `../../.github/agents/support.agent.md`. There is no second copy of the support agent, so there is nothing to keep in step and nothing that can drift: in a client repository the second copy had decayed into a wrapper telling the reader to go and read the real file.
 
-`name: support` is the role in lowercase, which satisfies Claude Code's naming rule and reads the same in both pickers. VS Code Copilot default-scans both folders and lists the agent twice; it is one file, so the two rows carry the same name.
+`name: Support Agent` is the display form: it is what a human reads in both pickers, while the filename carries the machine-facing role. Claude Code documents lowercase-and-hyphens, but a name with spaces and capitals registers and loads, verified in a client repository and again on this branch's fixture. VS Code Copilot default-scans both folders and lists the agent twice; it is one file, so the two rows carry the same name.
 
 ## Verification
 

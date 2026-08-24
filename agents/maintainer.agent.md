@@ -1,6 +1,6 @@
 ---
 description: "Keeps .ai/ documentation accurate as the project evolves. Detects drift, applies targeted updates, resolves conflicts with human edits, and syncs Confluence."
-name: maintainer
+name: Maintainer Agent
 ---
 
 # Maintainer Agent

@@ -7,10 +7,10 @@ agent: discovery
 
 > Self-contained phase. Requires Phase 1 (agents installed). Idempotent.
 
-**Execution mode:** run this prompt with the installed **Discovery Agent** from `.github/agents/discovery.agent.md`. If your tool ignores the prompt frontmatter, explicitly select or invoke that agent before continuing. The agent must receive the local repository, any `graphify-out/` artifacts, and the installed `.agents/skills/` context.
+**Execution mode:** run this prompt with the installed **Discovery Agent** from `.github/agents/discovery.agent.md`. If your tool ignores the prompt frontmatter, explicitly select or invoke that agent before continuing. Copilot addresses an agent by its file name (`agent: discovery`, `@agent discovery`); Claude Code addresses it by the `name:` in its frontmatter (`Discovery Agent`). Both point at the same file. The agent must receive the local repository, any `graphify-out/` artifacts, and the installed `.agents/skills/` context.
 
 **Claude Code — real subagent vs. main-thread fallback (timing matters):** Claude Code registers subagents from `.claude/agents/*.md` **at session start**, not mid-session.
-- **Bootstrap path (recommended):** if the migration was set up with `scripts/install.sh` in a terminal *before* launching Claude Code, `.claude/agents/discovery.md` already exists at session start → dispatch a **real Discovery subagent** for this phase (`Agent` / `subagent_type`), sandboxed with its own context.
+- **Bootstrap path (recommended):** if the migration was set up with `scripts/install.sh` in a terminal *before* launching Claude Code, `.claude/agents/discovery.md` already exists at session start → dispatch a **real Discovery subagent** for this phase (`Agent` with `subagent_type: Discovery Agent`, the `name:` from the agent's frontmatter), sandboxed with its own context.
 - **In-session path:** if `.claude/agents/discovery.md` was only written during Phase 1 of *this same session*, it is **not** yet a registered subagent (no reload happened). Do not fail — run Phase 2 in the **main thread** by reading `.claude/agents/discovery.md` and following it as the Discovery Agent persona. Real subagent dispatch becomes available on the next session. This is the same reload gap as the Datadog MCP (see `migrate.prompt.md` Preflight).
 
 ## Prerequisites

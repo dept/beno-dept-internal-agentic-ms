@@ -129,9 +129,12 @@ and `support`. The directory already says these are agents, so a `-agent` suffix
 (`support-agent.agent.md`), and the two sides used different names for the same agent. A symlink
 may be named differently from its target, so the `.agent.md` to `.md` difference is not a problem;
 the extension on the source stays because it is what VS Code's agent-file convention uses, and
-GitHub's cloud coding agent matches any `.md` under `.github/agents/`. The `name:` value is the
-same role in lowercase (`support`, not `"Support Agent"`), which is what Claude Code's naming rule
-allows and what both pickers show.
+GitHub's cloud coding agent matches any `.md` under `.github/agents/`. The `name:` value is the display
+form (`Support Agent`, `Maintainer Agent`, `Discovery Agent`): it is the string a human reads in
+both pickers, and the filename already carries the machine-facing role. Claude Code documents
+lowercase letters and hyphens, but a name with spaces and capitals registers and loads, verified
+in a client repository and on a fresh fixture, so the documented form is a convention here rather
+than a constraint.
 `scripts/mirror-claude.sh` migrates a project still on the old names: it renames a legacy
 `.github/agents/<role>-agent.agent.md` (or an extension-less `<role>-agent.md`) to
 `<role>.agent.md`, and removes the stale `.claude/agents/<role>-agent.md` left behind, because two

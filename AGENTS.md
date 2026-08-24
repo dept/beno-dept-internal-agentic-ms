@@ -29,10 +29,13 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   `description` and `name` only: `tools:` is optional in both harnesses and omitting it means all
   tools, so no harness-specific field remains and one file serves both. The rule is stated once in
   `standards/agentic-project-standard.md` -> Claude Code mirrors.
-- **An agent is named by its role alone.** `.github/agents/<role>.agent.md` and
-  `.claude/agents/<role>.md`: discovery, maintainer, support, with `name:` the same role in
-  lowercase. No `-agent` suffix on either side, and `.github/agents/` stays the source because it
-  is the only repository-level location the GitHub cloud coding agent reads.
+- **An agent is named by its role alone, and reads by its display name.** The file is
+  `.github/agents/<role>.agent.md`, mirrored to `.claude/agents/<role>.md`: discovery, maintainer,
+  support, no `-agent` suffix on either side. The `name:` value is the display form
+  (`Discovery Agent`, `Maintainer Agent`, `Support Agent`), which is what a human sees in both
+  pickers while the filename carries the machine-facing role: a name with spaces and capitals
+  registers, whatever the documented lowercase convention says. `.github/agents/` stays the source
+  because it is the only repository-level location the GitHub cloud coding agent reads.
   `scripts/mirror-claude.sh` renames legacy sources and removes the stale mirror, so an old name
   never survives as a second registered agent.
 - **Wiring layout:** `AGENTS.md` is the one authored wiring file and every harness reads it, Claude
