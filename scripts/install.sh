@@ -100,6 +100,7 @@ ARTIFACTS=(
   ".github/prompts/03-integrate.prompt.md|prompts/03-integrate.prompt.md"
   ".github/prompts/04-stack-tooling.prompt.md|prompts/04-stack-tooling.prompt.md"
   ".claude/commands/ms-migration.md|prompts/migrate.prompt.md"
+  ".cursor/commands/ms-migration.md|prompts/migrate.prompt.md"
   ".github/agents/discovery.agent.md|agents/discovery.agent.md"
   ".github/agents/maintainer.agent.md|agents/maintainer.agent.md"
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
@@ -122,6 +123,7 @@ ARTIFACTS=(
 BOOTSTRAP_ONLY=(
   ".github/prompts/migrate.prompt.md"
   ".claude/commands/ms-migration.md"
+  ".cursor/commands/ms-migration.md"
   ".github/prompts/01-install.prompt.md"
   ".github/prompts/02-discover.prompt.md"
   ".github/prompts/03-integrate.prompt.md"
@@ -295,6 +297,7 @@ for required in \
   ".github/prompts/03-integrate.prompt.md" \
   ".github/prompts/04-stack-tooling.prompt.md" \
   ".claude/commands/ms-migration.md" \
+  ".cursor/commands/ms-migration.md" \
   ".github/agents/discovery.agent.md" \
   ".github/agents/maintainer.agent.md" \
   ".claude/agents/maintainer.md" \
