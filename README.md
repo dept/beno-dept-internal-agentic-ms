@@ -186,7 +186,15 @@ Verify any project's `.ai/` folder meets the standard:
 ./scripts/validate.sh /path/to/your/project
 ```
 
-Checks: required files present, content quality, placeholder detection, staleness.
+Checks: required files present, content quality, placeholder detection, staleness, mirror parity,
+and reference integrity (every standard-owned path named in `.ai/`, the wiring files and the skills
+must resolve; a broken one fails the run).
+
+Run with no argument in this repository and it validates the standard's own references instead:
+
+```bash
+./scripts/validate.sh .
+```
 
 ## Agents
 
@@ -213,6 +221,9 @@ dept-agentic-standards/
 │   ├── standard-version.yml       # Current standard version (single source of truth)
 │   └── validation-rules.yml       # Rules for validate.sh
 ├── docs/
+│   ├── bmad-safe-migration.md     # Migrating a repo that already runs BMAD
+│   ├── confluence-page-standard.md # Shape of the handover pages
+│   ├── graphify-integration.md    # How the structural pre-pass is used
 │   ├── roadmap.md                 # 5-phase rollout plan
 │   ├── success-metrics.md         # KPIs and feedback loop
 │   └── vision.md                  # Strategic direction
@@ -227,8 +238,12 @@ dept-agentic-standards/
 │   ├── 03-integrate.prompt.md     # Phase 3: Wire tools + Confluence
 │   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + support agent
 ├── scripts/
+│   ├── install.sh                 # Installs the standard into a target repository
+│   ├── graphify-bootstrap.sh      # Structural pre-pass helper
+│   ├── mirror-claude.sh           # Creates and repairs the Claude Code mirror symlinks
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
-│   └── validate.sh                # Quality gate for .ai/ compliance
+│   ├── validate.sh                # Quality gate for .ai/ compliance
+│   └── version-report.sh          # Which projects run an outdated standard version
 ├── standards/
 │   ├── agentic-project-standard.md # The formal standard definition
 │   └── writing-rules.md            # What may be written into .ai/, one home
@@ -242,7 +257,8 @@ dept-agentic-standards/
     ├── skills/
     │   ├── codebase-overview/SKILL.md
     │   └── confluence-axi/SKILL.md
-    └── agents/
+    ├── workflows/maintainer.yml
+    └── agents/support.template.md
         └── support.template.md
 ```
 

@@ -12,7 +12,7 @@ You are running the **DEPT Managed Services Migration** workflow. This installs 
 
 After this workflow completes:
 - ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ Discovery and Maintainer agents installed and ready to use, in both Copilot (`.github/agents/`) and Claude Code (`.claude/agents/`) formats
+- ✓ Discovery and Maintainer agents installed and ready to use: one authored file each in `.github/agents/`, linked into `.claude/agents/` so Claude Code sees the same file
 - ✓ Migration slash commands installed for Copilot (`@workspace /ms-migration`), Claude Code + Cursor (`/ms-migration` from `.claude/commands/` + `.cursor/commands/`); Codex runs it by reading the prompt file referenced in `AGENTS.md`
 - ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification), referenced as agent guidance, not installed as files
 - ✓ Every harness wired to `.ai/` context through one authored file: `AGENTS.md` (Copilot on github.com and in VS Code, Codex, Cursor) and `CLAUDE.md`, which imports it (Claude Code)
@@ -330,7 +330,7 @@ After all phases complete, output:
 
 ### Phase 2: Discovery
 - .ai/ files: 9/9 generated
-- .meta.yml: created (standard v1.0.0)
+- .meta.yml: created (standard v[version from config/standard-version.yml])
 - Key features (Datadog Synthetics): [N tests fetched / access unavailable — staged To fill in]
 - Confidence: [average % across files]
 

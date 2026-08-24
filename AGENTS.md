@@ -58,8 +58,11 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
 - **Every script runs under `set -euo pipefail`.** A `grep ... | head | sed` reader that finds
   nothing exits non-zero, and inside `$(...)` that kills the whole script with no message, skipping
   every later check. End such pipelines with `|| true` when a no-match is a legitimate result.
-- **`scripts/validate.sh` runs against target repositories, not this one.** Check it with
-  `bash -n scripts/validate.sh` and then run it against a locally migrated clone.
+- **`scripts/validate.sh` has two modes.** Against a target repository it runs every section.
+  Against this repository (no `.ai/`, but `standards/` and `config/standard-version.yml` present)
+  it runs the reference-integrity section alone, over this repo's own layout, and fails on a path
+  that does not resolve. Check it with `bash -n scripts/validate.sh`, run `bash scripts/validate.sh .`
+  here, and run it against a locally migrated clone for the rest.
 
 ## Maintaining this file
 

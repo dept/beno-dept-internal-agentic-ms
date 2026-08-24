@@ -24,8 +24,76 @@ echo -e "${BLUE}  DEPT Agentic Standard — .ai/ Folder Validator${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo ""
 
+check_references() {
+  local prefixes="$1"; shift
+  local f hit line ref bad=0
+  local files=()
+  # bash 3.2 expands an empty array to an unbound variable under set -u.
+  if [ "$#" -gt 0 ]; then files=("$@"); fi
+
+  for f in "${files[@]}"; do
+    [ -f "$f" ] || continue
+    while IFS= read -r hit; do
+      line="${hit%%:*}"
+      ref="${hit#*:}"
+      ref="${ref#\`}"; ref="${ref%\`}"
+      # Placeholders, globs, command lines and URLs are not paths to resolve.
+      case "$ref" in
+        *" "*|*"<"*|*">"*|*"*"*|*"{"*|*"$"*|*"|"*|*"://"*|*"..."*) continue ;;
+      esac
+      ref="${ref%/}"; ref="${ref%.}"; ref="${ref%,}"; ref="${ref%)}"
+      [ -n "$ref" ] || continue
+      # Only what the standard owns.
+      local owned=0 p
+      for p in $prefixes; do
+        case "$ref" in "$p"|"$p"/*) owned=1; break ;; esac
+      done
+      [ "$owned" -eq 1 ] || continue
+      # -e follows symlinks, so a mirror whose source is gone fails here too, which is the point.
+      if [ ! -e "${PROJECT_DIR}/${ref}" ]; then
+        echo -e "  ${RED}✗${NC} ${f#${PROJECT_DIR}/}:${line} names ${ref}, which does not exist"
+        FAILED=$((FAILED + 1))
+        bad=$((bad + 1))
+      fi
+    done < <(grep -no '`[^`]*`' "$f" 2>/dev/null || true)
+  done
+
+  if [ "$bad" -eq 0 ]; then
+    echo -e "  ${GREEN}✓${NC} every standard-owned path named in ${#files[@]} file(s) resolves"
+    PASSED=$((PASSED + 1))
+  fi
+}
+
+
 # Check .ai/ directory exists
 if [ ! -d "$AI_DIR" ]; then
+  # The standards repository itself has no .ai/: it produces one for other repositories. The
+  # reference check is the only section that applies to it, and it applies to its own layout.
+  # docs/ and examples/ are left out of the prefix list on purpose: a `docs/...` path in these
+  # files is as likely to name a target project's docs or an upstream package's, and nothing
+  # here can tell those apart from a path into this repository.
+  if [ -f "${PROJECT_DIR}/standards/agentic-project-standard.md" ] && [ -f "${PROJECT_DIR}/config/standard-version.yml" ]; then
+    echo -e "Validating the standards repository itself: ${BLUE}${PROJECT_DIR}${NC}"
+    echo ""
+    echo -e "${BLUE}── Reference Integrity ──${NC}"
+    REPO_REF_FILES=()
+    while IFS= read -r f; do REPO_REF_FILES+=("$f"); done < <(
+      find "${PROJECT_DIR}" -name '*.md' -type f \
+        -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/graphify-out/*' 2>/dev/null || true
+    )
+    if [ "${#REPO_REF_FILES[@]}" -gt 0 ]; then
+      check_references \
+        "agents config prompts scripts standards templates AGENTS.md CLAUDE.md README.md" \
+        "${REPO_REF_FILES[@]}"
+    fi
+    echo ""
+    if [ "$FAILED" -gt 0 ]; then
+      echo -e "  Status: ${RED}${FAILED} broken reference(s)${NC}"
+      exit 1
+    fi
+    echo -e "  Status: ${GREEN}ALL REFERENCES RESOLVE${NC}"
+    exit 0
+  fi
   echo -e "${RED}FAIL:${NC} No .ai/ directory found at ${AI_DIR}"
   echo -e "${YELLOW}Hint:${NC} Run the Discovery Agent or scripts/scaffold.sh first."
   exit 1
@@ -289,9 +357,9 @@ fi
 # fn: warn if source dir has entries but a mirror is empty/absent.
 # kind = "md" (count *.md files) or "dir" (count subdirs). Predicate is hardcoded
 # per-kind so no glob pattern passes through word-splitting (which would expand vs cwd).
-# -L follows symlinks: a mirror may be symlinked instead of copied (both are allowed,
-# see agents/discovery.agent.md → Mirror to Claude Code), and a symlinked directory is
-# -type l, not -type d, so without -L a perfectly in-sync mirror counts as 0.
+# -L follows symlinks: both Claude mirrors are symlinks (see the Claude Code mirrors section
+# of standards/agentic-project-standard.md), and a symlinked directory is -type l, not -type d,
+# so without -L a perfectly in-sync mirror counts as 0.
 count_entries() {
   local dir="$1" kind="$2"
   # Missing dir → 0. Guard prevents find's exit-1 aborting the $(...) under set -e + pipefail.
@@ -319,6 +387,38 @@ check_mirror ".github/agents"  ".claude/agents"   md   "Agents"
 check_mirror ".agents/skills"  ".claude/skills"   dir  "Skills (Claude)"
 check_mirror ".github/prompts" ".claude/commands" md   "Commands (Claude)"
 check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
+
+echo ""
+
+# ── 6. Reference Integrity ─────────────────────────────────
+# A path this standard names must exist. Broken references are how a layout change (a renamed
+# agent, a mirror that became a symlink) survives in prose long after the files moved, and they
+# are the one class of rot no other check here catches.
+#
+# Scope, deliberately narrow:
+#   - only backticked tokens, which is how every path in these files is written
+#   - only paths under directories the standard itself owns (PREFIXES below), so a project's own
+#     src/ layout, npm package names, URLs and bare filenames are never guessed at
+#   - only files the standard owns and that stay in the repo for good
+# Scanned: the .ai/ files, the two wiring files and the skills, which are the durable context a
+# human or an agent reads every day. Not scanned, on purpose:
+#   - .github/prompts/ and .github/agents/, which describe files a later phase creates and name
+#     paths in the standards repository itself (templates/, scripts/) that a target repo never has
+#   - .vscode/ and .cursor/ MCP config, which a project may legitimately not use
+# Those two classes cannot be told apart from a real reference mechanically. They are checked in
+# the standards repository instead, where every path they name is a path in that repository.
+echo -e "${BLUE}── Reference Integrity ──${NC}"
+
+REF_FILES=()
+while IFS= read -r f; do REF_FILES+=("$f"); done < <(
+  find -L "${AI_DIR}" "${PROJECT_DIR}/.agents/skills" -name '*.md' -type f 2>/dev/null || true
+  ls "${PROJECT_DIR}/AGENTS.md" "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null || true
+)
+if [ "${#REF_FILES[@]}" -gt 0 ]; then
+check_references \
+  ".ai .agents .claude .github/agents .github/prompts scripts standards AGENTS.md CLAUDE.md" \
+  "${REF_FILES[@]}"
+fi
 
 echo ""
 

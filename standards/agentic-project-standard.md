@@ -156,6 +156,23 @@ re-run it after every change. `scripts/validate.sh` counts a symlinked mirror co
 
 **Known duplication — agents in VS Code:** VS Code Copilot default-scans **both** `.github/agents/` and `.claude/agents/`, so every agent appears **twice** in its agent picker. This is intentional and unavoidable — `.github/agents/` serves the github.com cloud Copilot coding agent, `.claude/agents/` serves Claude Code, and VS Code happens to read both. There is no setting to un-scan a default location. To mitigate: (1) `.claude/agents/*.md` is a symlink to the `.github/agents/*.agent.md` source, so the two picker rows are the same file under the same `name:` (clearly one agent, not two); (2) a developer bothered by the duplicate can hide one row via the eye icon in VS Code's *Agent Customizations* editor (gear icon in the Chat view). Prompt-commands (`.claude/commands/`) and skills (`.claude/skills/`) do **not** duplicate — VS Code does not default-scan those Claude folders.
 
+### Reference integrity
+
+Every path a `.ai/` file, a wiring file or a skill names in backticks must resolve. A renamed agent
+or a mirror that turned into a symlink leaves its old path behind in prose long after the files
+moved, and a reader who follows that path finds nothing. `scripts/validate.sh` resolves those
+references and **fails** on a broken one, in a migrated project and in the standards repository
+itself (which it detects by the absence of `.ai/` and the presence of `standards/` plus
+`config/standard-version.yml`).
+
+It only resolves paths under directories the standard owns, so a project's own source layout, a
+package name, a bare filename and any URL are left alone. Two classes are deliberately out of
+scope because nothing can tell them apart from a real reference mechanically: the phase prompts and
+agent definitions, which name files a later phase creates and paths that exist only in the
+standards repository, and optional per-IDE config (`.vscode/`, `.cursor/`). Those are covered in
+the standards repository, where every path they name is a path in that repository.
+
+
 ## Governance Principles
 
 - **Ownership**: each `.ai` document has a named owner (team, not individual).
