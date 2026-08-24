@@ -4,7 +4,7 @@
 # STALENESS POLICY:
 #   - Each entry has a `last_verified` date (YYYY-MM-DD)
 #   - Entries not verified in >90 days should be re-checked
-#   - Run `scripts/check-mcp-registry.sh` to flag stale entries
+#   - Re-checking is a manual pass over this file, no script does it for you
 #   - When verifying: check npm/pypi package exists, URL resolves, transport matches
 #
 # ADDING ENTRIES:

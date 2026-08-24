@@ -37,8 +37,8 @@ The generated file opens with this block, immediately after the H1:
 ## Regenerated downstream
 
 Changing the annotated tree, the stack table, the placement conventions, or the high-fan-in table
-means `.agents/skills/codebase-overview/SKILL.md` and its `.claude/skills/` mirror are regenerated
-in the same pass. `scripts/validate.sh` warns when the skill is older than this file.
+means `.agents/skills/codebase-overview/SKILL.md` is regenerated in the same pass (there is no
+mirror to update, `.claude/skills` symlinks to the source). `scripts/validate.sh` warns when the skill is older than this file.
 
 ## High-fan-in symbols (who owns what)
 

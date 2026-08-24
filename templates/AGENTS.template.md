@@ -29,7 +29,7 @@ Do not load `.ai/` files up front. Read one when the task touches its area:
 | `.ai/onboarding.md` | Local setup, and every URL and access link in the project |
 | `.ai/agent-registry.md` | Which agents, skills and MCP servers are configured here |
 
-Skills live in `.agents/skills/`, mirrored to `.claude/skills/` for Claude Code. Agents and prompts
+Skills live in `.agents/skills/`; `.claude/skills` is a symlink to it for Claude Code. Agents and prompts
 live in `.github/agents/` and `.github/prompts/`. For sustained development or support work, use the
 Support Agent in `.github/agents/`: it loads project context automatically.
 

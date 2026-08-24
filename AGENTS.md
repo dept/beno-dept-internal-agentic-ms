@@ -19,15 +19,32 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   `agents/<name>/logic.md` is the tool-agnostic workflow. A behaviour change lands in both or the
   two drift.
 - **Skill layout:** `.agents/skills/` is the source (Copilot, VS Code, Codex and Cursor read it;
-  Codex reads only that path), `.claude/skills/` is the mirror (Claude Code reads only that path).
-  `.github/skills/` is the standard 1.x layout and appears only as something to migrate away from.
+  Codex reads only that path), `.claude/skills` is a relative symlink to it (Claude Code reads only
+  that path). `.github/skills/` is the standard 1.x layout and appears only as something to migrate
+  away from.
+- **Nothing under `.claude/` is a file.** Both Claude mirrors are relative symlinks:
+  `.claude/skills` -> `.agents/skills`, and `.claude/agents/<role>.md` ->
+  `.github/agents/<role>.agent.md`. `scripts/mirror-claude.sh` creates and repairs them, and
+  `scripts/install.sh` runs it on install and on every `--update`. Agent frontmatter is
+  `description` and `name` only: `tools:` is optional in both harnesses and omitting it means all
+  tools, so no harness-specific field remains and one file serves both. The rule is stated once in
+  `standards/agentic-project-standard.md` -> Claude Code mirrors.
+- **An agent is named by its role alone, and reads by its display name.** The file is
+  `.github/agents/<role>.agent.md`, mirrored to `.claude/agents/<role>.md`: discovery, maintainer,
+  support, no `-agent` suffix on either side. The `name:` value is the display form
+  (`Discovery Agent`, `Maintainer Agent`, `Support Agent`), which is what a human sees in both
+  pickers while the filename carries the machine-facing role: a name with spaces and capitals
+  registers, whatever the documented lowercase convention says. `.github/agents/` stays the source
+  because it is the only repository-level location the GitHub cloud coding agent reads.
+  `scripts/mirror-claude.sh` renames legacy sources and removes the stale mirror, so an old name
+  never survives as a second registered agent.
 - **Wiring layout:** `AGENTS.md` is the one authored wiring file and every harness reads it, Claude
   Code through the `@AGENTS.md` import that is the whole of `CLAUDE.md`. The standard generates no
   `.github/copilot-instructions.md`, no `.github/instructions/*.instructions.md` and no
   `.cursor/rules/*.mdc`. `CLAUDE.md` is a real file, in this repository too, never a symlink: a
   write aimed at it follows the link and overwrites `AGENTS.md`, and a Windows checkout without
   symlink support turns the link into a one-line file holding the path. The `.claude/skills/`
-  mirror is the separate case where a copy and a symlink are both allowed.
+  mirror is the separate case, and it is a symlink.
 - **`scripts/install.sh` classifies artifacts.** `ARTIFACTS` is the install list and
   `BOOTSTRAP_ONLY` names the subset that exists only to bootstrap an unmigrated project (the migrate
   prompt and its `ms-migration` command, the discovery agent, phase prompts `01`-`04`,
@@ -44,8 +61,11 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
 - **Every script runs under `set -euo pipefail`.** A `grep ... | head | sed` reader that finds
   nothing exits non-zero, and inside `$(...)` that kills the whole script with no message, skipping
   every later check. End such pipelines with `|| true` when a no-match is a legitimate result.
-- **`scripts/validate.sh` runs against target repositories, not this one.** Check it with
-  `bash -n scripts/validate.sh` and then run it against a locally migrated clone.
+- **`scripts/validate.sh` has two modes.** Against a target repository it runs every section.
+  Against this repository (no `.ai/`, but `standards/` and `config/standard-version.yml` present)
+  it runs the reference-integrity section alone, over this repo's own layout, and fails on a path
+  that does not resolve. Check it with `bash -n scripts/validate.sh`, run `bash scripts/validate.sh .`
+  here, and run it against a locally migrated clone for the rest.
 
 ## Maintaining this file
 

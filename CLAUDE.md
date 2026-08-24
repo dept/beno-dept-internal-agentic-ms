@@ -10,4 +10,4 @@ link and overwrite AGENTS.md, and a Windows checkout without symlink support mat
 as a one-line text file holding the path, which silently loses the instructions. -->
 
 The skills this repository ships live in `templates/skills/` and are installed into target
-repositories at `.agents/skills/`, mirrored to `.claude/skills/`.
+repositories at `.agents/skills/`, which `.claude/skills` symlinks to.

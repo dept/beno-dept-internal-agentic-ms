@@ -22,8 +22,8 @@ Scan for existing AI/agent configurations before generating new files.
 **Scan locations:**
 - `.github/agents/`, `.agents/`, `.claude/agents/`, `AGENTS.md`, `CLAUDE.md`
 - `.github/copilot-instructions.md`, `.github/instructions/`, `.cursor/rules/` (pre-existing only)
-- `.github/prompts/`, `.agents/skills/` (source), `.claude/skills/` (mirror)
-- `.github/skills/` (pre-existing only, standard 1.x layout: move its skills into `.agents/skills/`, re-mirror, delete the old directory)
+- `.github/prompts/`, `.agents/skills/` (source), `.claude/skills` (mirror, a symlink to the source)
+- `.github/skills/` (pre-existing only, standard 1.x layout: move its skills into `.agents/skills/`, run `scripts/mirror-claude.sh`, delete the old directory)
 - `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`
 
 **Output:** Inventory list (file path, name, tool, scope, purpose)
@@ -140,8 +140,8 @@ For each detected technology:
 4. Check DEPT MCP registry for servers
 5. Fallback to public MCP registry
 6. Write MCP config to all three IDE files
-7. Generate support-agent with detected tools
-8. Mirror every skill from `.agents/skills/` into `.claude/skills/`, and the support agent from `.github/agents/support-agent.agent.md` into `.claude/agents/support-agent.md` (same body + same `name:`, Claude Code frontmatter, no `tools:` restriction). Claude Code reads `.claude/agents/`/`.claude/skills/`, not `.github/`. **Copy or symlink: both are acceptable for skills; the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker; keep `name:` identical so the rows read as one agent; skills/commands don't duplicate.
+7. Generate the support agent (no `tools:` line: an agent without one has every available tool)
+8. Run `scripts/mirror-claude.sh`. Claude Code reads `.claude/agents/` and `.claude/skills/`, not `.github/` or `.agents/`, and neither mirror is a file: the script points `.claude/skills` at `.agents/skills` and `.claude/agents/support.md` at `.github/agents/support.agent.md`, both relative symlinks. **Never write a file under `.claude/`; the rule is stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker; it is one file, so the rows read as one agent; skills/commands don't duplicate.
 
 ## Quality Gates
 
@@ -155,5 +155,5 @@ Before declaring complete:
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] Support agent created
-- [ ] All skills mirrored to `.claude/skills/`; support agent mirrored to `.claude/agents/support-agent.md`
+- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, `.claude/agents/support.md` symlinks to its `.github/` source
 - [ ] No secrets in any generated file

@@ -28,12 +28,12 @@ Document what the agentic setup inventory finds present:
 
 | Type | File / Location | Target Tool | Purpose |
 |------|----------------|-------------|---------|
-| Agent | `.github/agents/example.agent.md` | Copilot | Example agent |
+| Agent | the agent file under `.github/agents/`, named for its role | Copilot | what that agent is for |
 | Instructions | `AGENTS.md` | All harnesses | Project-wide instructions |
 | Instructions | `CLAUDE.md` | Claude Code | Imports `AGENTS.md` |
-| Prompt | `.github/prompts/example.prompt.md` | Copilot | Example prompt |
+| Prompt | the prompt file under `.github/prompts/` | Copilot | what that prompt does |
 | Skill | `.agents/skills/codebase-overview/` | All harnesses | Repository structure and placement |
-| Skill | `.claude/skills/` | Claude Code | Mirror of `.agents/skills/` |
+| Skill | `.claude/skills` | Claude Code | Symlink to `.agents/skills/` |
 | MCP | `.vscode/mcp.json` | VS Code / Copilot | MCP server config |
 | MCP | `.cursor/mcp.json` | Cursor | MCP server config |
 | MCP | `.mcp.json` | Claude Code | MCP server config |

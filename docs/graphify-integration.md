@@ -37,7 +37,7 @@ The follow-up clustering/report step writes:
 `graphify-out/cache/ast/` is expected cache output for AST extraction, especially on large repositories.
 
 ### Three-pass extraction model
-Upstream `docs/how-it-works.md` describes:
+The Graphify repository's own `how-it-works.md` describes:
 1. **Code structure pass** — local tree-sitter/code analysis, no API calls
 2. **Video/audio pass** — local transcription, no API calls
 3. **Docs/papers/images pass** — Claude subagents, token-costing semantic extraction

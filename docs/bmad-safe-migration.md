@@ -89,7 +89,7 @@ Run the deterministic scaffold. It is **idempotent** — it never overwrites exi
 #
 # .github/
 # └── agents/
-#     └── support-agent.md     ← NEW (template, Phase 4 fills placeholders)
+#     └── support.agent.md   ← NEW (template, Phase 4 fills placeholders)
 #
 # AGENTS.md                    ← NEW (the one authored wiring file)
 # CLAUDE.md                    ← NEW (@AGENTS.md import)
@@ -200,12 +200,12 @@ my-bmad-project/
 │
 ├── .github/
 │   ├── agents/
-│   │   └── support-agent.md   ← NEW (Phase 4 fills in stack + MCP tools)
+│   │   └── support.agent.md ← NEW (Phase 4 fills in stack + MCP tools)
 │   └── workflows/             ← UNCHANGED
 │       └── ci.yml
 │
 ├── .agents/skills/            ← NEW (Phase 4 installs stack skills)
-├── .claude/skills/            ← NEW (mirror of .agents/skills/)
+├── .claude/skills             ← NEW (symlink to .agents/skills/)
 ├── standards/writing-rules.md ← NEW (Phase 1)
 ├── .vscode/mcp.json           ← NEW (Phase 4)
 ├── .cursor/mcp.json           ← NEW (Phase 4)
@@ -231,7 +231,7 @@ After BMAD-safe migration:
 - [ ] `.ai/runbooks.md` covers BMAD's operational procedures (or notes gaps)
 - [ ] `.ai/agent-registry.md` documents BMAD agents from `.bmad-core/`
 - [ ] Validation script passes: `./scripts/validate.sh .`
-- [ ] Support agent is present at `.github/agents/support-agent.md`
+- [ ] Support agent is present at `.github/agents/support.agent.md`
 
 ---
 
@@ -242,7 +242,7 @@ If something goes wrong, the rollback is safe because BMAD files were never touc
 ```bash
 # Remove only the DEPT additions. BMAD is untouched
 rm -rf .ai/ AGENTS.md CLAUDE.md .vscode/mcp.json .cursor/mcp.json .mcp.json
-rm -rf .github/agents/ .agents/skills/ .claude/skills/ standards/writing-rules.md
+rm -rf .github/agents/ .agents/skills/ .claude/skills .claude/agents/ standards/writing-rules.md
 
 # Re-run from Phase 1 once issues are resolved
 ./scripts/scaffold.sh .

@@ -140,8 +140,8 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 ## Step 9.3: The `codebase-overview` Skill
 
 Alongside the technology skills, emit `.agents/skills/codebase-overview/SKILL.md` from
-`templates/skills/codebase-overview/SKILL.md`, substituting `[PROJECT_NAME]`. It is mirrored in
-Step 9.4 like every other skill.
+`templates/skills/codebase-overview/SKILL.md`, substituting `[PROJECT_NAME]`. Like every other
+skill it needs no mirroring, see Step 9.4.
 
 The `description` frontmatter is what makes an agent discover the skill before it starts exploring
 the tree. The body is generated from `.ai/architecture.md`: copy the repository tree, the technology
@@ -159,9 +159,13 @@ the generated block instead of `.ai/architecture.md` is the failure mode.
 
 `.agents/skills/` is read by GitHub Copilot, VS Code, Codex and Cursor. It is not auto-discovered by Claude Code, which reads `.claude/skills/` only. SKILL.md's `name`/`description` frontmatter is the same format across all of these, so no translation is needed.
 
-Mirror every skill installed or generated in Steps 9 and 9.3 to `.claude/skills/<skill-name>/`.
+**Do not copy any skill.** `.claude/skills` is one relative symlink to `.agents/skills`, so every skill installed or generated in Steps 9 and 9.3 is already mirrored. Run
 
-**Rule:** `.agents/skills/` stays the single source of truth for content; the mirror is never hand-edited independently. A copy and a symlink are both acceptable: the tradeoff and the rule are stated once in `agents/discovery.agent.md` → Step B rule 5. If you copy, re-copy whenever the source changes; if a directory already exists at the mirror path with identical content, skip.
+```bash
+bash scripts/mirror-claude.sh
+```
+
+if `.claude/skills` is missing, or if this project still carries a copied `.claude/skills/` directory from an older standard: the script converts it, moving into `.agents/skills/` (and reporting) anything that existed only in the copy. The rule and the fallback for a checkout without symlink support are stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.
 
 ## Step 9.5: Update agent-registry.md with Installed Skills
 
@@ -233,29 +237,19 @@ If the section already exists, merge new entries — never remove existing rows.
 
 ## Step 11: Generate Support Agent
 
-Create `.github/agents/support-agent.agent.md` if not already present.
+Create `.github/agents/support.agent.md` if not already present.
 
-**Tools to include (use template/agents/support-agent.template.md):**
+**No `tools:` line.** Both Copilot and Claude Code read an agent without one as having every
+available tool, MCP servers included, so the enumerated list added nothing and went stale as soon as
+a server was added. Leaving it out is also what makes the source valid for both harnesses, which is
+what lets the Claude Code mirror be a symlink rather than a second file.
 
-1. **Core tools** (always present):
-   - `read` — file system access
-   - `edit` — file creation/modification
-   - `search` — code search
-   - `run_in_terminal` — command execution
-   - `github/*` — GitHub API (issues, PRs, code search)
-
-2. **Installed skills** (from Phase 4 Step 9):
-   - Parse `.agents/skills/` directory
-   - For each skill, list its available tools in agent definition
-   - Example: skill `superpowers:systematic-debugging` provides `debug/*` tools
-
-3. **MCP server tools** (for each server in .vscode/mcp.json, .cursor/mcp.json, .mcp.json):
-   - Parse all MCP configs to extract server keys
-   - For each server, add `<server-key>/*` to tools list
-   - Example: if `.vscode/mcp.json` has `@atlassian/mcp-jira`, add `jira/*`
+Do list what the project has in the body, where it is documentation rather than a restriction:
+- installed skills, from `.agents/skills/`
+- MCP servers, from `.vscode/mcp.json`, `.cursor/mcp.json` and `.mcp.json`
 
 **Agent content from template:**
-- Use `templates/agents/support-agent.template.md`
+- Use `templates/agents/support.template.md`
 - Substitute all `[PLACEHOLDER]` values in the body:
   - `[PROJECT_NAME]` → from `.ai/project-context.md`
   - `[TECH_STACK_SUMMARY]` → e.g., "Node.js + Next.js + PostgreSQL + Vercel"
@@ -263,11 +257,7 @@ Create `.github/agents/support-agent.agent.md` if not already present.
   - `[MCP_SERVERS_TABLE]` → table of MCP servers (name, tools, purpose)
   - `[TECH_STACK_DETAILS]` → detailed tech stack from `.ai/architecture.md`
   - `[CONSTRAINTS]` → notable items from `.ai/` files (monorepo layout, deploy constraints, gotchas)
-- **Rewrite the `tools:` frontmatter line** to include all MCP server keys:
-  ```
-  tools: [read, edit, search, run_in_terminal, "github/*", "contentful/*", "vercel/*", "nextjs/*"]
-  ```
-  Replace the comment line and base `tools:` entry with this expanded version.
+- Leave the frontmatter at `description` and `name: Support Agent`. Add no `tools:` line.
 
 **Quality checks:**
 - All MCP servers in config files are listed in agent
@@ -277,16 +267,15 @@ Create `.github/agents/support-agent.agent.md` if not already present.
 
 ### Mirror to Claude Code
 
-Claude Code auto-loads subagents from `.claude/agents/`. Create `.claude/agents/support-agent.md` with the same body (Project Context, Installed Skills, MCP Servers, Behaviour Rules, Tech Stack, Constraints, Escalation) but Claude Code frontmatter instead of Copilot's:
+Claude Code auto-loads subagents from `.claude/agents/`. Do not write that file: link it to the source you just wrote by running
 
-```markdown
----
-name: "Support Agent"
-description: "Support & development agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [TECH_STACK_SUMMARY] project."
----
+```bash
+bash scripts/mirror-claude.sh
 ```
 
-Keep `name:` **identical to the `.github/agents/support-agent.agent.md` source** (`"Support Agent"`) — VS Code Copilot default-scans both folders and shows the agent twice, so matching names makes the two picker rows read as one agent rather than two. Omit a `tools:` restriction — Claude Code subagents inherit all available tools (file, search, bash, and every configured MCP server) by default, which already covers everything the Copilot `tools:` list enumerates explicitly. Don't translate the Copilot tool-name list into Claude Code tool names — unnecessary and drifts out of sync.
+It creates `.claude/agents/support.md` as a relative symlink to `../../.github/agents/support.agent.md`. There is no second copy of the support agent, so there is nothing to keep in step and nothing that can drift: in a client repository the second copy had decayed into a wrapper telling the reader to go and read the real file.
+
+`name: Support Agent` is the display form: it is what a human reads in both pickers, while the filename carries the machine-facing role. Claude Code documents lowercase-and-hyphens, but a name with spaces and capitals registers and loads, verified in a client repository and again on this branch's fixture. VS Code Copilot default-scans both folders and lists the agent twice; it is one file, so the two rows carry the same name.
 
 ## Verification
 
@@ -301,8 +290,8 @@ Keep `name:` **identical to the `.github/agents/support-agent.agent.md` source**
 - [ ] MCP config written to all 3 IDE files
 - [ ] `.ai/agent-registry.md` `## MCP Servers` section updated with installed servers
 - [ ] Project support agent created
-- [ ] Every skill from Steps 9 and 9.3 mirrored into `.claude/skills/` (copy or symlink)
-- [ ] `.claude/agents/support-agent.md` created, mirroring `.github/agents/support-agent.agent.md`'s body
+- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, and `.claude/agents/support.md` symlinks to `.github/agents/support.agent.md`
+- [ ] Nothing under `.claude/` was written or edited by hand
 
 ## Completion Signal
 

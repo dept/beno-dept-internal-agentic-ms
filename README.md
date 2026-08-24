@@ -106,10 +106,11 @@ your-project/
 │   ├── agent-registry.md          # All agentic config in one place
 │   └── onboarding.md              # Setup, access, local dev
 ├── .github/
-│   ├── agents/                    # Copilot agent definitions
+│   ├── agents/<role>.agent.md     # Agent definitions (one file per agent, read by every harness)
 │   └── prompts/                   # Reusable prompts
 ├── .agents/skills/                # Skills (Copilot, VS Code, Codex, Cursor)
-├── .claude/skills/                # Mirror of .agents/skills/ (Claude Code)
+├── .claude/skills -> ../.agents/skills             # Symlink, so Claude Code reads the same skills
+├── .claude/agents/<role>.md -> ../../.github/agents/<role>.agent.md   # Symlink, same agent
 ├── standards/writing-rules.md     # What may be written into .ai/
 ├── AGENTS.md                      # The one authored wiring file
 ├── CLAUDE.md                      # @AGENTS.md import (Claude Code)
@@ -153,13 +154,14 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 |---|---|---|
 | `.ai/` (9 files + `.meta.yml`) | **Keep** | Single source of truth |
 | Maintainer agent (`.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md`) | **Keep** | Ongoing drift maintenance |
-| Support agent (`support-agent.agent.md` + `.claude/agents/support-agent.md`) | **Keep** | Day-to-day dev/support |
+| Support agent (`support.agent.md` + `.claude/agents/support.md`) | **Keep** | Day-to-day dev/support |
 | Wiring (`AGENTS.md` and its `CLAUDE.md` import) | **Keep** | Every harness routes into `.ai/` through it |
 | `standards/writing-rules.md` | **Keep** | The Maintainer applies it on every run |
-| Stack skills (`.agents/skills/` + `.claude/skills/`, including `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
+| Stack skills (`.agents/skills/`, including `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
 | MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
+| `scripts/mirror-claude.sh` | **Keep** | Creates and repairs the Claude Code mirror symlinks when an agent or skill is added or removed |
 | `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
 | Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
 | Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
@@ -174,7 +176,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 > Everything in the **Keep** rows above is refreshed as usual. The installer never deletes anything,
 > so removing them stays your explicit choice.
 
-> **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills/`). Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
+> **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills`). Delete an agent from `.github/agents/` **and** its `.claude/agents/` symlink (which is a broken link once the source is gone), and a prompt from `.github/prompts/` **and** both command folders, or you introduce a "mirror out of sync" warning. Skills are the exception: `.claude/skills` is one symlink to the whole `.agents/skills` directory, so deleting the skill from the source is already symmetric and the symlink itself stays. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
 
 ## Validation
 
@@ -184,7 +186,15 @@ Verify any project's `.ai/` folder meets the standard:
 ./scripts/validate.sh /path/to/your/project
 ```
 
-Checks: required files present, content quality, placeholder detection, staleness.
+Checks: required files present, content quality, placeholder detection, staleness, mirror parity,
+and reference integrity (every standard-owned path named in `.ai/`, the wiring files and the skills
+must resolve; a broken one fails the run).
+
+Run with no argument in this repository and it validates the standard's own references instead:
+
+```bash
+./scripts/validate.sh .
+```
 
 ## Agents
 
@@ -211,6 +221,9 @@ dept-agentic-standards/
 │   ├── standard-version.yml       # Current standard version (single source of truth)
 │   └── validation-rules.yml       # Rules for validate.sh
 ├── docs/
+│   ├── bmad-safe-migration.md     # Migrating a repo that already runs BMAD
+│   ├── confluence-page-standard.md # Shape of the handover pages
+│   ├── graphify-integration.md    # How the structural pre-pass is used
 │   ├── roadmap.md                 # 5-phase rollout plan
 │   ├── success-metrics.md         # KPIs and feedback loop
 │   └── vision.md                  # Strategic direction
@@ -225,8 +238,12 @@ dept-agentic-standards/
 │   ├── 03-integrate.prompt.md     # Phase 3: Wire tools + Confluence
 │   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + support agent
 ├── scripts/
+│   ├── install.sh                 # Installs the standard into a target repository
+│   ├── graphify-bootstrap.sh      # Structural pre-pass helper
+│   ├── mirror-claude.sh           # Creates and repairs the Claude Code mirror symlinks
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
-│   └── validate.sh                # Quality gate for .ai/ compliance
+│   ├── validate.sh                # Quality gate for .ai/ compliance
+│   └── version-report.sh          # Which projects run an outdated standard version
 ├── standards/
 │   ├── agentic-project-standard.md # The formal standard definition
 │   └── writing-rules.md            # What may be written into .ai/, one home
@@ -240,8 +257,9 @@ dept-agentic-standards/
     ├── skills/
     │   ├── codebase-overview/SKILL.md
     │   └── confluence-axi/SKILL.md
-    └── agents/
-        └── support-agent.template.md
+    ├── workflows/maintainer.yml
+    └── agents/support.template.md
+        └── support.template.md
 ```
 
 ## Configuration

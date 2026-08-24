@@ -259,10 +259,10 @@ echo ""
 # Optional agent definition files for GitHub Copilot Agents.
 echo -e "${BLUE}── Agent templates ──${NC}"
 
-if [ -f "${TEMPLATES_DIR}/agents/support-agent.template.md" ]; then
-  copy_if_new "${TEMPLATES_DIR}/agents/support-agent.template.md" \
-    "${PROJECT_DIR}/.github/agents/support-agent.md" \
-    ".github/agents/support-agent.md"
+if [ -f "${TEMPLATES_DIR}/agents/support.template.md" ]; then
+  copy_if_new "${TEMPLATES_DIR}/agents/support.template.md" \
+    "${PROJECT_DIR}/.github/agents/support.agent.md" \
+    ".github/agents/support.agent.md"
 else
   echo -e "  ${YELLOW}△${NC} No agent templates found — skipping"
 fi
