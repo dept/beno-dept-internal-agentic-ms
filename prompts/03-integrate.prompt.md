@@ -44,6 +44,7 @@ Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instruc
 ### File 2: `CLAUDE.md` (repository root)
 - **Not present**: create from `templates/CLAUDE.template.md`, which is the `@AGENTS.md` import
 - **Already present**: add the `@AGENTS.md` import line if it is missing, and leave the rest
+- **Never a symlink to `AGENTS.md`**: a write aimed at `CLAUDE.md` follows the link and overwrites `AGENTS.md`, and a Windows checkout without symlink support materialises the link as a one-line text file holding the path, so the project silently loses its instructions. Already a symlink: replace it with a real file carrying the import. The `.claude/skills/` mirror is the separate case where a copy or a symlink are both allowed
 - Claude-Code-only lines (a `.claude/skills/` note, for example) may live here. Anything that applies to every harness goes in `AGENTS.md`
 
 ### Both wiring files must instruct AI to:

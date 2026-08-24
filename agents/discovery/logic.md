@@ -115,7 +115,7 @@ Generate all 9 required files + .meta.yml:
 
 Two wiring files, one of them authored:
 - `AGENTS.md` (the authored file, read by Copilot, Codex and Cursor; create from the template or append the missing sections)
-- `CLAUDE.md` (`@AGENTS.md` import for Claude Code; create it or add the import)
+- `CLAUDE.md` (`@AGENTS.md` import for Claude Code; create it or add the import). A real file, never a symlink to `AGENTS.md`: **the two reasons are stated once in `agents/discovery.agent.md` → the `CLAUDE.md` wiring file.**
 
 Do not generate `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or
 `.cursor/rules/*.mdc`. Those tools read `AGENTS.md`. Record any that already exist in
