@@ -2,8 +2,10 @@
 
 [PROJECT_SUMMARY]
 
-<!-- Two sentences from .ai/project-context.md: what the system is and who it serves. This is the
-only .ai/ content restated here. Keep it a summary, never a copy. -->
+<!-- Two sentences from .ai/project-context.md: what the system is and who it serves. This and the
+constraint lines below are the only .ai/ content that appears here at all. Keep it two sentences,
+never a copy, and never extend it into a summary of .ai/: every harness reads this file first, so a
+summary here goes stale silently. -->
 
 This is the one authored instruction file in this repository. Every harness reads it: Claude Code
 through the `@AGENTS.md` import in `CLAUDE.md`, Copilot on GitHub and in VS Code as agent
@@ -12,6 +14,12 @@ instructions, Codex and Cursor natively. There is no second copy to keep in sync
 ## Setup
 
 [SETUP_COMMANDS]
+
+The full command cheatsheet is in `.ai/onboarding.md`. The block above is the two or three commands
+run on every task, not a second copy of that list.
+
+<!-- Two or three commands, no more. .ai/onboarding.md owns the cheatsheet; a second copy here is
+the one that drifts, and it has, three ways, in a real repository. -->
 
 ## Project context
 
@@ -47,7 +55,12 @@ Support Agent in `.github/agents/`: it loads project context automatically.
 <!-- At most five, and only rules an agent could not recover from a tool error: a required import
 path, a wrapper it must use instead of a standard API, a generation step that must run after a
 schema change. Nothing a formatter fixes, nothing a type error already explains. The test is in
-standards/writing-rules.md section 3. Everything else stays in .ai/coding-standards.md. -->
+standards/writing-rules.md section 3.
+
+Each one is a constraint line: ONE line, stating the instruction, naming the .ai/ file that owns it
+inline. For example: "Tailwind is v3, not v4: `.ai/dependencies.md` is authoritative." A constraint
+with no owner named, or a second line on the same topic, is a restatement (writing-rules section 2)
+and does not belong here. Everything else stays in .ai/, reached through the table above. -->
 
 ## When context is stale
 

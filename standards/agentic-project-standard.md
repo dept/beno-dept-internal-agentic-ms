@@ -35,10 +35,25 @@ Every AI-ready project must maintain:
 4. **Confidence scoring**: rate reliability of each major section.
 5. **Validation questions**: include unresolved questions blocking high confidence.
 
+6. **Single source**: every fact has exactly one owning `.ai/` file. Every other mention of it is
+   a one-line pointer naming that owner, never a second telling of the fact.
+
 `standards/writing-rules.md` is the single home for the rules that decide what may be written into
 these files: what never goes in, which file owns which topic, which tool-enforced rules are worth
 recording at all, and when an agent may delete existing content. It is installed into every
 migrated repository and referenced from every agent, prompt and template. It is never restated.
+
+### Single source of truth for a fact
+
+A `.ai/` document is a chapter, not a briefing. It is **not** self-contained, and an author who
+makes it self-contained produces the failure this rule exists to prevent: in one migrated
+repository the same container image was described in six files, the same toolchain version floor
+in seven, and one command list in three copies that had already drifted apart.
+
+The rule, the definition of a restatement, the one narrow allowance for a short constraint line
+that names its owner, and the topic-to-file ownership map are in `standards/writing-rules.md` §2
+and §4b. They are stated there once and are not repeated here. `scripts/validate.sh` enforces the
+mechanical half, see Single-source integrity below.
 
 ## Update Cadence and Agent Support
 
@@ -174,6 +189,22 @@ scope because nothing can tell them apart from a real reference mechanically: th
 agent definitions, which name files a later phase creates and paths that exist only in the
 standards repository, and optional per-IDE config (`.vscode/`, `.cursor/`). Those are covered in
 the standards repository, where every path they name is a path in that repository.
+
+### Single-source integrity
+
+Two `.ai/` files that both write out the same fact are a defect the reference check cannot see:
+both files exist, so every path in them resolves. The duplication that reaches a repository is
+paraphrased rather than copy-pasted (a normalised three-line duplicate-block scan over a full
+migrated repository found none at all), so a text-similarity detector finds nothing. Two structural
+signals do find it, and `scripts/validate.sh` checks both:
+
+| Signal | Level | What it means |
+|---|---|---|
+| The same `## ` heading in more than one `.ai/` file | **fail** | Two files claim one topic. One of them owns it (`standards/writing-rules.md` §4b); the other gets a pointer. `## Validation Questions` is mandated in every file and is allowlisted |
+| The same command line inside fenced blocks in more than one file | warning | The command cheatsheet has one home, `onboarding.md`. A warning rather than a failure because `AGENTS.md` and a skill body may carry a capped, owner-naming block (§2) |
+
+Scanned: the `.ai/` files, `AGENTS.md`, and the skills. A skill directory counts as one place, so a
+skill and its own `references/` file repeating a command is not reported.
 
 
 ## Governance Principles

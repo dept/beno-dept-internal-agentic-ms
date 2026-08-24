@@ -422,6 +422,119 @@ fi
 
 echo ""
 
+# ── 7. Single-Source Integrity ──────────────────────────────
+# Every fact has one owning .ai/ file and every other mention is a pointer
+# (standards/writing-rules.md §2, ownership map in §4b). Reference Integrity above cannot see this
+# failure: both files exist, so every path in them resolves.
+#
+# The duplication that reaches a repository is paraphrased, not copy-pasted. A normalised 3-line
+# duplicate-block scan over a full migrated repository found zero hits, so a text-similarity
+# detector is worthless here. Two structural signals do fire on the real data:
+#
+#   a. Heading ownership. A `## ` heading claims its topic for the file it is in, so the same
+#      heading in two .ai/ files is two owners for one topic. Fails. `## Validation Questions` is
+#      mandated in every file by the standard and is allowlisted.
+#   b. Repeated commands. The command cheatsheet has one home, .ai/onboarding.md. The same command
+#      line inside fenced blocks in two places is that list growing a second copy. Warns rather
+#      than fails: AGENTS.md and a skill body may carry a capped block or constraint line that
+#      names its owner (§2), and that is a legitimate repeat.
+#
+# A skill directory counts as one place, so a skill and its own references/ file repeating a
+# command is not reported.
+echo -e "${BLUE}── Single-Source Integrity ──${NC}"
+
+# Allowlist: heading text (without the `## `), separated and wrapped in `|`.
+SS_HEADING_ALLOWLIST="|Validation Questions|"
+
+SS_AI_FILES=()
+while IFS= read -r f; do SS_AI_FILES+=("$f"); done < <(
+  find -L "${AI_DIR}" -maxdepth 1 -name '*.md' -type f 2>/dev/null | sort || true
+)
+
+if [ "${#SS_AI_FILES[@]}" -eq 0 ]; then
+  echo -e "  ${YELLOW}△${NC} no .ai/*.md files to check"
+  ((WARNED++))
+else
+  ss_dupe_headings=$(awk -v allow="$SS_HEADING_ALLOWLIST" -v root="${PROJECT_DIR}/" '
+    /^##[[:space:]]/ {
+      h = $0; gsub(/\r/, "", h); sub(/^##[[:space:]]+/, "", h); sub(/[[:space:]]+$/, "", h)
+      if (h == "" || index(allow, "|" h "|") > 0) next
+      rel = FILENAME; sub("^" root, "", rel); sub(/^\.\//, "", rel)
+      key = rel "\t" h
+      if (key in seen) next
+      seen[key] = 1
+      n[h]++
+      where[h] = (where[h] == "" ? rel : where[h] ", " rel)
+    }
+    END { for (h in n) if (n[h] > 1) printf "%s\t%s\n", h, where[h] }
+  ' "${SS_AI_FILES[@]}" | sort)
+
+  if [ -n "$ss_dupe_headings" ]; then
+    while IFS=$'\t' read -r heading files; do
+      [ -n "$heading" ] || continue
+      echo -e "  ${RED}✗${NC} \"## ${heading}\" is claimed by ${files}"
+      ((FAILED++))
+    done <<< "$ss_dupe_headings"
+    echo -e "    ${YELLOW}Fix:${NC} standards/writing-rules.md §4b names the one owner. The other file gets a one-line pointer."
+  else
+    echo -e "  ${GREEN}✓${NC} every '## ' heading in .ai/ is claimed by one file"
+    ((PASSED++))
+  fi
+
+  # Repeated command lines across places. A "place" is a file, except that a skill directory is
+  # one place: a skill and its own references/ file are one unit.
+  SS_CMD_FILES=("${SS_AI_FILES[@]}")
+  while IFS= read -r f; do SS_CMD_FILES+=("$f"); done < <(
+    find -L "${PROJECT_DIR}/.agents/skills" -name '*.md' -type f 2>/dev/null | sort || true
+    ls "${PROJECT_DIR}/AGENTS.md" "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null || true
+  )
+
+  ss_dupe_cmds=$(awk -v root="${PROJECT_DIR}/" '
+    FNR == 1 {
+      inblock = 0
+      place = FILENAME; sub("^" root, "", place); sub(/^\.\//, "", place)
+      if (place ~ /^\.agents\/skills\//) {
+        # Collapse to the skill directory: .agents/skills/<name>/...
+        split(place, seg, "/")
+        place = seg[1] "/" seg[2] "/" seg[3]
+      }
+    }
+    /^[[:space:]]*```/ { inblock = !inblock; next }
+    !inblock { next }
+    {
+      line = $0; gsub(/\r/, "", line)
+      sub(/^[[:space:]]*\$[[:space:]]+/, "", line)   # a leading shell prompt
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+#.*$/, "", line)              # a trailing comment
+      gsub(/[[:space:]]+/, " ", line)
+      sub(/[[:space:]]+$/, "", line)
+      # A command line: a lowercase binary name followed by at least one argument. This is what
+      # keeps JSON, YAML, tree output and prose out of the comparison.
+      if (line !~ /^[a-z][a-z0-9_.-]*[[:space:]][^[:space:]]/) next
+      key = place "\t" line
+      if (key in seen) next
+      seen[key] = 1
+      n[line]++
+      where[line] = (where[line] == "" ? place : where[line] ", " place)
+    }
+    END { for (c in n) if (n[c] > 1) printf "%d\t%s\t%s\n", n[c], c, where[c] }
+  ' "${SS_CMD_FILES[@]}" | sort -rn -k1,1)
+
+  if [ -n "$ss_dupe_cmds" ]; then
+    while IFS=$'\t' read -r count cmd places; do
+      [ -n "$cmd" ] || continue
+      echo -e "  ${YELLOW}△${NC} \`${cmd}\` appears in ${count} places: ${places}"
+      ((WARNED++))
+    done <<< "$ss_dupe_cmds"
+    echo -e "    ${YELLOW}Fix:${NC} .ai/onboarding.md owns the command cheatsheet. Elsewhere, a pointer, or in AGENTS.md a capped block naming it."
+  else
+    echo -e "  ${GREEN}✓${NC} no command line is written out in more than one place"
+    ((PASSED++))
+  fi
+fi
+
+echo ""
+
 # ── Summary ────────────────────────────────────────────────
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 TOTAL=$((PASSED + WARNED + FAILED))

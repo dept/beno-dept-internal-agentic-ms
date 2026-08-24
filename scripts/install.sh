@@ -110,6 +110,7 @@ ARTIFACTS=(
   "standards/writing-rules.md|standards/writing-rules.md"
   ".agents/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
   ".agents/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
+  ".agents/skills/context-ownership/SKILL.md|templates/skills/context-ownership/SKILL.md"
 )
 
 # Bootstrap-only artifacts: they exist to carry a project through its first migration and Phase 5
@@ -306,7 +307,8 @@ for required in \
   "scripts/mirror-claude.sh" \
   "standards/writing-rules.md" \
   ".agents/skills/confluence-axi/SKILL.md" \
-  ".claude/skills/confluence-axi/SKILL.md"
+  ".claude/skills/confluence-axi/SKILL.md" \
+  ".agents/skills/context-ownership/SKILL.md"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
     # A bootstrap-only artifact this run deliberately did not install is not a failure.

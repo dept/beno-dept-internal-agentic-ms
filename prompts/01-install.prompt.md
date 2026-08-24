@@ -48,10 +48,11 @@ Fetch these files from the DEPT Agentic Standards repository:
 | Writing rules | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/standards/writing-rules.md` | `standards/writing-rules.md` |
 | Confluence skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/SKILL.md` | `.agents/skills/confluence-axi/SKILL.md` |
 | Confluence skill setup | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/references/setup.md` | `.agents/skills/confluence-axi/references/setup.md` |
+| Context ownership skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/context-ownership/SKILL.md` | `.agents/skills/context-ownership/SKILL.md` |
 
-**Action:** Create `.github/agents/`, `.github/prompts/`, `.agents/skills/confluence-axi/`, `standards/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `scripts/mirror-claude.sh` are executable. (The `confluence-axi` skill bundles no script: it drives the `confluence-axi` npm CLI via `npx`, so nothing to chmod.)
+**Action:** Create `.github/agents/`, `.github/prompts/`, `.agents/skills/confluence-axi/`, `.agents/skills/context-ownership/`, `standards/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `scripts/mirror-claude.sh` are executable. (The `confluence-axi` skill bundles no script: it drives the `confluence-axi` npm CLI via `npx`, so nothing to chmod.)
 
-`standards/writing-rules.md` is the file every later phase points at when it says what may be written into `.ai/`. Install it before Phase 2 runs.
+`standards/writing-rules.md` is the file every later phase points at when it says what may be written into `.ai/`. Install it before Phase 2 runs. The `context-ownership` skill is its working procedure, applied per section while Phase 2 writes, so it has to be in place before Phase 2 as well.
 
 **Build the Claude Code mirrors:** run
 
@@ -93,6 +94,7 @@ Before proceeding to Phase 2, confirm:
 - [ ] `scripts/graphify-bootstrap.sh` exists and is executable
 - [ ] `scripts/validate.sh` and `scripts/mirror-claude.sh` exist and are executable
 - [ ] `standards/writing-rules.md` exists
+- [ ] `.agents/skills/context-ownership/SKILL.md` exists and resolves through the `.claude/skills` symlink
 - [ ] `.agents/skills/confluence-axi/` exists (SKILL.md + references/setup.md; no bundled script, it wraps the `confluence-axi` npm CLI)
 - [ ] `.claude/skills` is a symlink to `.agents/skills`, so `.claude/skills/confluence-axi/SKILL.md` resolves (Claude Code auto-load)
 - [ ] No other skills yet; stack-specific skills are added in Phase 4

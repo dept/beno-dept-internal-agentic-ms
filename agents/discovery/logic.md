@@ -108,7 +108,8 @@ Generate all 9 required files + .meta.yml:
 - Rate confidence per section: `Confidence: <0-100>%`
 - Add `Validation Questions` for gaps
 - No empty sections — explicit unknowns instead
-- Every file obeys `standards/writing-rules.md`, which is the single home for those rules: what never goes in (§1), which file owns which fact (§2, §4), and which tool-enforced rules get written at all (§3). Each file opens with its ownership header
+- Every file obeys `standards/writing-rules.md`, which is the single home for those rules: what never goes in (§1), the single-source rule (§2), the topic-to-file ownership map (§4b) and each file's remit (§4), and which tool-enforced rules get written at all (§3). Each file opens with its ownership header
+- Look each topic up in §4b before writing its section. Write the owning section first, then the one-line pointers into the other files. A `.ai/` file is a chapter, not a self-contained briefing, and between two `.ai/` files a pointer is the only allowed shape
 - `Validation Questions` carry a one-line pointer to the Confluence Open Questions page, not a paragraph about the workflow
 
 ### Step 9: AI Context Wiring + Confluence
@@ -152,6 +153,7 @@ Before declaring complete:
 - [ ] Skill file exists for every detected core technology (or the skip reason is recorded in the completion summary, never in `.ai/`)
 - [ ] `codebase-overview` skill emitted, its generated block matching the structural sections of `.ai/architecture.md`
 - [ ] Every `.ai/` file passes `standards/writing-rules.md` and opens with its ownership header
+- [ ] `bash scripts/validate.sh .` reports no Single-Source Integrity failure
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] Support agent created

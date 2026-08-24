@@ -32,14 +32,21 @@ Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instruc
 > authoritative. `standards/writing-rules.md` §3 sets what may appear in a wiring
 > file: at most five repo-wide class 3 constraints, and nothing a formatter or a
 > type error already fixes. Everything else is a pointer into `.ai/`. §4 gives the
-> full ownership rule for both files.
+> full ownership rule for both files and §4b says which `.ai/` file owns which topic.
+>
+> **Each constraint is one line and names its owner.** The allowed shape is
+> ``Tailwind is v3, not v4: `dependencies.md` is authoritative.`` One line, the
+> instruction, the owning `.ai/` file named inline. A constraint with no owner named,
+> or a second line on the same topic, is a restatement (§2) and does not belong in
+> `AGENTS.md`. `AGENTS.md` never carries a summary of a `.ai/` file, however short:
+> every harness reads it first and it goes stale silently.
 
 ### File 1: `AGENTS.md` (repository root)
 - **Not present**: create from `templates/AGENTS.template.md`
 - **Already present**: append the missing sections; leave what is there
 - Fill `[PROJECT_SUMMARY]` with two sentences on what the system is, from `.ai/project-context.md`
-- Fill `[SETUP_COMMANDS]` with the install/run commands from `.ai/onboarding.md`
-- Fill `[KEY_CONSTRAINTS_ONE_LINERS]` from `.ai/coding-standards.md`, applying the §3 test to each candidate before writing it
+- Fill `[SETUP_COMMANDS]` with the two or three commands run on every task, copied from the cheatsheet in `.ai/onboarding.md`, and add one line under the block naming `.ai/onboarding.md` as the home of the full list. Not the whole cheatsheet: `onboarding.md` owns it, and a second copy here is the one that drifts
+- Fill `[KEY_CONSTRAINTS_ONE_LINERS]` from `.ai/`, applying the §3 test to each candidate before writing it, and write each one in the constraint-line shape above with its owning `.ai/` file named inline
 
 ### File 2: `CLAUDE.md` (repository root)
 - **Not present**: create from `templates/CLAUDE.template.md`, which is the `@AGENTS.md` import
@@ -152,7 +159,8 @@ After wiring is complete, create handover documentation in Confluence.
 Before proceeding to Phase 4, confirm:
 - [ ] `AGENTS.md` exists, has no unfilled `[PLACEHOLDER]`, and routes into `.ai/` (Copilot, Codex, Cursor)
 - [ ] `CLAUDE.md` contains the `@AGENTS.md` import (Claude Code)
-- [ ] `AGENTS.md` carries at most five constraints, each of them class 3 by the `standards/writing-rules.md` §3 test
+- [ ] `AGENTS.md` carries at most five constraints, each of them class 3 by the `standards/writing-rules.md` §3 test, each one line, and each naming the `.ai/` file that owns it
+- [ ] `AGENTS.md` carries no command cheatsheet and no summary of a `.ai/` file, and `bash scripts/validate.sh .` reports no new Single-Source Integrity failure
 - [ ] Confluence pages created, or the completion summary says what blocked it
 - [ ] No Confluence page instructs a human reader to read `.ai/` files (rule 6b; the landing page's AI tooling status entry and the diagram sync note are the only allowed mentions)
 - [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`
