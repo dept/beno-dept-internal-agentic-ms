@@ -75,8 +75,8 @@ GitHub website and in VS Code; Codex and Cursor read it natively; Claude Code re
 write aimed at `CLAUDE.md` follows the link and overwrites `AGENTS.md`, which has already destroyed
 authored content in a real repository. And on a Windows checkout without symlink support git
 materialises the link as a plain text file containing the path `AGENTS.md`, so the harness reads a
-one-line file and the project silently loses its instructions. (The `.claude/skills/` mirror is a
-separate case: there a copy or a symlink are both allowed, see Skills below.)
+one-line file and the project silently loses its instructions. (The `.claude/skills/` mirror is the
+separate case where a symlink is the rule, see Claude Code mirrors below.)
 
 What may go into a wiring file, and what belongs in `.ai/` instead, is in
 `standards/writing-rules.md` §3 and §4.
@@ -85,16 +85,47 @@ What may go into a wiring file, and what belongs in `.ai/` instead, is in
 
 `.agents/skills/` is the source of truth for skill content. Copilot, VS Code and Cursor read it
 among other locations, and Codex reads only `.agents/skills` paths, which is why the source lives
-there. Claude Code reads `.claude/skills/` and nothing else, so every skill is mirrored into it.
-The mirror is a copy or a symlink, never hand-edited independently.
+there. Claude Code reads `.claude/skills/` and nothing else, so the source is mirrored into it,
+see Claude Code mirrors below.
 
 `.github/agents/` and `.github/prompts/` stay the source for agents and prompts, with the
-`.claude/*` and `.cursor/*` copies as exact mirrors, re-copied on change.
+`.claude/*` and `.cursor/*` copies as mirrors.
 
 The `codebase-overview` skill is generated: its body carries the repository tree, technology stack
 table, placement conventions and high-fan-in symbols copied from `.ai/architecture.md`, inside
 marked generated blocks. `.ai/architecture.md` remains the only hand-edited home for those
 sections, and the Maintainer Agent regenerates the skill when they change.
+
+### Claude Code mirrors
+
+Claude Code reads `.claude/`; every other harness reads `.agents/skills/` and `.github/`. Nothing
+under `.claude/` is authored, and neither mirror is maintained by hand: a hand-maintained second
+copy drifts, and it has (13 duplicated skill files in one client repository, and two copies of the
+same agent whose bodies had diverged by 85 lines in another).
+
+| Mirror | Form | Rebuilt by |
+|---|---|---|
+| `.claude/skills` | one relative symlink to `.agents/skills` | nothing to rebuild, it cannot drift |
+| `.claude/agents/<name>.md` | derived from `.github/agents/<name>.agent.md` | `scripts/mirror-claude.sh` |
+| `.claude/commands/<name>.md`, `.cursor/commands/<name>.md` | copied from `.github/prompts/<name>.prompt.md` | the phase prompts, on change |
+
+`scripts/mirror-claude.sh` rebuilds both Claude mirrors and is idempotent. `scripts/install.sh`
+runs it on install and on every `--update` refresh, so a refresh repairs a derived agent copy that
+was hand-edited and converts a project still carrying a copied `.claude/skills/` directory.
+Run it yourself after adding, editing or deleting a skill or an agent.
+
+The agent mirror cannot be a symlink: Claude Code subagent frontmatter is `name` and `description`
+(plus an optional `model`), while the `.github/` source also carries the Copilot `tools:` list. The
+transform keeps the body verbatim and rewrites the frontmatter to those fields in that order.
+Claude Code subagents inherit every available tool, so dropping `tools:` restricts nothing. Nobody
+edits a `.claude/agents/*.md` file: the edit belongs in the `.github/agents/` source and the next
+run of the script carries it over.
+
+Nothing is ever deleted silently. A skill found only in a copied `.claude/skills/` directory is
+moved into `.agents/skills/` and reported; a `.claude/agents/*.md` with no source is reported and
+left in place. On a checkout that cannot create symlinks (Windows without developer mode) the
+script falls back to copying `.claude/skills/` and says so, and that project has to re-run it after
+every skill change. `scripts/validate.sh` counts a symlinked mirror correctly, it uses `find -L`.
 
 **Known duplication — agents in VS Code:** VS Code Copilot default-scans **both** `.github/agents/` and `.claude/agents/`, so every agent appears **twice** in its agent picker. This is intentional and unavoidable — `.github/agents/` serves the github.com cloud Copilot coding agent, `.claude/agents/` serves Claude Code, and VS Code happens to read both. There is no setting to un-scan a default location. To mitigate: (1) each `.claude/agents/*.md` mirror keeps the **same `name:` frontmatter** as its `.github/agents/*.agent.md` source, so the two picker rows carry the identical label (clearly one agent, not two); (2) a developer bothered by the duplicate can hide one row via the eye icon in VS Code's *Agent Customizations* editor (gear icon in the Chat view). Prompt-commands (`.claude/commands/`) and skills (`.claude/skills/`) do **not** duplicate — VS Code does not default-scan those Claude folders.
 

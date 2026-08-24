@@ -3,9 +3,17 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.2.0"
+  version: "2.3.0"
   release_date: "2026-08-24"
   changelog:
+    - version: "2.3.0"
+      date: "2026-08-24"
+      changes:
+        - ".claude/skills is one relative symlink to .agents/skills, not a copy per skill. A copied mirror drifts (13 duplicated skill files in one client repository) and has to be re-copied on every source edit; a symlink cannot. Every path is unchanged, so no skill moves and scripts/validate.sh, which counts with find -L, reports the symlinked mirror in sync"
+        - ".claude/agents/<name>.md is a derived file, not a second hand-maintained copy. scripts/mirror-claude.sh rewrites the .github/agents/<name>.agent.md frontmatter to Claude Code's name and description and copies the body verbatim, for every agent the project has, the support agent included. Two hand-maintained copies of the same agent had diverged by 85 lines in a client repository"
+        - "New: scripts/mirror-claude.sh, installed into target repositories. It rebuilds both Claude Code mirrors, is idempotent, and runs from scripts/install.sh on install and on every --update refresh, so a refresh repairs a derived agent copy that was hand-edited and converts a project still carrying a copied .claude/skills/ directory"
+        - "The conversion never deletes silently: a skill found only in a copied .claude/skills/ directory is moved into .agents/skills/ and reported, and a .claude/agents/*.md with no source is reported and left in place. On a checkout that cannot create symlinks the script falls back to copying and says so"
+        - "Nothing under .claude/ is authored any more. The phase prompts, the Discovery Agent and the Maintainer Agent write to the source and run the script instead of writing a second copy, and Phase 5 of the migrate prompt states the one case where remove-symmetrically now means removing from the source alone: skills"
     - version: "2.2.0"
       date: "2026-08-24"
       changes:

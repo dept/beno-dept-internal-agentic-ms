@@ -177,8 +177,8 @@ evidence-note exception.
 
 When this run changes the repository tree, the technology stack table, the placement conventions or
 the high-fan-in symbols in `.ai/architecture.md`, regenerate
-`.agents/skills/codebase-overview/SKILL.md` from those sections in the same run and mirror it to
-`.claude/skills/codebase-overview/`. Copy the sections verbatim into the generated block; the
+`.agents/skills/codebase-overview/SKILL.md` from those sections in the same run. There is no mirror
+to update: `.claude/skills` is a symlink to `.agents/skills`. Copy the sections verbatim into the generated block; the
 markers in the file show its bounds. `.ai/architecture.md` is the editable source, the skill is the
 derived copy, and `scripts/validate.sh` warns when the copy is older than its source.
 
@@ -296,7 +296,7 @@ Before completing, verify:
 - [ ] All critical-severity findings resolved or escalated
 - [ ] Every missing `.ai/` file or `sync_map` source reported as a critical gap: none silently skipped, none recreated unprompted
 - [ ] Every `.ai/` file this run touched passes `standards/writing-rules.md`, and any rule-breaking content found there was removed rather than left in place. The change itself belongs in the Phase 6 summary
-- [ ] `.agents/skills/codebase-overview/SKILL.md` regenerated and mirrored if this run changed the structural sections of `.ai/architecture.md`
+- [ ] `.agents/skills/codebase-overview/SKILL.md` regenerated if this run changed the structural sections of `.ai/architecture.md`
 - [ ] No secrets added to any `.ai/` file
 - [ ] Confidence scores updated for changed sections
 - [ ] Human-maintained sections untouched

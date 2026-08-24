@@ -23,7 +23,7 @@ Datadog "key features" have **no skill**: they are fetched via the **Datadog MCP
 
 Only **stack-specific** skills are left to Phase 4 (vendor-fetched via `gh skill` or generated from `.ai/` evidence) and are NOT stored here: they live in the target project's `.agents/skills/`.
 
-**Multi-client mirroring:** `.agents/skills/` is the source of truth. Copilot, VS Code, Codex and Cursor read it directly; Claude Code does not, so every skill is also present at `.claude/skills/`. SKILL.md's frontmatter format is identical across clients, so no rewrite is involved. The mirror is never hand-edited. A copy and a symlink are both acceptable: the tradeoff and the rule are stated once in `agents/discovery.agent.md` -> Step B rule 5.
+**Multi-client mirroring:** `.agents/skills/` is the source of truth. Copilot, VS Code, Codex and Cursor read it directly; Claude Code does not, so `.claude/skills` is a relative symlink to it, created by `scripts/install.sh` and recreated by `scripts/mirror-claude.sh`. A skill written to the source is mirrored the moment it exists, and nothing under `.claude/` is ever hand-edited. The rule, including the fallback for a checkout without symlink support, is stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.
 
 ## Adding a new technology
 

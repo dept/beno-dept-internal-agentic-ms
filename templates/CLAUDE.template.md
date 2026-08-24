@@ -9,4 +9,4 @@ This file is a real file, never a symlink to AGENTS.md: a write aimed at CLAUDE.
 link and overwrite AGENTS.md, and a Windows checkout without symlink support materialises the link
 as a one-line text file holding the path, which silently loses the instructions. -->
 
-Skills for this project are in `.claude/skills/`, mirrored from `.agents/skills/`.
+Skills for this project are in `.agents/skills/`, which `.claude/skills` symlinks to.

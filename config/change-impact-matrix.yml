@@ -31,7 +31,7 @@ change_impact_rules:
         action: "Add new service dependencies"
       - file: .agents/skills/codebase-overview/SKILL.md
         severity: critical
-        action: "Regenerate the block from architecture.md and mirror to .claude/skills/"
+        action: "Regenerate the block from architecture.md (.claude/skills symlinks to the source, nothing to mirror)"
 
   - trigger: "Infrastructure config changed (Terraform, Bicep, Docker, CI/CD)"
     detect_by:

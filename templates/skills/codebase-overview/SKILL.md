@@ -40,7 +40,7 @@ shared helpers to reuse instead of writing a second version, with paths and cons
   a fact that is not in the source: this file must be checkable against it by eye.
 - Nothing else from `.ai/` is copied here. Other topics get the one pointer line above and no more,
   because a loaded skill stays in context for the rest of the session.
-- Regenerate whenever those sections of `.ai/architecture.md` change, and mirror the result to
-  `.claude/skills/codebase-overview/SKILL.md`.
+- Regenerate whenever those sections of `.ai/architecture.md` change. Nothing to mirror:
+  `.claude/skills` is a symlink to `.agents/skills`.
 - Substitute `[PROJECT_NAME]` in the description. The description is what an agent matches on
   before loading anything, so it stays specific.

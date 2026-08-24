@@ -109,7 +109,7 @@ your-project/
 │   ├── agents/                    # Copilot agent definitions
 │   └── prompts/                   # Reusable prompts
 ├── .agents/skills/                # Skills (Copilot, VS Code, Codex, Cursor)
-├── .claude/skills/                # Mirror of .agents/skills/ (Claude Code)
+├── .claude/skills -> ../.agents/skills   # Symlink, so Claude Code reads the same skills
 ├── standards/writing-rules.md     # What may be written into .ai/
 ├── AGENTS.md                      # The one authored wiring file
 ├── CLAUDE.md                      # @AGENTS.md import (Claude Code)
@@ -156,10 +156,11 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | Support agent (`support-agent.agent.md` + `.claude/agents/support-agent.md`) | **Keep** | Day-to-day dev/support |
 | Wiring (`AGENTS.md` and its `CLAUDE.md` import) | **Keep** | Every harness routes into `.ai/` through it |
 | `standards/writing-rules.md` | **Keep** | The Maintainer applies it on every run |
-| Stack skills (`.agents/skills/` + `.claude/skills/`, including `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
+| Stack skills (`.agents/skills/`, including `confluence-axi`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` |
 | MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
+| `scripts/mirror-claude.sh` | **Keep** | Rebuilds the Claude Code mirrors after any agent or skill change |
 | `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
 | Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
 | Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
@@ -174,7 +175,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 > Everything in the **Keep** rows above is refreshed as usual. The installer never deletes anything,
 > so removing them stays your explicit choice.
 
-> **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills/`). Delete from source **and** mirrors together, or you introduce a "mirror out of sync" warning. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
+> **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills`). Delete an agent from `.github/agents/` **and** `.claude/agents/`, and a prompt from `.github/prompts/` **and** both command folders, or you introduce a "mirror out of sync" warning. Skills are the exception: `.claude/skills` is a symlink to `.agents/skills`, so deleting the skill from the source is already symmetric and the symlink itself stays. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
 
 ## Validation
 

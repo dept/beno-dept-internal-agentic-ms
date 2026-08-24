@@ -33,7 +33,7 @@ Document what the agentic setup inventory finds present:
 | Instructions | `CLAUDE.md` | Claude Code | Imports `AGENTS.md` |
 | Prompt | `.github/prompts/example.prompt.md` | Copilot | Example prompt |
 | Skill | `.agents/skills/codebase-overview/` | All harnesses | Repository structure and placement |
-| Skill | `.claude/skills/` | Claude Code | Mirror of `.agents/skills/` |
+| Skill | `.claude/skills` | Claude Code | Symlink to `.agents/skills/` |
 | MCP | `.vscode/mcp.json` | VS Code / Copilot | MCP server config |
 | MCP | `.cursor/mcp.json` | Cursor | MCP server config |
 | MCP | `.mcp.json` | Claude Code | MCP server config |

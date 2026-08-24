@@ -19,15 +19,22 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   `agents/<name>/logic.md` is the tool-agnostic workflow. A behaviour change lands in both or the
   two drift.
 - **Skill layout:** `.agents/skills/` is the source (Copilot, VS Code, Codex and Cursor read it;
-  Codex reads only that path), `.claude/skills/` is the mirror (Claude Code reads only that path).
-  `.github/skills/` is the standard 1.x layout and appears only as something to migrate away from.
+  Codex reads only that path), `.claude/skills` is a relative symlink to it (Claude Code reads only
+  that path). `.github/skills/` is the standard 1.x layout and appears only as something to migrate
+  away from.
+- **Nothing under `.claude/` is authored.** `scripts/mirror-claude.sh` rebuilds both Claude mirrors:
+  the `.claude/skills` symlink, and one derived `.claude/agents/<name>.md` per
+  `.github/agents/<name>.agent.md` (frontmatter rewritten, body verbatim). `scripts/install.sh`
+  runs it on install and on every `--update`. A change to an agent lands in the `.github/` source;
+  a second hand-maintained copy is the drift this replaced. The rule is stated once in
+  `standards/agentic-project-standard.md` -> Claude Code mirrors.
 - **Wiring layout:** `AGENTS.md` is the one authored wiring file and every harness reads it, Claude
   Code through the `@AGENTS.md` import that is the whole of `CLAUDE.md`. The standard generates no
   `.github/copilot-instructions.md`, no `.github/instructions/*.instructions.md` and no
   `.cursor/rules/*.mdc`. `CLAUDE.md` is a real file, in this repository too, never a symlink: a
   write aimed at it follows the link and overwrites `AGENTS.md`, and a Windows checkout without
   symlink support turns the link into a one-line file holding the path. The `.claude/skills/`
-  mirror is the separate case where a copy and a symlink are both allowed.
+  mirror is the separate case, and it is a symlink.
 - **`scripts/install.sh` classifies artifacts.** `ARTIFACTS` is the install list and
   `BOOTSTRAP_ONLY` names the subset that exists only to bootstrap an unmigrated project (the migrate
   prompt and its `ms-migration` command, the discovery agent, phase prompts `01`-`04`,

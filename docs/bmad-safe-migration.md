@@ -205,7 +205,7 @@ my-bmad-project/
 │       └── ci.yml
 │
 ├── .agents/skills/            ← NEW (Phase 4 installs stack skills)
-├── .claude/skills/            ← NEW (mirror of .agents/skills/)
+├── .claude/skills             ← NEW (symlink to .agents/skills/)
 ├── standards/writing-rules.md ← NEW (Phase 1)
 ├── .vscode/mcp.json           ← NEW (Phase 4)
 ├── .cursor/mcp.json           ← NEW (Phase 4)
@@ -242,7 +242,7 @@ If something goes wrong, the rollback is safe because BMAD files were never touc
 ```bash
 # Remove only the DEPT additions. BMAD is untouched
 rm -rf .ai/ AGENTS.md CLAUDE.md .vscode/mcp.json .cursor/mcp.json .mcp.json
-rm -rf .github/agents/ .agents/skills/ .claude/skills/ standards/writing-rules.md
+rm -rf .github/agents/ .agents/skills/ .claude/skills .claude/agents/ standards/writing-rules.md
 
 # Re-run from Phase 1 once issues are resolved
 ./scripts/scaffold.sh .

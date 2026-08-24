@@ -63,7 +63,7 @@ Apply changes with conflict resolution:
 3. **Add** new information to the section that owns the topic. Delete only in the three cases in `standards/writing-rules.md` §5: it breaks a writing rule, repository evidence contradicts it, or a human asked. Never delete a fact just because you did not write it
 4. **Low-confidence updates** go in `> ⚠️ Potential update:` blocks
 5. **Cite sources** in the Phase 6 PR summary (date + `path/to/file:LINE`) — NOT as inline `<!-- ... -->` comments, which rot the files. Git blame + the PR are the audit trail.
-6. **Regenerate** `.agents/skills/codebase-overview/SKILL.md` (and its `.claude/skills/` mirror) when the structural sections of `.ai/architecture.md` changed
+6. **Regenerate** `.agents/skills/codebase-overview/SKILL.md` when the structural sections of `.ai/architecture.md` changed (no mirror to update, `.claude/skills` symlinks to the source)
 
 ### Phase 5: Gap Detection
 

@@ -230,8 +230,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Mirrors agents/prompts/skill to Claude Code (`.claude/agents/`, `.claude/commands/`, `.claude/skills/`) so both Copilot and Claude Code auto-load them.
-**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` exists (mirrored in `.claude/skills/`). Other (stack) skills are added in Phase 4.
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Builds the Claude Code mirrors with `scripts/mirror-claude.sh` (`.claude/skills` as a symlink to `.agents/skills`, one derived file per agent in `.claude/agents/`) and copies the prompts into `.claude/commands/`, so both Copilot and Claude Code auto-load them.
+**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` exists and resolves through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
@@ -251,8 +251,8 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 4: Stack-Aware Tooling
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/04-stack-tooling.prompt.md`
-**Does:** Detects tech stack, installs skills + MCP servers, creates support agent. Mirrors every skill to `.claude/skills/` and the support agent to `.claude/agents/support-agent.md`.
-**Verify before continuing:** MCP config in all 3 IDEs, support-agent exists (mirrored in `.claude/agents/`), skills mirrored in `.claude/skills/`
+**Does:** Detects tech stack, installs skills + MCP servers, creates support agent, then runs `scripts/mirror-claude.sh` to derive `.claude/agents/support-agent.md`. Skills need no mirroring step, `.claude/skills` is a symlink to `.agents/skills`.
+**Verify before continuing:** MCP config in all 3 IDEs, support-agent exists and `.claude/agents/support-agent.md` was derived from it, `.claude/skills` resolves to the installed skills
 
 ### Phase 4b: Maintainer Automation (ask the user)
 
@@ -283,10 +283,11 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - `.github/agents/support-agent.agent.md` + `.claude/agents/support-agent.md`
 - Wiring: `AGENTS.md` (the authored file) and `CLAUDE.md` (its import)
 - `standards/writing-rules.md`: the rules the Maintainer applies on every run
-- Stack skills under `.agents/skills/` + `.claude/skills/` (including `confluence-axi`, used by the Maintainer to re-sync Confluence)
+- Stack skills under `.agents/skills/` (including `confluence-axi`, used by the Maintainer to re-sync Confluence), reached by Claude Code through the `.claude/skills` symlink
 - Datadog MCP (in the MCP configs) — used to fetch/refresh key features via browser OAuth
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
+- `scripts/mirror-claude.sh` — rebuilds the Claude Code mirrors after any agent or skill change
 - `.github/workflows/maintainer.yml` — if installed in Phase 4b
 
 **Safe to remove after a successful migration (ask, then delete):**
@@ -301,7 +302,13 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 
 **Do not remove** anything if the migration reported WARNINGS/NOT COMPLIANT or Confluence was only staged: resolve those first.
 
-**Remove symmetrically.** `scripts/validate.sh` compares *file counts* between each source directory and its mirror and warns if they diverge. So delete an artifact from **all** of source + mirrors together (for example the discovery agent from both `.github/agents/` and `.claude/agents/`; each phase prompt from `.github/prompts/`, `.claude/commands/`, and `.cursor/commands/`; each skill from both `.agents/skills/` and `.claude/skills/`). Deleting from one side only will introduce a new "mirror out of sync" warning.
+**Remove symmetrically.** `scripts/validate.sh` compares *file counts* between each source directory and its mirror and warns if they diverge. So delete an artifact from **all** of source + mirrors together, with one exception:
+
+- **Agents:** delete from `.github/agents/` **and** `.claude/agents/` (for example the discovery agent). The `.claude/` file is derived, not authored, but nothing recreates it once its source is gone, and leaving it behind is exactly the orphan `scripts/mirror-claude.sh` reports and refuses to delete for you.
+- **Prompts:** delete each phase prompt from `.github/prompts/`, `.claude/commands/` **and** `.cursor/commands/`.
+- **Skills:** delete from `.agents/skills/` **only**. `.claude/skills` is a single symlink to that directory, so the removal is already symmetric and there is nothing on the mirror side to delete. Deleting the symlink itself is what breaks the count, so leave it alone.
+
+Deleting from one side only, apart from the skills case above, will introduce a new "mirror out of sync" warning.
 
 **Nothing about this cleanup is written into `.ai/`.** No "removed during Phase 5" note, no *Cleanup* section, no row in `agent-registry.md` for something that is no longer there. `agent-registry.md` lists what is present after the cleanup, and the deletions are described in this run's completion summary and in the pull request. `standards/writing-rules.md` §1 is the rule.
 
@@ -317,9 +324,9 @@ After all phases complete, output:
 ## Migration Complete ✓
 
 ### Phase 1: Installation
-- Agents: [installed / already present] (mirrored to .claude/agents/)
+- Agents: [installed / already present] (derived into .claude/agents/)
 - Prompts: [installed / already present] (mirrored to .claude/commands/)
-- Skills: [installed / already present] (mirrored to .claude/skills/)
+- Skills: [installed / already present] (.claude/skills symlinks to .agents/skills)
 
 ### Phase 2: Discovery
 - .ai/ files: 9/9 generated
@@ -334,9 +341,9 @@ After all phases complete, output:
 
 ### Phase 4: Stack-Aware Tooling
 - Technologies detected: [count]
-- Skills installed: [list or "None matched"] (each mirrored to .claude/skills/)
+- Skills installed: [list or "None matched"] (reached by Claude Code through the .claude/skills symlink)
 - MCP servers added: [list or "None"]
-- Support agent: [created / present] (mirrored to .claude/agents/support-agent.md)
+- Support agent: [created / present] (derived into .claude/agents/support-agent.md)
 
 ### Phase 4b: Maintainer Automation
 - .github/workflows/maintainer.yml: [installed (biweekly) / declined — on-demand only / already present]

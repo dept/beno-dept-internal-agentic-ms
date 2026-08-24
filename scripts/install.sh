@@ -104,6 +104,7 @@ ARTIFACTS=(
   ".github/agents/maintainer.agent.md|agents/maintainer.agent.md"
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
   "scripts/validate.sh|scripts/validate.sh"
+  "scripts/mirror-claude.sh|scripts/mirror-claude.sh"
   "config/standard-version.yml|config/standard-version.yml"
   "standards/writing-rules.md|standards/writing-rules.md"
   ".agents/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
@@ -126,7 +127,6 @@ BOOTSTRAP_ONLY=(
   ".github/prompts/03-integrate.prompt.md"
   ".github/prompts/04-stack-tooling.prompt.md"
   ".github/agents/discovery.agent.md"
-  ".claude/agents/discovery.md"
   "scripts/graphify-bootstrap.sh"
 )
 
@@ -233,48 +233,22 @@ for artifact in "${ARTIFACTS[@]}"; do
   install_one "$dest_rel" "$src_rel"
 done
 
-# Mirror agents to Claude Code (.claude/agents/) so they are registered as
-# invokable subagents at the NEXT Claude Code session start. Installing them here
-# — before the migration session runs — is what lets Phase 2 dispatch a real
-# Discovery subagent on the first run instead of falling back to the main thread.
+# Rebuild the Claude Code mirrors: `.claude/skills` as a symlink to `.agents/skills`, and one
+# derived `.claude/agents/<name>.md` per `.github/agents/<name>.agent.md`. Neither is authored,
+# so both are rebuilt on every run, with or without --update: that is what makes a refresh
+# repair a mirror that drifted. Installing the agent mirrors here, before the migration session
+# runs, is also what lets Phase 2 dispatch a real Discovery subagent on the first run.
 #
-# Claude Code subagent frontmatter is `name` + `description` only; the Copilot
-# `tools:` line is dropped (Claude Code subagents inherit all tools). We transform
-# the just-installed .github source (single source of truth) rather than shipping a
-# duplicate body that could drift.
-mirror_claude_agent() {
-  local github_rel="$1"   # e.g. .github/agents/discovery.agent.md
-  local claude_rel="$2"   # e.g. .claude/agents/discovery.md
-  local github_dest="${TARGET_DIR}/${github_rel}"
-  local claude_dest="${TARGET_DIR}/${claude_rel}"
-
-  if skip_bootstrap "$claude_rel" "$claude_dest"; then
-    return 0
-  fi
-
-  [[ -f "$github_dest" ]] || return 0
-
-  if [[ -e "$claude_dest" && $UPDATE -ne 1 ]]; then
-    echo -e "  ${YELLOW}⊘${NC} ${claude_rel} — already exists, skipping"
-    SKIPPED=$((SKIPPED + 1))
-    return 0
-  fi
-
-  mkdir -p "$(dirname "$claude_dest")"
-  # Strip the Copilot-only `tools:` frontmatter line; keep name + description body.
-  sed '/^tools:[[:space:]]*\[/d' "$github_dest" > "$claude_dest"
-
-  if [[ $UPDATE -eq 1 ]]; then
-    echo -e "  ${GREEN}↻${NC} ${claude_rel} (mirrored)"
-    UPDATED=$((UPDATED + 1))
-  else
-    echo -e "  ${GREEN}✓${NC} ${claude_rel} (mirrored)"
-    CREATED=$((CREATED + 1))
-  fi
-}
-
-mirror_claude_agent ".github/agents/discovery.agent.md" ".claude/agents/discovery.md"
-mirror_claude_agent ".github/agents/maintainer.agent.md" ".claude/agents/maintainer.md"
+# Bootstrap-only artifacts need no special case any more: a derived mirror exists exactly when
+# its source does, so a project that removed the discovery agent in Phase 5 gets no mirror back.
+echo ""
+echo -e "${BLUE}── Claude Code mirrors ──${NC}"
+if [[ -f "${REPO_DIR}/scripts/mirror-claude.sh" ]]; then
+  bash "${REPO_DIR}/scripts/mirror-claude.sh" "$TARGET_DIR"
+else
+  bash "${TARGET_DIR}/scripts/mirror-claude.sh" "$TARGET_DIR"
+fi
+echo ""
 
 # Stamp the freshly installed standard version into an existing .ai/.meta.yml, so a project
 # that is re-installed or refreshed reports the version it actually runs, not the one its first
@@ -323,12 +297,13 @@ for required in \
   ".claude/commands/ms-migration.md" \
   ".github/agents/discovery.agent.md" \
   ".github/agents/maintainer.agent.md" \
-  ".claude/agents/discovery.md" \
   ".claude/agents/maintainer.md" \
   "scripts/graphify-bootstrap.sh" \
   "scripts/validate.sh" \
+  "scripts/mirror-claude.sh" \
   "standards/writing-rules.md" \
-  ".agents/skills/confluence-axi/SKILL.md"
+  ".agents/skills/confluence-axi/SKILL.md" \
+  ".claude/skills/confluence-axi/SKILL.md"
 do
   if [[ ! -f "${TARGET_DIR}/${required}" ]]; then
     # A bootstrap-only artifact this run deliberately did not install is not a failure.
@@ -340,10 +315,12 @@ do
   fi
 done
 
-if [[ -f "${TARGET_DIR}/scripts/graphify-bootstrap.sh" && ! -x "${TARGET_DIR}/scripts/graphify-bootstrap.sh" ]]; then
-  echo -e "${RED}ERROR:${NC} scripts/graphify-bootstrap.sh is not executable"
-  exit 1
-fi
+for script in scripts/graphify-bootstrap.sh scripts/mirror-claude.sh; do
+  if [[ -f "${TARGET_DIR}/${script}" && ! -x "${TARGET_DIR}/${script}" ]]; then
+    echo -e "${RED}ERROR:${NC} ${script} is not executable"
+    exit 1
+  fi
+done
 
 echo -e "  ${GREEN}✓${NC} bootstrap bundle present"
 echo ""
