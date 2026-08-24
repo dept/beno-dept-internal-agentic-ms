@@ -103,7 +103,7 @@ link_agent() {
       rm "$mirror"
       echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md was a copy with the same body, replaced by a symlink"
     else
-      echo -e "  ${RED}✗${NC} .claude/agents/${name}.md has drifted from .github/agents/${name}.agent.md. Nothing was changed: reconcile the two bodies into the .github/ source, delete the copy, and run this script again"
+      echo -e "  ${RED}✗${NC} .claude/agents/${name}.md has content the .github/agents/${name}.agent.md source does not. Nothing was changed: fold anything worth keeping into the .github/ source (a copy that only points at that source is worth nothing, delete it), then delete the copy and run this script again"
       return 0
     fi
   fi

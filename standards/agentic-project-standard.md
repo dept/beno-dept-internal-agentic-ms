@@ -101,7 +101,8 @@ sections, and the Maintainer Agent regenerates the skill when they change.
 Claude Code reads `.claude/`; every other harness reads `.agents/skills/` and `.github/`. Nothing
 under `.claude/` is authored, and neither mirror is maintained by hand: a hand-maintained second
 copy drifts, and it has (13 duplicated skill files in one client repository, and two copies of the
-same agent whose bodies had diverged by 85 lines in another).
+same agent in another, where the Claude copy had decayed into a 22-line wrapper telling the
+reader to go and read the 106-line `.github/` file).
 
 | Mirror | Form | Rebuilt by |
 |---|---|---|

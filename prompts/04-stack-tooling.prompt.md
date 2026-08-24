@@ -273,7 +273,7 @@ Claude Code auto-loads subagents from `.claude/agents/`. Do not write that file:
 bash scripts/mirror-claude.sh
 ```
 
-It creates `.claude/agents/support.md` as a relative symlink to `../../.github/agents/support.agent.md`. There is no second copy of the support agent, so there is nothing to keep in step and nothing that can drift: two hand-maintained copies of the same agent have already diverged by 85 lines in a client repository.
+It creates `.claude/agents/support.md` as a relative symlink to `../../.github/agents/support.agent.md`. There is no second copy of the support agent, so there is nothing to keep in step and nothing that can drift: in a client repository the second copy had decayed into a wrapper telling the reader to go and read the real file.
 
 `name: support` is the role in lowercase, which satisfies Claude Code's naming rule and reads the same in both pickers. VS Code Copilot default-scans both folders and lists the agent twice; it is one file, so the two rows carry the same name.
 
