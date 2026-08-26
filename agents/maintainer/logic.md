@@ -11,7 +11,7 @@ Keep the `.ai/` folder accurate and current as the project evolves. Detect drift
 
 - Access to the full repository filesystem
 - Git history access (`git log`)
-- Access to `config/change-impact-matrix.yml` from the standards repo
+- Access to `config/change-impact-matrix.yml` (vendored into the repository by the installer)
 - Optionally: Confluence access (for sync)
 
 ## When to Trigger

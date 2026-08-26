@@ -292,7 +292,7 @@ Same rule for Confluence: a page whose only delta would be the "Last synced" lin
 
 Automated triggering runs this agent via a **cost-gated GitHub Actions workflow**: a cheap `git log` step skips the paid agent run whenever nothing outside `.ai/**` changed, and the agent opens a PR (never pushes to `main`) — and only when the run produced real content changes (see the no-op rule above). Triggers: biweekly `schedule` (1st + 15th, 09:00 UTC) + manual `workflow_dispatch`.
 
-Setup is not part of this agent's runtime job — the full workflow (permissions, cost-gate step, model choice, and the Atlassian-MCP-for-Confluence note) lives in `templates/workflows/maintainer.yml`. Copy it to `.github/workflows/maintainer.yml` to enable automation; a repo may already have its own.
+Setup is not part of this agent's runtime job. The full workflow (permissions, cost-gate step, model choice, and the Atlassian-MCP-for-Confluence note) is not vendored into a migrated repository; fetch it from the standards repository at `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/maintainer.yml` and write it to `.github/workflows/maintainer.yml` to enable automation. A repo may already have its own. (The migrate prompt's Phase 4b does this for you on a fresh migration.)
 
 ---
 
