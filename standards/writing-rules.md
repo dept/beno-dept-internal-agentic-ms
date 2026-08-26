@@ -8,11 +8,6 @@ carries a pointer to this file and nothing more. Copying a rule out of here into
 the exact failure the rules exist to prevent: two copies drift, and an agent then has two
 contradictory instructions and no way to tell which is current.
 
-Referenced from `agents/discovery.agent.md`, `agents/maintainer.agent.md`,
-`agents/discovery/logic.md`, `agents/maintainer/logic.md`, `prompts/02-discover.prompt.md`,
-`prompts/03-integrate.prompt.md`, `prompts/04-stack-tooling.prompt.md`, `prompts/migrate.prompt.md`,
-`templates/skills/context-ownership/SKILL.md`, and all nine `.ai/` templates.
-
 `scripts/validate.sh` enforces the parts of §2 a script can see: a `## ` heading claimed by two
 `.ai/` files, and a command line repeated across files.
 
