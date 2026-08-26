@@ -21,6 +21,11 @@ concurrency:
 jobs:
   maintain:
     runs-on: ubuntu-latest
+    # Default-branch guard: only ever run on main/master, never on any other ref.
+    # `schedule` always fires with github.ref = the default branch, so this passes.
+    # `workflow_dispatch` passes only when dispatched against main/master, so a manual
+    # run against a feature branch is skipped instead of committing .ai/ to the wrong base.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
