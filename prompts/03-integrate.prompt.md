@@ -154,6 +154,8 @@ After wiring is complete, create handover documentation in Confluence.
 14. Do NOT create a separate coding standards page unless explicitly requested.
 15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's **full prefixed** `title`, its real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves it by the full title and backfills it on first run.
 
+    **`pages` is a map, not a list.** Emit `pages:` as a YAML map keyed exactly `landing`, `overview`, `architecture`, `environments`, `onboarding`, each value `{ title: "...", id: "..." }`. The `confluence-axi` skill and the Maintainer read the landing page id at the field path `confluence.pages.landing.id`, so `landing` MUST be a keyed map entry carrying an `id`. Do **not** emit `pages:` as a list of `{ title, id }` items, and do **not** put the landing title in a separate top-level `landing_title:` field. Either shape breaks the field path the skill reads and `scripts/validate.sh` warns on it. Copy the block skeleton verbatim from `docs/confluence-page-standard.md` → *`.meta.yml` `confluence:` block (schema)* and fill in the real titles and ids.
+
 ## Verification
 
 Before proceeding to Phase 4, confirm:

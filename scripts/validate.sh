@@ -401,9 +401,11 @@ echo ""
 #     src/ layout, npm package names, URLs and bare filenames are never guessed at
 #   - only files the standard owns and that stay in the repo for good
 # Scanned: the .ai/ files, the two wiring files and the skills, which are the durable context a
-# human or an agent reads every day. Not scanned, on purpose:
-#   - .github/prompts/ and .github/agents/, which describe files a later phase creates and name
-#     paths in the standards repository itself (templates/, scripts/) that a target repo never has
+# human or an agent reads every day; and, in the narrow follow-on scan below, the durable
+# Maintainer Agent plus standards/writing-rules.md. Not scanned, on purpose:
+#   - .github/prompts/ and the Discovery Agent, which describe files a later phase creates and name
+#     paths in the standards repository itself (templates/, scripts/install.sh,
+#     standards/agentic-project-standard.md) that a target repo never has
 #   - .vscode/ and .cursor/ MCP config, which a project may legitimately not use
 # Those two classes cannot be told apart from a real reference mechanically. They are checked in
 # the standards repository instead, where every path they name is a path in that repository.
@@ -418,6 +420,57 @@ if [ "${#REF_FILES[@]}" -gt 0 ]; then
 check_references \
   ".ai .agents .claude .github/agents .github/prompts scripts standards AGENTS.md CLAUDE.md" \
   "${REF_FILES[@]}"
+fi
+
+# The durable Maintainer Agent and the writing rules are the one part of .github/agents/ that CAN
+# be reference-checked in a target repo, and the part that most needs it: the Maintainer is
+# installed for good and reads its named files on every run, so a dead reference in it ships into
+# every migrated repo and stays there. That is the class a Copilot reviewer caught on client PRs
+# (config/change-impact-matrix.yml, docs/confluence-page-standard.md named but never vendored).
+# Every path it names now lives under a standards-owned tree the installer vendors durably, so the
+# prefix set is exactly those trees: config/ docs/ scripts/ standards/. Two things stay out of
+# scope on purpose and are checked in the standards repository instead:
+#   - the Discovery Agent, which is bootstrap-only and legitimately names standards-repo-only paths
+#     (scripts/install.sh, standards/agentic-project-standard.md, config/stack-detection.yml fetched
+#     at migration time) that a target repo never vendors, indistinguishable from a dead reference
+#     mechanically, the reason the main scan above excludes agent files wholesale;
+#   - templates/, which agent prose names only as URLs fetched at setup time (already skipped as URLs).
+AGENT_REF_FILES=()
+while IFS= read -r f; do AGENT_REF_FILES+=("$f"); done < <(
+  ls "${PROJECT_DIR}/.github/agents/maintainer.agent.md" \
+     "${PROJECT_DIR}/standards/writing-rules.md" 2>/dev/null || true
+)
+if [ "${#AGENT_REF_FILES[@]}" -gt 0 ]; then
+check_references \
+  "config docs scripts standards" \
+  "${AGENT_REF_FILES[@]}"
+fi
+
+echo ""
+
+# ── 6b. Confluence Metadata Schema ─────────────────────────
+# The confluence-axi skill and the Maintainer read the landing page id at the field path
+# confluence.pages.landing.id (see templates/skills/confluence-axi/SKILL.md and
+# docs/confluence-page-standard.md). Some early migrations emitted pages as a LIST of {title,id}
+# with a separate landing_title:, which has no confluence.pages.landing.id to read, so Confluence
+# sync silently resolves nothing. Warn (not fail) so a project on the old schema is not blocked in
+# CI, but the drift is named with its fix. Silent when there is no confluence: block (a project may
+# legitimately not use Confluence) or when the canonical map form is present.
+echo -e "${BLUE}── Confluence Metadata Schema ──${NC}"
+META="${AI_DIR}/.meta.yml"
+if [ ! -f "$META" ]; then
+  echo -e "  ${YELLOW}△${NC} no .ai/.meta.yml — cannot check Confluence schema"
+  ((WARNED++))
+elif ! grep -qE '^[[:space:]]*confluence:' "$META" 2>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} no confluence: block (Confluence sync not configured)"
+  ((PASSED++))
+elif grep -qE '^[[:space:]]+landing:([[:space:]]|$)' "$META" 2>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} confluence.pages is a map with a landing key (confluence.pages.landing.id is readable)"
+  ((PASSED++))
+else
+  echo -e "  ${YELLOW}△${NC} confluence: block has no pages.landing map key: the confluence-axi skill reads confluence.pages.landing.id and will resolve nothing"
+  echo -e "    ${YELLOW}Fix:${NC} make pages a map keyed landing/overview/architecture/environments/onboarding, each { title, id }; see docs/confluence-page-standard.md. Drop any pages: list and top-level landing_title:."
+  ((WARNED++))
 fi
 
 echo ""

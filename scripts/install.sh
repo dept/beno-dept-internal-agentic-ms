@@ -107,7 +107,9 @@ ARTIFACTS=(
   "scripts/validate.sh|scripts/validate.sh"
   "scripts/mirror-claude.sh|scripts/mirror-claude.sh"
   "config/standard-version.yml|config/standard-version.yml"
+  "config/change-impact-matrix.yml|config/change-impact-matrix.yml"
   "standards/writing-rules.md|standards/writing-rules.md"
+  "docs/confluence-page-standard.md|docs/confluence-page-standard.md"
   ".agents/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
   ".agents/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
   ".agents/skills/context-ownership/SKILL.md|templates/skills/context-ownership/SKILL.md"
@@ -305,7 +307,9 @@ for required in \
   "scripts/graphify-bootstrap.sh" \
   "scripts/validate.sh" \
   "scripts/mirror-claude.sh" \
+  "config/change-impact-matrix.yml" \
   "standards/writing-rules.md" \
+  "docs/confluence-page-standard.md" \
   ".agents/skills/confluence-axi/SKILL.md" \
   ".claude/skills/confluence-axi/SKILL.md" \
   ".agents/skills/context-ownership/SKILL.md"

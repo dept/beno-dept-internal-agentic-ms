@@ -3,9 +3,16 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.4.0"
-  release_date: "2026-08-24"
+  version: "2.5.0"
+  release_date: "2026-08-26"
   changelog:
+    - version: "2.5.0"
+      date: "2026-08-26"
+      changes:
+        - "scripts/install.sh vendors config/change-impact-matrix.yml and docs/confluence-page-standard.md into every target repo as durable artifacts, and prompts/01-install.prompt.md fetches both. The durable Maintainer Agent reads them on every run (change classification, and the Confluence page schema plus sync map), so a migrated repo shipped a dead reference to each: the file was named by the installed agent but never installed. A Copilot reviewer caught it on real client migration PRs. Both are durable, so a project already migrated picks them up on the next `bash scripts/install.sh . --update`"
+        - "agents/maintainer.agent.md no longer tells a migrated repo the CI workflow lives at templates/workflows/maintainer.yml, an authoring-layout path a target repo never has. It names the raw upstream URL to fetch instead, the same one the migrate prompt's Phase 4b already uses, so the setup instruction resolves from inside a client"
+        - "prompts/03-integrate.prompt.md now emits the .ai/.meta.yml confluence: block as a map keyed landing/overview/architecture/environments/onboarding, each { title, id }, matching the field path confluence.pages.landing.id that the confluence-axi skill and the Maintainer read. Some early migrations wrote a pages: list with a separate landing_title:, which has no landing.id to resolve, so Confluence sync silently matched nothing and risked duplicate pages"
+        - "scripts/validate.sh gains two client-mode checks. Reference Integrity now also resolves the standards-owned paths (config/ docs/ scripts/ standards/) named by the durable Maintainer Agent and standards/writing-rules.md, the one part of .github/agents/ a target repo can safely check. The bootstrap-only Discovery Agent stays out of scope because it legitimately names standards-repo-only paths (scripts/install.sh, standards/agentic-project-standard.md, config/stack-detection.yml fetched at migration time). New Confluence Metadata Schema check warns, without failing CI, when a .ai/.meta.yml confluence: block is not the map form the skill reads"
     - version: "2.4.0"
       date: "2026-08-24"
       changes:
