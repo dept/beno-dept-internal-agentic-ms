@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.5.0"
+  version: "2.6.0"
   release_date: "2026-08-26"
   changelog:
+    - version: "2.6.0"
+      date: "2026-08-26"
+      changes:
+        - "templates/workflows/maintainer.yml guards the maintain job to the default branch: `if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'` at job level. The workflow triggers on schedule and workflow_dispatch only; schedule always fires with github.ref = the default branch, so the guard passes and the biweekly run is unaffected. The one leak was a manual workflow_dispatch against a non-default branch, which would check out that branch, commit .ai/ updates and open a PR from the wrong base: the guard skips the whole job on any ref other than main/master. Future migrations ship the guarded workflow; already-migrated repos are handled separately"
+        - "scripts/validate.sh gains a Maintainer Workflow Guard check. When .github/workflows/maintainer.yml is present it asserts the default-branch job guard is there and fails if missing; conditional on the file existing, since the workflow is bootstrap-only and not in every repo. Cheap and specific: one grep for the compound if-condition, no YAML parser"
     - version: "2.5.0"
       date: "2026-08-26"
       changes:

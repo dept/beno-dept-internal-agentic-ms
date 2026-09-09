@@ -390,6 +390,27 @@ check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
 
 echo ""
 
+# ── 5b. Maintainer Workflow Guard ──────────────────────────
+# The Maintainer Agent workflow (bootstrap-only, so not present in every repo) triggers on schedule
+# and workflow_dispatch. schedule always fires with github.ref = the default branch; a manual
+# dispatch can name any branch, and without a guard it would check out that branch and open a PR
+# from the wrong base. The maintain job carries a default-branch guard to close that. Assert it is
+# present when the workflow is. Cheap and specific: match the compound if-condition on one line, no
+# YAML parser. Conditional on the file existing, so a repo without the workflow is silent.
+WF="${PROJECT_DIR}/.github/workflows/maintainer.yml"
+if [ -f "$WF" ]; then
+  echo -e "${BLUE}── Maintainer Workflow Guard ──${NC}"
+  if grep -qE "github\.ref[[:space:]]*==[[:space:]]*['\"]refs/heads/main['\"][[:space:]]*\|\|[[:space:]]*github\.ref[[:space:]]*==[[:space:]]*['\"]refs/heads/master['\"]" "$WF" 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} maintainer.yml guards the maintain job to the default branch (main/master)"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}✗${NC} maintainer.yml is missing the default-branch job guard"
+    echo -e "    ${YELLOW}Fix:${NC} add \`if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'\` at the maintain job level"
+    ((FAILED++))
+  fi
+  echo ""
+fi
+
 # ── 6. Reference Integrity ─────────────────────────────────
 # A path this standard names must exist. Broken references are how a layout change (a renamed
 # agent, a mirror that became a symlink) survives in prose long after the files moved, and they
