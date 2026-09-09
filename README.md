@@ -162,6 +162,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
 | `scripts/mirror-claude.sh` | **Keep** | Creates and repairs the Claude Code mirror symlinks when an agent or skill is added or removed |
+| `scripts/gen-dependabot.sh` | **Keep** | Seeds `.github/dependabot.yml` from the tracked lockfiles when a project has none; re-run after a new ecosystem is added |
 | `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
 | Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
 | Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
@@ -243,6 +244,7 @@ dept-agentic-standards/
 │   ├── install.sh                 # Installs the standard into a target repository
 │   ├── graphify-bootstrap.sh      # Structural pre-pass helper
 │   ├── mirror-claude.sh           # Creates and repairs the Claude Code mirror symlinks
+│   ├── gen-dependabot.sh          # Seeds .github/dependabot.yml from tracked lockfiles
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
 │   ├── validate.sh                # Quality gate for .ai/ compliance
 │   └── version-report.sh          # Which projects run an outdated standard version

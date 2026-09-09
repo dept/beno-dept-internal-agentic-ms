@@ -106,6 +106,7 @@ ARTIFACTS=(
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
   "scripts/validate.sh|scripts/validate.sh"
   "scripts/mirror-claude.sh|scripts/mirror-claude.sh"
+  "scripts/gen-dependabot.sh|scripts/gen-dependabot.sh"
   "config/standard-version.yml|config/standard-version.yml"
   "config/change-impact-matrix.yml|config/change-impact-matrix.yml"
   "standards/writing-rules.md|standards/writing-rules.md"
@@ -291,6 +292,17 @@ stamp_meta_version() {
 
 stamp_meta_version
 
+# Generate a Dependabot config if the project has none. Lockfile-driven and
+# install-if-absent: it never overwrites a hand-tuned dependabot.yml, and runs
+# with or without --update (there is nothing to refresh, only to seed once).
+echo ""
+echo -e "${BLUE}── Dependabot config ──${NC}"
+if [[ -f "${REPO_DIR}/scripts/gen-dependabot.sh" ]]; then
+  bash "${REPO_DIR}/scripts/gen-dependabot.sh" "$TARGET_DIR"
+else
+  bash "${TARGET_DIR}/scripts/gen-dependabot.sh" "$TARGET_DIR"
+fi
+
 echo ""
 echo -e "${BLUE}── Verification ──${NC}"
 for required in \
@@ -308,6 +320,7 @@ for required in \
   "scripts/validate.sh" \
   "scripts/mirror-claude.sh" \
   "config/change-impact-matrix.yml" \
+  "scripts/gen-dependabot.sh" \
   "standards/writing-rules.md" \
   "docs/confluence-page-standard.md" \
   ".agents/skills/confluence-axi/SKILL.md" \
@@ -324,7 +337,7 @@ do
   fi
 done
 
-for script in scripts/graphify-bootstrap.sh scripts/mirror-claude.sh; do
+for script in scripts/graphify-bootstrap.sh scripts/mirror-claude.sh scripts/gen-dependabot.sh; do
   if [[ -f "${TARGET_DIR}/${script}" && ! -x "${TARGET_DIR}/${script}" ]]; then
     echo -e "${RED}ERROR:${NC} ${script} is not executable"
     exit 1
