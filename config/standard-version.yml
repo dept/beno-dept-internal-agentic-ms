@@ -3,9 +3,16 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.6.0"
-  release_date: "2026-08-26"
+  version: "2.7.0"
+  release_date: "2026-09-09"
   changelog:
+    - version: "2.7.0"
+      date: "2026-09-09"
+      changes:
+        - "New: scripts/gen-dependabot.sh, installed into target repositories and run by scripts/install.sh on install and on every --update refresh. It writes .github/dependabot.yml when a project has none, so dependency updates are part of the standard instead of a per-project decision"
+        - "Detection is lockfile-driven, not manifest-driven: it reads tracked package-lock.json, yarn.lock, pnpm-lock.yaml, composer.lock, Gemfile.lock, *.sln or *.csproj, Dockerfile and .github/workflows, and derives one directory entry per lockfile location. A package.json without a lockfile is not a real update target, and a monorepo has a manifest per component, which manifest detection would turn into dozens of noise directories. Only git-tracked files count, so .gitignore and vendored trees are honoured"
+        - "Install-if-absent: an existing .github/dependabot.yml is never overwritten, because projects hand-tune theirs with private registries, commit prefixes and custom groups. A target that is not a git work tree, or has no tracked lockfiles or workflows, is reported and skipped rather than failing the install"
+        - "The generated config is deliberately quiet: weekly interval, five open pull requests per ecosystem, major version updates ignored, and minor and patch grouped into one pull request. Security updates are an org-wide GitHub setting and are enabled separately, which the generated file states in a header comment"
     - version: "2.6.0"
       date: "2026-08-26"
       changes:
