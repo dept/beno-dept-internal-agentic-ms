@@ -5,6 +5,11 @@ Keep Confluence project handover pages structurally consistent across repositori
 
 This is the **canonical base layout** for DEPT Managed Services project documentation in Confluence. When creating or updating project pages, keep the page names, page order, and section order the same unless there is a strong project-specific reason to deviate.
 
+**This file owns the structure; `docs/confluence-layout.md` owns the rendering.** Which pages exist,
+which sections they carry and in what order is here. How a section is rendered once it belongs on
+the page (table versus bullets versus code block, heading depth, canonical table columns, panels)
+is in `docs/confluence-layout.md`, and it is not restated here. Read both before writing a page.
+
 ## Fixed page tree
 Every project should use this structure under `MS / Projects`:
 
@@ -36,7 +41,7 @@ pages up by that full title when creating or syncing.
 - Use clear mixed-audience language: understandable for both engineers and client managers.
 - **Confluence is the human surface; `.ai/` is the agent surface. Never send a human reader into `.ai/`.** These pages must stand on their own: a reader gets the answer on the page, not a pointer to a repository file written for AI tools. Do not write instructions like "read `.ai/project-context.md`, then `.ai/architecture.md`", and do not describe `.ai/` files as onboarding reading, background reading, or the fastest route into the codebase. If content only exists in `.ai/`, copy the substance onto the page in human wording instead of linking to the file.
   Two narrow exceptions, both of which describe the repository rather than instruct the reader: the landing page's *AI tooling status* section may state that `.ai/` exists and what it contains, and a sync note under a synced artifact (such as the architecture diagram) may name the `.ai/` file that owns the source, so an engineer editing it knows where to change it. Neither is an instruction to go read `.ai/` to understand the project.
-- If `doc/` or `docs/` exists in the repository, use it as a primary wording source, then verify important claims against code and config.
+- **Read the repository's own prose first.** `README.md` at the root, a per-package `README.md`, `CONTRIBUTING.md`, and a `doc/` or `docs/` folder are the primary wording source: they hold the project's own explanation of what it is, plus the conventions (commit format, branch format, required tooling, local setup order) that no config file states. Use them for wording and for facts, then verify important claims against code and config. A repository readme that documents a commit convention and does not reach the Onboarding page is the standard failing, not the readme being irrelevant.
 - Sanitize titles before creating Confluence pages: decode HTML entities and prefer readable words over raw symbols.
 
 ---
@@ -326,6 +331,8 @@ Short explanation of the available environments and what they are used for.
 - Optimize for a new engineer joining the project.
 - Write the onboarding path in human terms: what to install, what access to request, what to run, what to read *on Confluence*. Never route the new engineer through `.ai/` — those files are written for AI tools, and "read `.ai/project-context.md` first" is not an onboarding step for a person. Put the orientation itself on this page and link to the Overview and Architecture pages for depth.
 - Include setup prerequisites, local run/test commands, and known pitfalls.
+- **`## Local development workflow` is a `Task` / `Command` / `Notes` table with a row per command a developer runs on every task**, copied from the cheatsheet in `.ai/onboarding.md`. The minimum row set is **Install, Run, Test, Build, Commit**, plus any project-specific loop (a watch task, a container start, a CMS bootstrap step).
+- **The Commit row is not optional, and it carries the convention.** Name the wrapper command the project enforces (for example `pnpm commit` via Commitizen, when git hooks reject a hand-written message), then state the commit and branch format under the table, sourced from `.ai/coding-standards.md` (which owns the convention) and from `README.md`/`CONTRIBUTING.md` where the repository documents it. A page that lists Install, Run, Test and Build and stops leaves a new engineer with a rejected first commit and no idea why, which is the exact omission this rule exists to prevent.
 - Include support paths and escalation guidance.
 - Do **not** repeat a Key Contacts table here — contacts live on the main `[Project Name]` landing page. Link to it instead if readers need it.
 - Include project-specific handover notes that would otherwise be lost in code or chat history.
@@ -333,19 +340,26 @@ Short explanation of the available environments and what they are used for.
 ### Example section skeleton
 ```md
 ## First-day setup
-- Install prerequisites
-- Request access
-- Fetch secrets
+1. Install prerequisites
+2. Request access
+3. Fetch secrets
 
 ## Local development workflow
-- Install:
-- Run:
-- Test:
-- Build:
+| Task | Command | Notes |
+| --- | --- | --- |
+| Install | `pnpm install` | Run in the repository root unless noted |
+| Run | `pnpm dev` | ... |
+| Test | `pnpm test` | ... |
+| Build | `pnpm build` | Also the pre-push gate |
+| Commit | `pnpm commit` | Commitizen prompt; git hooks reject a hand-written message |
+
+**Commit and branch conventions.** Commit: `<type>(TICKET-<number>): <description>`.
+Branch: `<type>/TICKET-<number>/<description>`. Use `TICKET-000` when there is no ticket.
 
 ## Troubleshooting and common gotchas
-- Gotcha 1
-- Gotcha 2
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| ... | ... | ... |
 
 ## Support and escalation
 - Primary team:
@@ -429,9 +443,9 @@ Bad customization examples:
 
 ## Enforcement guidance for agents
 When an agent creates Confluence documentation, it should:
-1. follow this document as the canonical Confluence structure source
+1. follow this document as the canonical Confluence structure source, and `docs/confluence-layout.md` as the canonical rendering source
 2. create the standard page tree first
-3. fill the standard sections in order
+3. fill the standard sections in order, choosing each section's block type per `docs/confluence-layout.md` → *Rule 0* and its canonical column sets
 4. add project-specific sections only when needed
 5. explain any structural deviation explicitly in its final report
 6. place Key facts, AI tooling status, and Key contacts **only on the main `[Project Name]` landing page** — never repeat them on Overview, Architecture, or Onboarding subpages
@@ -440,7 +454,8 @@ When an agent creates Confluence documentation, it should:
 
 ## Recommended implementation pattern in prompts and skills
 To reduce drift, prompts and skills should say:
-- use `docs/confluence-page-standard.md` as the canonical page-layout source
+- use `docs/confluence-page-standard.md` as the canonical page-structure source and `docs/confluence-layout.md` as the canonical rendering source
 - keep exact page names unless there is a strong reason not to
 - keep section order stable across projects
 - add custom sections only after the standard ones when possible
+- render each section with the block type and column set `docs/confluence-layout.md` prescribes, rather than choosing per project

@@ -60,6 +60,14 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
 - **A file-layout change is a breaking change.** Bump `config/standard-version.yml` and add a
   changelog entry naming what moved, so a repository migrated under an older version can be told
   what to do.
+- **Patch for a fix, minor for a change.** A correction inside an existing artifact is `x.y.Z`
+  (`2.7.0` to `2.7.1`); a new artifact or anything a migrated project must act on is `x.Y.0`; a
+  file-layout move stays major. The Versioning section of `README.md` states it once.
+- **The Confluence pages are governed by two files, and the split is strict.**
+  `docs/confluence-page-standard.md` owns structure (which pages, which sections, in what order);
+  `docs/confluence-layout.md` owns rendering (block choice per section, heading depth, canonical
+  table columns, panels). Neither restates the other, and both are vendored into target repos by
+  `scripts/install.sh` and fetched by `prompts/01-install.prompt.md`.
 - **Every standard-content change bumps the version.** `.github/workflows/version-bump.yml` fails a
   PR that touches standard content without changing the `version` field. See the Versioning section
   of `README.md` for what counts as standard content and how a project reports its version.

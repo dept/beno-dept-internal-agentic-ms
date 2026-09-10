@@ -130,7 +130,8 @@ collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): 
 - Sanitize titles so encoded entities like `&amp;` or `@amp;` never appear in page names
 - Include package / feature / campaign inventory when the project has multiple areas
 - For monorepos or multi-area projects, include both a quick table and a short plain-language summary for each package/feature/campaign so a new developer understands purpose, not just names
-- Prefer `doc/` or `docs/` as primary context for Confluence wording and onboarding details when those folders exist
+- Prefer the repository's own prose as primary context for Confluence wording and onboarding details: root and per-package `README.md`, `CONTRIBUTING.md`, and `doc/`/`docs/` when present. Commit and branch conventions and required wrapper commands usually live only there
+- Render every section per `docs/confluence-layout.md` (block choice, canonical table columns, bodies start at `H2`). The local development workflow is a `Task`/`Command`/`Notes` table with an Install, Run, Test, Build and Commit row, and the commit and branch convention under it
 
 ### Step 10: Stack-Aware Developer Setup
 

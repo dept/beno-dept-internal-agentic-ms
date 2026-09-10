@@ -84,6 +84,7 @@ Flags come **after** the command.
 
   `guestParams` must be `{"index": N}`, with `N` the 0-based position of the source among **all** code blocks on the page, counted recursively so blocks inside expands count too. `""` ("Auto detect") gives *Error while loading diagram* on API-written pages. The code block `language` is cosmetic; do not tag it `mermaid`. The ids above are specific to the dept-nl install: if the app is reinstalled or another site is targeted, read a live page's ADF and copy the current ones. Verify with `page get <id> --format adf --full` and check for the expand plus extension pair; the rendered diagram itself takes 10 to 20 seconds to appear.
 - **Output is TOON-encoded** (token-efficient) — there is no plain-text or JSON mode.
+- **Page structure and layout are governed by two files, both vendored into the repo.** `docs/confluence-page-standard.md` owns which pages exist and which sections they carry; `docs/confluence-layout.md` owns how each section is rendered (table versus bullets versus code block, heading depth, the column set for every recurring table). Read both before writing a body, and keep an existing page in the standard shape rather than appending to a drifted one.
 - **DEPT handover sync:** page ids + full titles live in `.ai/.meta.yml` `confluence:`. Resolve by walking `landing.id`'s children (rule 1), act by id, write resolved ids back.
 
 ## Common mistakes

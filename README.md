@@ -68,13 +68,16 @@ Then run `@workspace /01-install`, `@workspace /02-discover`, etc. in your AI to
 
 ### Confluence Documentation Standard
 
-To keep project handover pages consistent across repositories, use the canonical Confluence layout defined in [docs/confluence-page-standard.md](docs/confluence-page-standard.md).
+Two files govern the handover pages, and both are installed into every migrated repository:
 
-That standard fixes:
-- the page tree
-- the default section order per page
-- the requirement for a Mermaid overview on the architecture page
-- where customization is allowed versus where structure should stay stable
+- [docs/confluence-page-standard.md](docs/confluence-page-standard.md) fixes the **structure**: the
+  page tree, the default section order per page, the requirement for a Mermaid overview on the
+  architecture page, the `.ai/` to page mapping, and where customization is allowed versus where
+  structure should stay stable.
+- [docs/confluence-layout.md](docs/confluence-layout.md) fixes the **rendering**: which block type a
+  section uses (table, code block, numbered list, bullets, prose), heading depth, the column set for
+  every recurring table, which panels are allowed, and the anti-patterns that make two projects'
+  pages look unrelated.
 
 The goal is: **same base structure everywhere, with only small project-specific additions when needed**.
 
@@ -226,6 +229,7 @@ dept-agentic-standards/
 ├── docs/
 │   ├── bmad-safe-migration.md     # Migrating a repo that already runs BMAD
 │   ├── confluence-page-standard.md # Shape of the handover pages
+│   ├── confluence-layout.md       # How each handover section is rendered
 │   ├── graphify-integration.md    # How the structural pre-pass is used
 │   ├── roadmap.md                 # 5-phase rollout plan
 │   ├── success-metrics.md         # KPIs and feedback loop
@@ -317,6 +321,11 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
   content without changing the `version` field, so bump the field and add a changelog entry in
   the same PR. Repo-only changes (`docs/`, `examples/`, `README.md`, `AGENTS.md`, CI) do not
   need a bump.
+- **Patch for a fix, minor for a change.** A correction inside an existing artifact (a missing rule,
+  a wrong path, a clarified instruction) is a patch bump: `2.7.0` to `2.7.1`. A new artifact, a new
+  installed file, a changed workflow or anything a migrated project has to act on is a minor bump.
+  A file-layout change stays a major bump. Reserve minor bumps for changes worth a project's
+  attention, so the changelog stays a signal.
 - **One bump per pull request, not per commit.** While a PR is open and unmerged, further commits
   on that branch amend the changelog entry for the version being released; they never add another
   version. A new version number is only introduced by a PR that does not already carry an

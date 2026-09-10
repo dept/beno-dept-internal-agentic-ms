@@ -255,6 +255,7 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 3. Push **critical/moderate** updates only. Skip minor (avoid noise).
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
 5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
+6. **Keep the layout.** Write every section with the block type and column set in `docs/confluence-layout.md`: a table for parallel facts (`Task`/`Command`/`Notes` for the local development workflow, and that table keeps its `Commit` row), a code block for commands, `H2` for standard sections. When a section on the live page uses an older shape, bring it to the standard shape while you are already updating it, rather than appending to the old one.
 
 **Refresh key features.** The `## Key Features (Monitored)` section lives in `project-context.md` (syncs to the Overview page). If the **Datadog MCP** (`datadog` server, browser OAuth) is reachable, call its Synthetics tool for the `client:<name>` tag and update the section when the test set has changed (added/removed/renamed/status flip). Use the canonical table schema — **Public ID** (link → `https://app.datadoghq.<region>/synthetics/details/<public_id>`) · **Type** (Browser/API) · **Name** (exact test name) · **Description** (factual, from the config) — sorted Browser first, API second; do not invent columns or details. If the MCP is not reachable/authed, leave the existing content untouched — never blank it.
 
