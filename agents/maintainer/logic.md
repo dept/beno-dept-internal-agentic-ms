@@ -92,6 +92,7 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 - Push critical/moderate updates only; skip minor (reduce noise)
 - Update in place — never delete a page/section unless its subject no longer exists in the repo
 - Add "Last synced from .ai/ — [timestamp]" to each touched page
+- Render every section per `docs/confluence-layout.md` (block choice, canonical table columns, `H2` sections); bring an older-shaped section to the standard shape while updating it
 
 ### Phase 8: Metadata Update
 

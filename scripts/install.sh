@@ -111,6 +111,7 @@ ARTIFACTS=(
   "config/change-impact-matrix.yml|config/change-impact-matrix.yml"
   "standards/writing-rules.md|standards/writing-rules.md"
   "docs/confluence-page-standard.md|docs/confluence-page-standard.md"
+  "docs/confluence-layout.md|docs/confluence-layout.md"
   ".agents/skills/confluence-axi/SKILL.md|templates/skills/confluence-axi/SKILL.md"
   ".agents/skills/confluence-axi/references/setup.md|templates/skills/confluence-axi/references/setup.md"
   ".agents/skills/context-ownership/SKILL.md|templates/skills/context-ownership/SKILL.md"
@@ -323,6 +324,7 @@ for required in \
   "scripts/gen-dependabot.sh" \
   "standards/writing-rules.md" \
   "docs/confluence-page-standard.md" \
+  "docs/confluence-layout.md" \
   ".agents/skills/confluence-axi/SKILL.md" \
   ".claude/skills/confluence-axi/SKILL.md" \
   ".agents/skills/context-ownership/SKILL.md"

@@ -3,9 +3,16 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.0"
-  release_date: "2026-09-09"
+  version: "2.7.1"
+  release_date: "2026-09-10"
   changelog:
+    - version: "2.7.1"
+      date: "2026-09-10"
+      changes:
+        - "New: docs/confluence-layout.md, vendored into every target repository and fetched by prompts/01-install.prompt.md. The page standard said which sections a handover page carries but never how a section is rendered, so each migration chose per project: one Onboarding page shipped flat bullet lists, another a heading per topic, another tables. The layout file owns block choice (three or more parallel facts is a table, a command is a code block, a dependent sequence is a numbered list), heading depth (bodies start at H2, since Confluence already renders the page title), the column set for each of the twelve recurring tables, which three panel macros are allowed, the prose and bullet budget, and an anti-pattern table. The split with docs/confluence-page-standard.md is strict: structure there, rendering here, neither restating the other"
+        - "Fix: the Onboarding page's `## Local development workflow` is a Task/Command/Notes table whose minimum rows are Install, Run, Test, Build and Commit, with the commit and branch convention stated under it. The section previously had no required row set, so pages listed install/run/test/build and dropped the commit convention that sat next to it in the .ai/onboarding.md cheatsheet, leaving a new engineer with a first commit the git hooks reject. Stated in the page standard, the Phase 3 prompt, its verification checklist, and both agents"
+        - "Fix: the repository's own prose is named as the primary Confluence wording source: root and per-package README.md, CONTRIBUTING.md, and doc/ or docs/ when present. Only doc/ or docs/ was named before, so a readme documenting the commit format, the required wrapper command or the local setup order was not read while the Onboarding page was written. Applied in the page standard, prompts/03-integrate.prompt.md and the Discovery Agent"
+        - "The Maintainer applies the layout file on every Confluence sync and brings an older-shaped section to the standard shape while it is already updating it, so pages written before this version converge instead of staying frozen"
     - version: "2.7.0"
       date: "2026-09-09"
       changes:

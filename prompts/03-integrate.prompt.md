@@ -81,9 +81,14 @@ After wiring is complete, create handover documentation in Confluence.
 > drafts. Phase 5 (cleanup) removes them.
 
 **Canonical structure source:** `docs/confluence-page-standard.md`
-- Use it as the default page-layout and section-order source for every project.
+- Use it as the default page-tree and section-order source for every project.
 - Keep the base page names and section order the same unless a project-specific need clearly justifies a deviation.
 - If you deviate, keep the standard structure as intact as possible and explain the deviation in your final report.
+
+**Canonical rendering source:** `docs/confluence-layout.md`
+- Read it before writing any page body. It decides, per section, whether the content is a table, a code block, a numbered list, bullets or prose, and it fixes the column set for every recurring table.
+- Parallel facts go in a table with the prescribed columns, commands go in code blocks or as inline `<code>` in a table cell, and the body starts at `H2` (Confluence already renders the page title).
+- Do not invent a layout per project: page-to-page inconsistency is what this file exists to stop. Name any section you rendered differently, and why, in your final report.
 
 **Target location:**
 - Space: `MS`
@@ -147,9 +152,9 @@ After wiring is complete, create handover documentation in Confluence.
    - The app id and environment id above are specific to the dept-nl site install. If the app was reinstalled or another site is targeted, read a live page's ADF back and copy the current `extensionKey` and `extensionId`.
    - After publishing, re-read the page with `npx -y confluence-axi page get <id> --format adf --full` and confirm the expand plus extension pair is present with the right `index`. Do not judge from the rendered page alone, and give it 10 to 20 seconds after load before calling a diagram broken.
    - If no Mermaid app is installed on the target site, keep the plain code block and record "request the Atlassian Labs Mermaid Diagrams Viewer app" as an open handover item rather than silently shipping an unrendered diagram.
-10. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
+10. Use the repository's own prose as a primary input for Confluence wording, package/campaign descriptions, and onboarding context: the root `README.md`, per-package `README.md` files, `CONTRIBUTING.md`, and a `doc/` or `docs/` folder if present. These are where the conventions no config file states are written down (commit and branch format, the wrapper command the hooks require, local setup order, required tooling), so read them before writing the Onboarding page and carry those facts onto it. Still verify against code/config when facts conflict.
 11. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
-12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page. Write the reading path for a person: point at the Overview and Architecture pages for orientation, never at `.ai/` files (see rule 6b).
+12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. `## Local development workflow` is a `Task` / `Command` / `Notes` table, not a bullet list, with a row per command a developer runs on every task, copied from the cheatsheet in `.ai/onboarding.md`. The minimum rows are **Install, Run, Test, Build, Commit**, plus any project-specific loop (watch task, container start, CMS bootstrap). **The Commit row is mandatory:** name the command the project enforces (for example `pnpm commit`, when git hooks reject a hand-written message) and state the commit and branch format under the table, taken from `.ai/coding-standards.md` and from the repository's `README.md`/`CONTRIBUTING.md`. Install/Run/Test/Build with no Commit row is a defect, not a shorter page: it leaves a new engineer with a rejected first commit. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page. Write the reading path for a person: point at the Overview and Architecture pages for orientation, never at `.ai/` files (see rule 6b).
 13. Include all 5 links collected in Phase 2 Step 4.
 14. Do NOT create a separate coding standards page unless explicitly requested.
 15. **Record the page mapping.** After creating/finding the pages, write a `confluence:` block into `.ai/.meta.yml` using the schema in `docs/confluence-page-standard.md` — space, base URL, each page's **full prefixed** `title`, its real `id`, and the `sync_map`. This is what lets the Maintainer Agent sync the right pages without duplicating. If a page's ID cannot be captured, leave it empty; the Maintainer resolves it by the full title and backfills it on first run.
@@ -165,6 +170,8 @@ Before proceeding to Phase 4, confirm:
 - [ ] `AGENTS.md` carries no command cheatsheet and no summary of a `.ai/` file, and `bash scripts/validate.sh .` reports no new Single-Source Integrity failure
 - [ ] Confluence pages created, or the completion summary says what blocked it
 - [ ] No Confluence page instructs a human reader to read `.ai/` files (rule 6b; the landing page's AI tooling status entry and the diagram sync note are the only allowed mentions)
+- [ ] Every page body starts at `H2`, every recurring table uses the column set in `docs/confluence-layout.md`, and no section renders parallel facts as `Label: value` bullets
+- [ ] `Onboarding & Handover` → `## Local development workflow` is a table and has a `Commit` row, with the commit and branch convention stated under it
 - [ ] `.ai/.meta.yml` has a `confluence:` block with page IDs + `sync_map`
 
 ## Completion Signal

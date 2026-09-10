@@ -48,6 +48,7 @@ Fetch these files from the DEPT Agentic Standards repository:
 | Change-impact matrix | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/config/change-impact-matrix.yml` | `config/change-impact-matrix.yml` |
 | Writing rules | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/standards/writing-rules.md` | `standards/writing-rules.md` |
 | Confluence page standard | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/docs/confluence-page-standard.md` | `docs/confluence-page-standard.md` |
+| Confluence layout conventions | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/docs/confluence-layout.md` | `docs/confluence-layout.md` |
 | Confluence skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/SKILL.md` | `.agents/skills/confluence-axi/SKILL.md` |
 | Confluence skill setup | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/confluence-axi/references/setup.md` | `.agents/skills/confluence-axi/references/setup.md` |
 | Context ownership skill | `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/skills/context-ownership/SKILL.md` | `.agents/skills/context-ownership/SKILL.md` |
@@ -96,7 +97,7 @@ Before proceeding to Phase 2, confirm:
 - [ ] `scripts/graphify-bootstrap.sh` exists and is executable
 - [ ] `scripts/validate.sh` and `scripts/mirror-claude.sh` exist and are executable
 - [ ] `standards/writing-rules.md` exists
-- [ ] `config/change-impact-matrix.yml` and `docs/confluence-page-standard.md` exist (the Maintainer reads both every run)
+- [ ] `config/change-impact-matrix.yml`, `docs/confluence-page-standard.md` and `docs/confluence-layout.md` exist (the Maintainer reads all three every run)
 - [ ] `.agents/skills/context-ownership/SKILL.md` exists and resolves through the `.claude/skills` symlink
 - [ ] `.agents/skills/confluence-axi/` exists (SKILL.md + references/setup.md; no bundled script, it wraps the `confluence-axi` npm CLI)
 - [ ] `.claude/skills` is a symlink to `.agents/skills`, so `.claude/skills/confluence-axi/SKILL.md` resolves (Claude Code auto-load)
