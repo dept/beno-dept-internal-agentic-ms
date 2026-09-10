@@ -49,8 +49,25 @@ emit() {
   fi
   echo "    schedule:"
   echo "      interval: weekly"
-  if [[ "$eco" != "github-actions" ]]; then
-    echo "    open-pull-requests-limit: 5"
+  # Package ecosystems land on Monday, actions on Tuesday. One ecosystem opening
+  # pull requests per day keeps a slow pipeline from building every branch at once.
+  if [[ "$eco" == "github-actions" ]]; then
+    echo "      day: tuesday"
+  else
+    echo "      day: monday"
+  fi
+  echo "    open-pull-requests-limit: 3"
+  # Dependabot rebases every open pull request when the base branch moves, and
+  # each rebase re-runs the whole pipeline. Rebase on demand instead.
+  echo "    rebase-strategy: disabled"
+  if [[ "$eco" == "github-actions" ]]; then
+    # Majors are not ignored here: an action pinned to a major that stopped
+    # receiving fixes is the risk, and the blast radius is CI, not the product.
+    # Grouped so a week of action bumps is one pull request, not one per action.
+    echo "    groups:"
+    echo "      actions:"
+    echo "        patterns: [\"*\"]"
+  else
     echo "    ignore:"
     echo "      - dependency-name: \"*\""
     echo "        update-types: [\"version-update:semver-major\"]"

@@ -3,9 +3,16 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.2"
+  version: "2.7.3"
   release_date: "2026-09-10"
   changelog:
+    - version: "2.7.3"
+      date: "2026-09-10"
+      changes:
+        - "scripts/gen-dependabot.sh groups the github-actions ecosystem into one pull request (`groups.actions.patterns: [\"*\"]`). The ecosystem previously got no grouping at all, so the first run on a real client repository opened three separate pull requests for three action bumps, two of them majors, each firing a full CI pipeline. Majors stay allowed for actions on purpose: an action pinned to a major that no longer receives fixes is the actual risk, and the blast radius of a bad action version is CI, not the product"
+        - "The generated open-pull-requests-limit drops from five to three per ecosystem, and applies to github-actions too, which had no limit. On a repository whose pipeline runs ten minutes per branch, five concurrent update branches is most of a build agent's morning"
+        - "`rebase-strategy: disabled` on every ecosystem. Dependabot rebases each open pull request whenever the base branch moves, and every rebase re-runs the whole pipeline: a busy default branch multiplies one weekly update batch into a build per merge per open pull request. A stale branch is rebased on demand from the pull request instead"
+        - "Package ecosystems are scheduled on Monday and github-actions on Tuesday, so a repository with both does not open every update branch in the same minute"
     - version: "2.7.2"
       date: "2026-09-10"
       changes:
