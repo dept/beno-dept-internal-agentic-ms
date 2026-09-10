@@ -3,9 +3,15 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.1"
+  version: "2.7.2"
   release_date: "2026-09-10"
   changelog:
+    - version: "2.7.2"
+      date: "2026-09-10"
+      changes:
+        - "Fix: scripts/validate.sh Reference Integrity no longer scans files git ignores. An editor's .history/ or a planning tool's .hermes/ holds stale copies of this standard's own prose, and every path they name resolved against a layout from months ago: the standards repository's self-check reported 82 broken references, all of them noise, which is enough to make the section useless as a gate. An ignored file is local scratch, not standard content"
+        - "Fix: a path git is told to ignore is absent on purpose and is no longer reported as a broken reference. A repository that documents a local-only file (.claude/settings.local.json, excluded through .git/info/exclude) is describing its layout correctly. check-ignore honours .gitignore and .git/info/exclude, which is where such files are listed"
+        - "Fix: the Maintainer Workflow Guard check accepts a guard that names one default branch. It demanded the template's `main || master` line verbatim, so a repository whose default branch is main and whose guard names only main failed a workflow that was already correct. Any `github.ref == refs/heads/main` or `refs/heads/master` comparison on the job closes the hole the guard exists for"
     - version: "2.7.1"
       date: "2026-09-10"
       changes:

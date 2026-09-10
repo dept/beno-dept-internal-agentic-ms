@@ -57,6 +57,13 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   prompt and its `ms-migration` command, the discovery agent, phase prompts `01`-`04`,
   `graphify-bootstrap.sh`). A project with a `.ai/.meta.yml` never gets those installed or
   refreshed, so a version refresh does not undo the migrate prompt's Phase 5 cleanup. The installer never deletes: that stays the operator's choice.
+- **`templates/workflows/maintainer.yml` is shipped but never installed.** It is not in
+  `ARTIFACTS`, so no `--update` refresh propagates a change to it and every already-migrated repo
+  keeps whatever workflow its migration wrote. That is why 2.6.0's default-branch guard was still
+  missing from eight client repos weeks later, and why `scripts/validate.sh` asserts the guard
+  instead of the installer fixing it. Adding it to `ARTIFACTS` would overwrite a project's tuned
+  schedule and cost gate, so a workflow change is applied per repo by hand, and the check is what
+  finds the repos that need it.
 - **A file-layout change is a breaking change.** Bump `config/standard-version.yml` and add a
   changelog entry naming what moved, so a repository migrated under an older version can be told
   what to do.
