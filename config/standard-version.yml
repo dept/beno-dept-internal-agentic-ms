@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.6"
+  version: "2.7.7"
   release_date: "2026-09-11"
   changelog:
+    - version: "2.7.7"
+      date: "2026-09-11"
+      changes:
+        - "The Maintainer Workflow Guard check no longer assumes the default branch is called `main` or `master`. It matched `github.ref == 'refs/heads/(main|master)'` and its failure message prescribed exactly that line, so a repository defaulting to `develop` had two bad options: write the prescribed guard, which is false on every scheduled run and silently disables the Maintainer Agent, or write a correct `develop` guard and fail the check. BENO-Optiver-Website is the first such repository. The check now accepts any `github.ref == 'refs/heads/<branch>'` comparison, because the hole the guard exists to close is a manual dispatch against an arbitrary branch and any single-branch pin closes it, and the fix message names the repo's own default branch rather than the template's line"
     - version: "2.7.6"
       date: "2026-09-11"
       changes:

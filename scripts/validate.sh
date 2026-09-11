@@ -408,17 +408,20 @@ echo ""
 WF="${PROJECT_DIR}/.github/workflows/maintainer.yml"
 if [[ -f "$WF" ]]; then
   echo -e "${BLUE}── Maintainer Workflow Guard ──${NC}"
-  # The guard has to pin the run to a default branch, not to both names of one. A repo whose
-  # default branch is `main` and whose guard names only `main` is guarded; demanding the template's
-  # `main || master` line of it fails a workflow that is already correct. Any `github.ref ==
-  # 'refs/heads/main'` or `'refs/heads/master'` comparison on the job's `if:` closes the hole the
-  # guard exists for, so accept either, and accept them combined.
-  if grep -qE "github\.ref[[:space:]]*==[[:space:]]*['\"]refs/heads/(main|master)['\"]" "$WF" 2>/dev/null; then
-    echo -e "  ${GREEN}✓${NC} maintainer.yml guards the maintain job to the default branch (main/master)"
+  # The guard has to pin the run to one named branch, not to a particular spelling of it. A repo
+  # whose default branch is `main` and whose guard names only `main` is guarded; demanding the
+  # template's `main || master` line of it fails a workflow that is already correct. Nor is the
+  # default branch always one of those two: BENO-Optiver-Website defaults to `develop`, where a
+  # `main || master` guard is false on every scheduled run and silently disables the Maintainer.
+  # Any `github.ref == 'refs/heads/<branch>'` comparison closes the hole the guard exists for,
+  # which is a manual dispatch against an arbitrary branch, so accept any branch name.
+  if grep -qE "github\.ref[[:space:]]*==[[:space:]]*['\"]refs/heads/[A-Za-z0-9._/-]+['\"]" "$WF" 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} maintainer.yml guards the maintain job to a named branch"
     PASSED=$((PASSED + 1))
   else
     echo -e "  ${RED}✗${NC} maintainer.yml is missing the default-branch job guard"
-    echo -e "    ${YELLOW}Fix:${NC} add \`if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'\` at the maintain job level"
+    echo -e "    ${YELLOW}Fix:${NC} add \`if: github.ref == 'refs/heads/<default-branch>'\` at the maintain job level"
+    echo -e "    ${YELLOW}     ${NC} the template ships \`'refs/heads/main' || github.ref == 'refs/heads/master'\`; name this repo's default branch instead if it is neither"
     FAILED=$((FAILED + 1))
   fi
   echo ""
