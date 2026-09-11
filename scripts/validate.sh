@@ -127,20 +127,20 @@ REQUIRED_FILES=(
 for file in "${REQUIRED_FILES[@]}"; do
   if [[ -f "${AI_DIR}/${file}" ]]; then
     echo -e "  ${GREEN}✓${NC} ${file}"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${RED}✗${NC} ${file} — MISSING"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
   fi
 done
 
 # Check recommended files
 if [[ -f "${AI_DIR}/.meta.yml" ]]; then
   echo -e "  ${GREEN}✓${NC} .meta.yml (recommended)"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo -e "  ${YELLOW}△${NC} .meta.yml — missing (recommended for version tracking)"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 fi
 
 echo ""
@@ -173,10 +173,10 @@ for file in "${REQUIRED_FILES[@]}"; do
 
   if [[ -z "$issues" ]]; then
     echo -e "  ${GREEN}✓${NC} ${file} — OK"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} ${file} —${issues}"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 done
 
@@ -189,10 +189,10 @@ echo -e "${BLUE}── File-Specific Checks ──${NC}"
 if [[ -f "${AI_DIR}/architecture.md" ]]; then
   if grep -qi 'mermaid' "${AI_DIR}/architecture.md" 2>/dev/null; then
     echo -e "  ${GREEN}✓${NC} architecture.md has diagram"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} architecture.md — no mermaid diagram found"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 fi
 
@@ -200,10 +200,10 @@ fi
 if [[ -f "${AI_DIR}/dependencies.md" ]]; then
   if grep -q '|' "${AI_DIR}/dependencies.md" 2>/dev/null; then
     echo -e "  ${GREEN}✓${NC} dependencies.md has table"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} dependencies.md — no table found (expected | delimiters)"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 fi
 
@@ -214,10 +214,10 @@ fi
 if [[ -f "${AI_DIR}/agent-registry.md" ]]; then
   if grep -qE '^\|.*(\.md|\.json|\.agents/|\.claude/|\.github/)' "${AI_DIR}/agent-registry.md" 2>/dev/null; then
     echo -e "  ${GREEN}✓${NC} agent-registry.md lists configured agentic artifacts"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} agent-registry.md has no agent, skill, or MCP rows"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 fi
 
@@ -228,7 +228,7 @@ if command -v git &>/dev/null && git -C "$PROJECT_DIR" rev-parse --git-dir &>/de
   skill_ts=$(git -C "$PROJECT_DIR" log -1 --format=%ct -- ".agents/skills/codebase-overview/SKILL.md" 2>/dev/null || echo "")
   if [[ -n "$arch_ts" ]] && [[ -n "$skill_ts" ]] && [[ "$arch_ts" -gt "$skill_ts" ]]; then
     echo -e "  ${YELLOW}△${NC} codebase-overview skill is older than .ai/architecture.md, regenerate it"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 fi
 
@@ -256,22 +256,22 @@ CURRENT_VERSION=$(read_version_field "${PROJECT_DIR}/config/standard-version.yml
 
 if [[ -z "$RECORDED_VERSION" ]] || [[ "$RECORDED_VERSION" = "null" ]]; then
   echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records no standard_version, cannot check for drift"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 elif [[ -z "$CURRENT_VERSION" ]]; then
   echo -e "  ${YELLOW}△${NC} config/standard-version.yml missing or has no version, cannot check for drift"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 elif [[ "$RECORDED_VERSION" = "$CURRENT_VERSION" ]]; then
   echo -e "  ${GREEN}✓${NC} standard ${CURRENT_VERSION} (matches config/standard-version.yml)"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   oldest=$(printf '%s\n%s\n' "$RECORDED_VERSION" "$CURRENT_VERSION" | sort -V | head -1)
   if [[ "$oldest" = "$RECORDED_VERSION" ]]; then
     echo -e "  ${YELLOW}△${NC} project is on standard ${RECORDED_VERSION}, current is ${CURRENT_VERSION}"
     echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   else
     echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records standard ${RECORDED_VERSION}, ahead of the vendored ${CURRENT_VERSION}"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 fi
 
@@ -296,27 +296,27 @@ if command -v git &>/dev/null && git -C "$PROJECT_DIR" rev-parse --git-dir &>/de
 
       if [[ "$age_days" -gt 90 ]]; then
         echo -e "  ${RED}✗${NC} .ai/ last updated ${age_days} days ago (critical: >90 days)"
-        ((FAILED++))
+        FAILED=$((FAILED + 1))
       elif [[ "$age_days" -gt 30 ]]; then
         echo -e "  ${YELLOW}△${NC} .ai/ last updated ${age_days} days ago (warning: >30 days)"
-        ((WARNED++))
+        WARNED=$((WARNED + 1))
       else
         echo -e "  ${GREEN}✓${NC} .ai/ last updated ${age_days} days ago"
-        ((PASSED++))
+        PASSED=$((PASSED + 1))
       fi
 
       if [[ "$drift_days" -gt 14 ]]; then
         echo -e "  ${YELLOW}△${NC} Repo has ${drift_days} days of commits since last .ai/ update"
-        ((WARNED++))
+        WARNED=$((WARNED + 1))
       fi
     fi
   else
     echo -e "  ${YELLOW}△${NC} No git history for .ai/ (new folder?)"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 else
   echo -e "  ${YELLOW}△${NC} Not a git repo — skipping staleness check"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 fi
 
 echo ""
@@ -336,10 +336,10 @@ for entry in "${WIRING[@]}"; do
   path="${entry%%|*}"; label="${entry##*|}"
   if [[ -f "${PROJECT_DIR}/${path}" ]]; then
     echo -e "  ${GREEN}✓${NC} ${path} (${label})"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} ${path} — missing (${label} won't auto-load .ai/)"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 done
 
@@ -347,17 +347,17 @@ done
 if [[ -f "${PROJECT_DIR}/CLAUDE.md" ]]; then
   if grep -q '@AGENTS.md' "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null; then
     echo -e "  ${GREEN}✓${NC} CLAUDE.md imports AGENTS.md"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} CLAUDE.md has no @AGENTS.md import (instructions will drift)"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 fi
 
 # Skills moved to .agents/skills in standard 2.0.0. Flag the 1.x location if it survives.
 if [[ -d "${PROJECT_DIR}/.github/skills" ]]; then
   echo -e "  ${YELLOW}△${NC} .github/skills exists (standard 1.x): move its skills to .agents/skills and delete it"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 fi
 
 # Mirror parity: .agents/skills is the skill source, .github/* the agent and prompt source;
@@ -385,10 +385,10 @@ check_mirror() {
   mir_n=$(count_entries "${PROJECT_DIR}/${mirror}" "$kind")
   if [[ "${mir_n:-0}" -ge "$src_n" ]]; then
     echo -e "  ${GREEN}✓${NC} ${what}: ${src} (${src_n}) → ${mirror} (${mir_n})"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${YELLOW}△${NC} ${what}: ${src} has ${src_n} but ${mirror} has ${mir_n:-0} — mirror out of sync"
-    ((WARNED++))
+    WARNED=$((WARNED + 1))
   fi
 }
 check_mirror ".github/agents"  ".claude/agents"   md   "Agents"
@@ -415,11 +415,11 @@ if [[ -f "$WF" ]]; then
   # guard exists for, so accept either, and accept them combined.
   if grep -qE "github\.ref[[:space:]]*==[[:space:]]*['\"]refs/heads/(main|master)['\"]" "$WF" 2>/dev/null; then
     echo -e "  ${GREEN}✓${NC} maintainer.yml guards the maintain job to the default branch (main/master)"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   else
     echo -e "  ${RED}✗${NC} maintainer.yml is missing the default-branch job guard"
     echo -e "    ${YELLOW}Fix:${NC} add \`if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'\` at the maintain job level"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
   fi
   echo ""
 fi
@@ -494,17 +494,17 @@ echo -e "${BLUE}── Confluence Metadata Schema ──${NC}"
 META="${AI_DIR}/.meta.yml"
 if [[ ! -f "$META" ]]; then
   echo -e "  ${YELLOW}△${NC} no .ai/.meta.yml — cannot check Confluence schema"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 elif ! grep -qE '^[[:space:]]*confluence:' "$META" 2>/dev/null; then
   echo -e "  ${GREEN}✓${NC} no confluence: block (Confluence sync not configured)"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 elif grep -qE '^[[:space:]]+landing:([[:space:]]|$)' "$META" 2>/dev/null; then
   echo -e "  ${GREEN}✓${NC} confluence.pages is a map with a landing key (confluence.pages.landing.id is readable)"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo -e "  ${YELLOW}△${NC} confluence: block has no pages.landing map key: the confluence-axi skill reads confluence.pages.landing.id and will resolve nothing"
   echo -e "    ${YELLOW}Fix:${NC} make pages a map keyed landing/overview/architecture/environments/onboarding, each { title, id }; see docs/confluence-page-standard.md. Drop any pages: list and top-level landing_title:."
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 fi
 
 echo ""
@@ -540,7 +540,7 @@ while IFS= read -r f; do SS_AI_FILES+=("$f"); done < <(
 
 if [[ "${#SS_AI_FILES[@]}" -eq 0 ]]; then
   echo -e "  ${YELLOW}△${NC} no .ai/*.md files to check"
-  ((WARNED++))
+  WARNED=$((WARNED + 1))
 else
   ss_dupe_headings=$(awk -v allow="$SS_HEADING_ALLOWLIST" -v root="${PROJECT_DIR}/" '
     /^##[[:space:]]/ {
@@ -560,12 +560,12 @@ else
     while IFS=$'\t' read -r heading files; do
       [[ -n "$heading" ]] || continue
       echo -e "  ${RED}✗${NC} \"## ${heading}\" is claimed by ${files}"
-      ((FAILED++))
+      FAILED=$((FAILED + 1))
     done <<< "$ss_dupe_headings"
     echo -e "    ${YELLOW}Fix:${NC} standards/writing-rules.md §4b names the one owner. The other file gets a one-line pointer."
   else
     echo -e "  ${GREEN}✓${NC} every '## ' heading in .ai/ is claimed by one file"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   fi
 
   # Repeated command lines across places. A "place" is a file, except that a skill directory is
@@ -611,12 +611,12 @@ else
     while IFS=$'\t' read -r count cmd places; do
       [[ -n "$cmd" ]] || continue
       echo -e "  ${YELLOW}△${NC} \`${cmd}\` appears in ${count} places: ${places}"
-      ((WARNED++))
+      WARNED=$((WARNED + 1))
     done <<< "$ss_dupe_cmds"
     echo -e "    ${YELLOW}Fix:${NC} .ai/onboarding.md owns the command cheatsheet. Elsewhere, a pointer, or in AGENTS.md a capped block naming it."
   else
     echo -e "  ${GREEN}✓${NC} no command line is written out in more than one place"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
   fi
 fi
 

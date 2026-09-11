@@ -91,6 +91,10 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
 - **Every script runs under `set -euo pipefail`.** A `grep ... | head | sed` reader that finds
   nothing exits non-zero, and inside `$(...)` that kills the whole script with no message, skipping
   every later check. End such pipelines with `|| true` when a no-match is a legitimate result.
+  Arithmetic has the same edge: `((COUNT++))` returns the status of the value it *read*, so the
+  first bump from zero returns 1, and when that bump is the last statement of a function the
+  function returns 1 and `set -e` kills the caller. Write `COUNT=$((COUNT + 1))`, which is always
+  status zero. This hid every check after the first warning in `validate.sh` until 2.7.6.
 - **`scripts/validate.sh` has two modes.** Against a target repository it runs every section.
   Against this repository (no `.ai/`, but `standards/` and `config/standard-version.yml` present)
   it runs the reference-integrity section alone, over this repo's own layout, and fails on a path

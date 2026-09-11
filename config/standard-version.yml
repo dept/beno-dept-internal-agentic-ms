@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.5"
+  version: "2.7.6"
   release_date: "2026-09-11"
   changelog:
+    - version: "2.7.6"
+      date: "2026-09-11"
+      changes:
+        - "`scripts/validate.sh` no longer exits silently on its own first warning. Every counter bump was `((PASSED++))`, `((WARNED++))` or `((FAILED++))`, and bash gives a post-increment expression the status of the value it read, so `((WARNED++))` with `WARNED` still at zero returns 1. Where that bump is the last statement of a helper such as `check_mirror`, the helper returns 1, the caller is a simple command, and `set -e` kills the script mid-run: no Results line, no Status line, exit 1, and every check after that point never runs. It surfaced on dtnl-bpd-corporate, the first repository clean enough to reach the Multi-Client Wiring section with no earlier warning, where a mirror warning that should have been cosmetic read as a hard CI failure with no output to explain it. All 42 sites are now `X=$((X + 1))`, which is always status zero. Verified identical output on five repositories that already passed, and dtnl-bpd-corporate goes from a truncated exit 1 to 35 passed, 2 warnings, 0 failed"
     - version: "2.7.5"
       date: "2026-09-11"
       changes:
