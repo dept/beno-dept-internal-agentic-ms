@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.3"
-  release_date: "2026-09-10"
+  version: "2.7.4"
+  release_date: "2026-09-11"
   changelog:
+    - version: "2.7.4"
+      date: "2026-09-11"
+      changes:
+        - "Every conditional test in `scripts/validate.sh` uses `[[ ]]` instead of `[ ]`. The script is vendored into every migrated repository, so a client pipeline that runs SonarQube scans it as first-party source and raises its shell rule on each single-bracket test: the Fastned pull request alone reported three, and a larger version jump reports more. `scripts/install.sh` and `scripts/mirror-claude.sh` already used `[[ ]]`, so this makes the shipped scripts consistent. Output is byte-identical, verified against five migrated repositories, and every comparison already quoted both sides so no pattern-matching behaviour changes"
+        - "`scripts/scaffold.sh` and `scripts/version-report.sh` converted with it. Neither is vendored, so no client scanner sees them, but leaving them on the old form is what reintroduces the rule the next time a check moves between scripts"
     - version: "2.7.3"
       date: "2026-09-10"
       changes:

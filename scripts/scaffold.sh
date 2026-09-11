@@ -82,14 +82,14 @@ echo ""
 
 # ── Validate prerequisites ─────────────────────────────────
 # Verify templates directory exists
-if [ ! -d "$TEMPLATES_DIR" ]; then
+if [[ ! -d "$TEMPLATES_DIR" ]]; then
   echo -e "${RED}ERROR:${NC} Templates directory not found: ${TEMPLATES_DIR}"
   echo -e "${YELLOW}Hint:${NC} Use --templates-dir /path/to/dept-agentic-standards/templates"
   exit 1
 fi
 
 # Verify project directory exists (or can be created)
-if [ ! -d "$PROJECT_DIR" ]; then
+if [[ ! -d "$PROJECT_DIR" ]]; then
   echo -e "${YELLOW}NOTE:${NC} Project directory does not exist, creating: ${PROJECT_DIR}"
   mkdir -p "$PROJECT_DIR"
 fi
@@ -105,7 +105,7 @@ copy_if_new() {
   # Ensure parent directory exists
   mkdir -p "$(dirname "$dest")"
 
-  if [ -f "$dest" ]; then
+  if [[ -f "$dest" ]]; then
     echo -e "  ${YELLOW}⊘${NC} ${label} — already exists, skipping"
     SKIPPED=$((SKIPPED + 1))
   else
@@ -148,7 +148,7 @@ OUTPUT_NAMES=(
 for i in "${!TEMPLATE_NAMES[@]}"; do
   template="${TEMPLATE_NAMES[$i]}"
   target="${OUTPUT_NAMES[$i]}"
-  if [ -f "${TEMPLATES_DIR}/${template}" ]; then
+  if [[ -f "${TEMPLATES_DIR}/${template}" ]]; then
     copy_if_new "${TEMPLATES_DIR}/${template}" "${AI_DIR}/${target}" ".ai/${target}"
   else
     echo -e "  ${RED}✗${NC} Template not found: ${template}"
@@ -166,18 +166,18 @@ echo ""
 echo -e "${BLUE}── Generating .meta.yml ──${NC}"
 
 META_FILE="${AI_DIR}/.meta.yml"
-if [ -f "$META_FILE" ]; then
+if [[ -f "$META_FILE" ]]; then
   echo -e "  ${YELLOW}⊘${NC} .ai/.meta.yml — already exists, skipping"
   SKIPPED=$((SKIPPED + 1))
 else
   # Parse standard version from config (default fallback: 1.0.0)
   STANDARD_VERSION="1.0.0"
   VERSION_FILE="${CONFIG_DIR}/standard-version.yml"
-  if [ -f "$VERSION_FILE" ]; then
+  if [[ -f "$VERSION_FILE" ]]; then
     # Handles both quoted and unquoted version values:
     #   version: "1.0.0"  or  version: 1.0.0
     parsed=$(grep -E '^\s*version:' "$VERSION_FILE" | head -1 | sed 's/.*version:[[:space:]]*//' | sed 's/^"//' | sed 's/"$//' | tr -d '[:space:]')
-    if [ -n "$parsed" ]; then
+    if [[ -n "$parsed" ]]; then
       STANDARD_VERSION="$parsed"
     fi
   fi
@@ -188,7 +188,7 @@ else
   # Project name from directory basename
   PROJECT_NAME=$(basename "$(cd "$PROJECT_DIR" && pwd)")
 
-  if [ -f "${TEMPLATES_DIR}/meta.template.yml" ]; then
+  if [[ -f "${TEMPLATES_DIR}/meta.template.yml" ]]; then
     # Substitute placeholders in the meta template
     sed -e "s/{{STANDARD_VERSION}}/${STANDARD_VERSION}/g" \
         -e "s/{{AGENT_VERSION}}/scaffold-1.0/g" \
@@ -236,7 +236,7 @@ echo -e "${BLUE}── Wiring IDE configurations ──${NC}"
 
 # AGENTS.md: the one authored instruction file. Read by Copilot (GitHub and VS Code),
 # Codex and Cursor natively, and by Claude Code through the import in CLAUDE.md.
-if [ -f "${TEMPLATES_DIR}/AGENTS.template.md" ]; then
+if [[ -f "${TEMPLATES_DIR}/AGENTS.template.md" ]]; then
   copy_if_new "${TEMPLATES_DIR}/AGENTS.template.md" \
     "${PROJECT_DIR}/AGENTS.md" \
     "AGENTS.md"
@@ -245,7 +245,7 @@ else
 fi
 
 # Claude Code: CLAUDE.md, an import of AGENTS.md
-if [ -f "${TEMPLATES_DIR}/CLAUDE.template.md" ]; then
+if [[ -f "${TEMPLATES_DIR}/CLAUDE.template.md" ]]; then
   copy_if_new "${TEMPLATES_DIR}/CLAUDE.template.md" \
     "${PROJECT_DIR}/CLAUDE.md" \
     "CLAUDE.md"
@@ -259,7 +259,7 @@ echo ""
 # Optional agent definition files for GitHub Copilot Agents.
 echo -e "${BLUE}── Agent templates ──${NC}"
 
-if [ -f "${TEMPLATES_DIR}/agents/support.template.md" ]; then
+if [[ -f "${TEMPLATES_DIR}/agents/support.template.md" ]]; then
   copy_if_new "${TEMPLATES_DIR}/agents/support.template.md" \
     "${PROJECT_DIR}/.github/agents/support.agent.md" \
     ".github/agents/support.agent.md"

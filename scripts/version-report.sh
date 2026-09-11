@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 VERSION_FILE="${REPO_DIR}/config/standard-version.yml"
 
-if [ $# -eq 0 ]; then
+if [[ $# -eq 0 ]]; then
   echo "Usage: $(basename "$0") <project-dir> [more-project-dirs...]"
   echo ""
   echo "Example: $(basename "$0") ~/work/*/"
@@ -36,13 +36,13 @@ read_version_field() {
   # trailing `|| true`, grep's no-match exit code propagates through pipefail and set -e kills
   # the script inside the command substitution, with no error message.
   local file="$1" field="$2"
-  [ -f "$file" ] || return 0
+  [[ -f "$file" ]] || return 0
   grep -E "^[[:space:]]*${field}:" "$file" 2>/dev/null | head -1 \
     | sed "s/.*${field}:[[:space:]]*//; s/\"//g" | tr -d '[:space:]' || true
 }
 
 CURRENT_VERSION=$(read_version_field "$VERSION_FILE" "version")
-if [ -z "$CURRENT_VERSION" ]; then
+if [[ -z "$CURRENT_VERSION" ]]; then
   echo -e "${RED}ERROR:${NC} no version found in ${VERSION_FILE}"
   exit 1
 fi
@@ -64,18 +64,18 @@ for project in "$@"; do
   name=$(basename "$(cd "$project" 2>/dev/null && pwd || echo "$project")")
   recorded=$(read_version_field "${project}/.ai/.meta.yml" "standard_version")
 
-  if [ ! -d "$project" ]; then
+  if [[ ! -d "$project" ]]; then
     printf '  %-40s %-12s %-12s %b\n' "$name" "-" "$CURRENT_VERSION" "${YELLOW}unknown (no such directory)${NC}"
     UNKNOWN_COUNT=$((UNKNOWN_COUNT + 1))
-  elif [ -z "$recorded" ] || [ "$recorded" = "null" ]; then
+  elif [[ -z "$recorded" ]] || [[ "$recorded" = "null" ]]; then
     printf '  %-40s %-12s %-12s %b\n' "$name" "none" "$CURRENT_VERSION" "${YELLOW}unknown (no .ai/.meta.yml version)${NC}"
     UNKNOWN_COUNT=$((UNKNOWN_COUNT + 1))
-  elif [ "$recorded" = "$CURRENT_VERSION" ]; then
+  elif [[ "$recorded" = "$CURRENT_VERSION" ]]; then
     printf '  %-40s %-12s %-12s %b\n' "$name" "$recorded" "$CURRENT_VERSION" "${GREEN}no${NC}"
     OK_COUNT=$((OK_COUNT + 1))
   else
     oldest=$(printf '%s\n%s\n' "$recorded" "$CURRENT_VERSION" | sort -V | head -1)
-    if [ "$oldest" = "$recorded" ]; then
+    if [[ "$oldest" = "$recorded" ]]; then
       printf '  %-40s %-12s %-12s %b\n' "$name" "$recorded" "$CURRENT_VERSION" "${RED}yes${NC}"
       BEHIND_COUNT=$((BEHIND_COUNT + 1))
     else
@@ -88,7 +88,7 @@ done
 echo ""
 echo -e "  ${GREEN}${OK_COUNT} up to date${NC} | ${RED}${BEHIND_COUNT} behind${NC} | ${YELLOW}${UNKNOWN_COUNT} unknown${NC}"
 
-if [ "$BEHIND_COUNT" -gt 0 ]; then
+if [[ "$BEHIND_COUNT" -gt 0 ]]; then
   echo -e "  ${YELLOW}Refresh a project with:${NC} bash scripts/install.sh <project-dir> --update"
   exit 1
 fi

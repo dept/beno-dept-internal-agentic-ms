@@ -57,6 +57,14 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   prompt and its `ms-migration` command, the discovery agent, phase prompts `01`-`04`,
   `graphify-bootstrap.sh`). A project with a `.ai/.meta.yml` never gets those installed or
   refreshed, so a version refresh does not undo the migrate prompt's Phase 5 cleanup. The installer never deletes: that stays the operator's choice.
+- **A vendored script is scanned by the client's linters, not just ours.** `scripts/validate.sh`,
+  `scripts/mirror-claude.sh`, `scripts/gen-dependabot.sh` and `scripts/graphify-bootstrap.sh` land
+  inside the target repository, so a client pipeline running SonarQube treats them as first-party
+  source and raises its shell rules on them: single-bracket `[ ]` tests produced a finding per line
+  across the 2.7.3 refresh pull requests. Use `[[ ]]`, and prefer the form a generic shell linter
+  accepts over the shortest one, because the finding lands on a client's dashboard where nobody can
+  explain it.
+
 - **`templates/workflows/maintainer.yml` is shipped but never installed.** It is not in
   `ARTIFACTS`, so no `--update` refresh propagates a change to it and every already-migrated repo
   keeps whatever workflow its migration wrote. That is why 2.6.0's default-branch guard was still
