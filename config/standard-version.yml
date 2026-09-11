@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.5.0"
-  release_date: "2026-08-26"
+  version: "2.5.1"
+  release_date: "2026-09-11"
   changelog:
+    - version: "2.5.1"
+      date: "2026-09-11"
+      changes:
+        - "scripts/graphify-bootstrap.sh's no-key fallback actually forces code-only mode now. It detected the no-LLM-key case and rewrote .graphifyignore to exclude docs/papers/images, but Graphify's own preflight counts those files before ignore patterns are applied and aborted anyway with \"no LLM API key found (... file(s) need semantic extraction)\", leaving graphify-out/ empty and Discovery silently falling back to raw-repository scanning with no warning that the accelerator never ran. Found on a real migration (dtnl-bpd-platform: 1950 doc/image files, all correctly listed in .graphifyignore, still triggered the abort). Fix: enable_no_llm_code_only_mode now also appends --code-only to the actual graphify invocation, the CLI's own documented escape hatch, instead of relying on .graphifyignore alone to suppress the scan. Verified against a scratch repo (graph.json produced, 0 docs/images) and against dtnl-bpd-platform (21098 nodes, 47131 edges from a --code-only run that previously produced nothing)"
     - version: "2.5.0"
       date: "2026-08-26"
       changes:
