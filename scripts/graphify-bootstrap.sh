@@ -180,11 +180,28 @@ path.write_text(updated, encoding='utf-8')
 PY
 }
 
+add_code_only_arg() {
+  # .graphifyignore excludes alone do not stop Graphify's own preflight check:
+  # it counts doc/paper/image files before ignore patterns are applied and
+  # aborts with "no LLM API key found (... file(s) need semantic extraction)"
+  # even when every one of those files is excluded. The documented escape
+  # hatch is the CLI's own --code-only flag, so the no-key fallback must pass
+  # it explicitly rather than relying on .graphifyignore to suppress the scan.
+  local arg
+  for arg in "${EXTRA_ARGS[@]:-}"; do
+    if [[ "$arg" == "--code-only" ]]; then
+      return 0
+    fi
+  done
+  EXTRA_ARGS+=(--code-only)
+}
+
 enable_no_llm_code_only_mode() {
   local ignore_file="$PROJECT_DIR/.graphifyignore"
 
   ensure_graphifyignore
   remove_temp_no_llm_exclusions
+  add_code_only_arg
 
   cat >> "$ignore_file" <<EOF
 
@@ -337,6 +354,8 @@ cd "$PROJECT_DIR"
 
 ensure_graphifyignore
 
+EXTRA_ARGS=("$@")
+
 if ! has_graphify_llm_key && repo_has_semantic_files; then
   cat <<'EOF'
 No supported Graphify LLM API key detected.
@@ -359,8 +378,6 @@ EOF
 fi
 
 trap cleanup_graphify_bootstrap EXIT
-
-EXTRA_ARGS=("$@")
 
 run_graphify() {
   # Wrapped with `|| true` at call sites so a non-zero exit (e.g. a semantic
