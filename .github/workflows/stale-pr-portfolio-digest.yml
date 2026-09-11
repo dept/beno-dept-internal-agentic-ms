@@ -1,9 +1,8 @@
 name: Stale PR portfolio digest
 
-# One weekly Slack message for the client managers, covering every migrated project.
-# This repository defines what "migrated" means, so it is also the one that reports on
-# it: a project qualifies when its repository has a .ai/.meta.yml, which means the list
-# maintains itself and a project joins the digest the Monday after it migrates.
+# One weekly Slack message for the client managers, covering the Managed Services
+# portfolio. The repositories reported on are listed in config/portfolio.yml, which is
+# the one place to add or remove a project.
 #
 # Repo-only CI, not standard content: nothing here is installed into a target repository,
 # so it needs no version bump (see .github/workflows/version-bump.yml).
@@ -21,21 +20,24 @@ on:
         required: false
         type: string
 
-permissions: {}
+permissions:
+  contents: read # checkout, to read config/portfolio.yml
 
 jobs:
   digest:
     runs-on: ubuntu-latest
     steps:
-      - name: Report stale PRs across migrated projects
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Report stale PRs across the portfolio
         env:
           # GITHUB_TOKEN only ever sees this repository, so reading other repositories
-          # needs a token of its own: a fine-grained PAT or App token with Contents: read
-          # and Pull requests: read on the migrated repositories.
+          # needs a token of its own: a fine-grained PAT or App token with Pull requests:
+          # read on the listed repositories.
           GH_TOKEN: ${{ secrets.PORTFOLIO_GH_TOKEN }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL: ${{ inputs.channel || vars.SLACK_MANAGER_CHANNEL }}
-          ORG: ${{ github.repository_owner }}
+          PORTFOLIO_FILE: config/portfolio.yml
           STALE_DAYS: 5 # A PR older than this needs a manager to look at it.
           MIN_PRS: 2 # Below this the backlog is normal, so the project is left out.
         run: |
@@ -61,25 +63,32 @@ jobs:
 
           cutoff=$(date -u -d "$STALE_DAYS days ago" +%Y-%m-%dT%H:%M:%SZ)
 
-          # One code-search call finds every migrated repository, rather than a hand-kept list
-          # or a contents probe against all few hundred repositories in the org.
-          mapfile -t repos < <(gh api -X GET search/code \
-            -f q="org:$ORG path:.ai filename:.meta.yml" -f per_page=100 \
-            --jq '.items[].repository.full_name' | sort -u)
+          # The list is a plain YAML sequence read with grep, matching how version-bump.yml
+          # reads config/standard-version.yml: no yq or python dependency on the runner.
+          # The last filter keeps only owner/name pairs, so a stray comment or a malformed
+          # line is skipped instead of becoming a doomed API call.
+          repos=$(grep -E '^[[:space:]]*-[[:space:]]+' "$PORTFOLIO_FILE" \
+            | sed -E 's/^[[:space:]]*-[[:space:]]+//; s/[[:space:]]*#.*$//; s/["'"'"']//g' \
+            | grep -E '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$' || true)
 
-          if [[ ${#repos[@]} -eq 0 ]]; then
-            echo "::warning::Code search returned no migrated repositories. Check PORTFOLIO_GH_TOKEN's scope."
+          if [[ -z "$repos" ]]; then
+            echo "::warning::No projects listed in $PORTFOLIO_FILE. Nothing to report on."
             exit 0
           fi
-          echo "Found ${#repos[@]} migrated project(s)."
+          echo "Checking $(wc -l <<<"$repos" | tr -d ' ') project(s) from $PORTFOLIO_FILE."
 
           : > rows.jsonl
-          for repo in "${repos[@]}"; do
+          while read -r repo; do
+            # A repository the token cannot read must not be reported as a healthy zero.
+            if ! gh api "repos/$repo" --silent >/dev/null 2>&1; then
+              echo "::warning::Cannot read $repo with PORTFOLIO_GH_TOKEN. Skipping it."
+              continue
+            fi
             count=$(gh pr list --repo "$repo" --state open --limit 100 \
               --json isDraft,createdAt \
               | jq --arg c "$cutoff" '[.[] | select(.isDraft == false and .createdAt < $c)] | length')
             jq -nc --arg repo "$repo" --argjson count "$count" '{repo: $repo, count: $count}' >> rows.jsonl
-          done
+          done <<<"$repos"
 
           text=$(jq -rs --argjson min "$MIN_PRS" --arg days "$STALE_DAYS" '
             map(select(.count >= $min)) | sort_by(-.count)

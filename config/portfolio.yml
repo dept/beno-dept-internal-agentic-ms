@@ -1,0 +1,35 @@
+# Managed Services portfolio: the repositories the stale PR digest reports on.
+#
+# Read by .github/workflows/stale-pr-portfolio-digest.yml, which posts one weekly
+# Slack message to the client managers. Adding a project here is the whole of
+# joining the digest; removing a line is the whole of leaving it.
+#
+# This list is deliberately not standard content: nothing here is installed into a
+# target repository, and version-bump.yml excludes the file so that adding a project
+# does not require bumping the standard version.
+#
+# To find migrated projects that are not yet listed, from a session with org access:
+#
+#   gh api -X GET search/code -f q='org:dept path:.ai filename:.meta.yml' \
+#     -f per_page=100 --jq '.items[].repository.full_name' | sort -u
+#
+# One `owner/name` per line. Blank lines and comments are ignored, and a line that
+# is not an owner/name pair is skipped rather than queried.
+
+projects:
+  - dept/beno-artis-website
+  - dept/beno-centrica-website
+  - dept/beno-unicef-website
+  - dept/dtnl-asm-corporate-website
+  - dept/dtnl-fastned-website
+  - dept/dtnl-florensis-foot-2022
+  - dept/dtnl-lucardi
+  - dept/dtnl-mauritshuis-website
+  - dept/dtnl-milieucentraal-websiteu8
+  - dept/dtnl-mojo-website
+  - dept/dtnl-philharmonie-lux-website
+  - dept/dtnl-via-outlets-website
+  - dept/dtnl-wijtechniek-website
+  - dept/hogeschool-rotterdam-website
+  - dept/hyva-website
+  - dept/milieucentraal-verbeteruwhuis

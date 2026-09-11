@@ -23,9 +23,13 @@ jobs:
           # Standard content is everything the standard installs into a target repository.
           # Repo-only files (docs, examples, CI, the readme and wiring files) do not need a bump,
           # and neither does a change limited to the version file itself.
+          # config/portfolio.yml is repo-only too: it lists the repositories this repo's own
+          # reporting workflow reads, is not in install.sh's ARTIFACTS, and would otherwise make
+          # adding one Managed Services project to a digest a standard version bump.
           changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
           standard_changed=$(printf '%s\n' "$changed" \
             | grep -Ev '^(docs/|examples/|\.github/|README\.md|AGENTS\.md|CLAUDE\.md|\.gitignore$)' \
+            | grep -v '^config/portfolio\.yml$' \
             | grep -v "^${VERSION_FILE}$" || true)
 
           if [ -z "$standard_changed" ]; then
