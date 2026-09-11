@@ -189,24 +189,25 @@ Use the Atlassian Labs **Mermaid Diagrams Viewer** Forge app (marketplace app `1
 
 Do **not** use the "Mermaid Chart for Confluence" macro or the Stratus Add-ons equivalent. Those apps cache a pre-rendered SVG inside the macro configuration. An API write cannot produce that cache, so the diagram stays blank until a human opens the editor and re-saves the macro.
 
-The page shape is a collapsed expand holding the source, immediately followed by the viewer macro. Write it in ADF:
+**This is an ADF-only node, and `confluence-axi` cannot write ADF.** `page create`/`page update` are storage-format only (confirmed against `confluence-axi` 1.0.4, the latest published version — no `--format` flag exists on either). Raw `<ac:adf-extension>`/`<ac:adf-parameter>` storage XML — the usual escape hatch for ADF-only content in a storage-format document — does not work either: Confluence's storage-format serialization of an extension's nested parameters **kebab-cases or flattens every key** (`guestParams` came back as `guestparams` in one attempt and `guest-params` in another, tested directly). The Mermaid app reads `parameters.guestParams.index` case-sensitively, so either mangled form makes it unresolvable, producing *Error while loading diagram* even though the write "succeeded" with no error.
 
-```json
-{"type":"expand","attrs":{"title":"Diagram source"},"content":[
-  {"type":"codeBlock","attrs":{"language":"ruby"},
-   "content":[{"type":"text","text":"flowchart LR\n    User[User / Editor] --> Frontend[Frontend App]\n    Frontend --> API[Backend / API Layer]\n    API --> DB[(Primary Database)]"}]}]}
-{"type":"extension","attrs":{
-  "layout":"default",
-  "extensionType":"com.atlassian.ecosystem",
-  "extensionKey":"23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
-  "text":"Mermaid diagram",
-  "parameters":{
-    "layout":"extension",
-    "guestParams":{"index":0},
-    "forgeEnvironment":"PRODUCTION",
-    "extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
-    "extensionTitle":"Mermaid diagram"}}}
+**The write that actually works** goes through an MCP that speaks the Atlassian **HTML content format** (`@atlassian/atlassian-html-format` — e.g. a first-party Atlassian/Rovo connector's `createConfluencePage`/`updateConfluencePage` tools, when the current session has one; this is a session-level capability, not the community `atlassian`/`mcp-atlassian` server Phase 4 installs into the target repo's `.mcp.json`, whose ADF-write fidelity for extensions is unverified). That format encodes the extension's parameters as a single JSON-encoded `data-parameters` HTML attribute — parsed as JSON, not decomposed into XML elements — which is exactly what preserves the casing. Confirmed working, end to end, against a live `dept-nl.atlassian.net` page: the stored ADF read back afterward showed `"guestParams":{"index":0}` (camelCase, `index` as a number), `"forgeEnvironment"`, `"extensionId"`, `"extensionTitle"` all intact.
+
+The page shape is a collapsed expand holding the source, immediately followed by the extension. Write it in this HTML dialect (not storage-format XML, not raw ADF JSON):
+
+```html
+<details><summary>Diagram source</summary><pre><code class="language-text">flowchart LR
+    User[User / Editor] --> Frontend[Frontend App]
+    Frontend --> API[Backend / API Layer]
+    API --> DB[(Primary Database)]</code></pre></details>
+<div data-type="extension"
+     data-extension-key="23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram"
+     data-extension-type="com.atlassian.ecosystem"
+     data-layout="default"
+     data-parameters='{"layout":"extension","guestParams":{"index":0},"forgeEnvironment":"PRODUCTION","extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram","extensionTitle":"Mermaid diagram"}'>Mermaid diagram</div>
 ```
+
+`<details>` (a native HTML5 expand — do not add `open`, it must stay collapsed) converts to a genuine ADF `expand` node holding a genuine `codeBlock`; it is not part of the ADF-only workaround, only the `<div data-type="extension">` is.
 
 Rules:
 
@@ -216,8 +217,8 @@ Rules:
 - The source is a verbatim copy of the `mermaid` block in `.ai/architecture.md`, which remains the single source of truth. State that under the diagram, and tell the reader to change the repository file and re-sync instead of editing the diagram in place.
 - The app id and environment id above are **specific to the dept-nl site install**. If the app is reinstalled, or another Confluence site is targeted, read a live page's ADF back and copy the current `extensionKey` and `extensionId` from it.
 - The diagram appears 10 to 20 seconds after page load. Wait that long before calling a page broken.
-- Verify by reading the page ADF back (`npx -y confluence-axi page get <id> --format adf --full`) and confirming the expand plus extension pair with the right `index`, rather than only eyeballing the rendered page.
-- If the site has no Mermaid app installed, keep the code block on its own and record "request the Atlassian Labs Mermaid Diagrams Viewer app" as an open handover item.
+- **Verify by reading true ADF back, never the storage-format echo.** `npx -y confluence-axi page get <id> --format adf --full` (or the writing MCP's own ADF read) reflects what actually renders and must show `"type":"extension"` with camelCase `guestParams`/`forgeEnvironment`/`extensionId`/`extensionTitle` intact and `guestParams.index` as a **number**. `npx -y confluence-axi page get <id> --full` (the storage-format default) is **not a valid check here**: it kebab-cases/flattens the same keys for display even when the underlying stored ADF is correct, so it can look broken when it isn't — confirm the expand plus extension pair with the right `index` from the ADF read, not the storage one.
+- If no MCP with the Atlassian HTML content format is reachable in the current session, or the site has no Mermaid app installed, keep the diagram as a plain code block (skip the `<div data-type="extension">` entirely) and record the specific gap — "no MCP available to publish the live diagram" or "request the Atlassian Labs Mermaid Diagrams Viewer app" — as an open handover item rather than silently shipping a broken extension.
 
 ### Example Mermaid pattern
 

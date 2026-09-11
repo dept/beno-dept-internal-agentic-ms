@@ -27,11 +27,12 @@ Say it once at the point you fall back, not per page. This fallback covers a mis
 
 Use `confluence-axi` for **every** Confluence operation by default — search, page resolution, reads, create, update, and post-write verification. Reads are the bulk of the token cost on a handover run and this CLI returns compact output that truncates unless you pass `--full`, so sending reads through the remote Atlassian MCP burns tokens for nothing.
 
-Reach for the MCP only when this CLI genuinely cannot complete the operation. In practice that is one case: a page-body update the CLI refuses because a full-body replace would drop an embedded macro you cannot faithfully reconstruct in storage format. When it happens:
+Reach for the MCP only when this CLI genuinely cannot complete the operation. In practice that is two cases:
 
-1. Do that single write through the MCP.
-2. Verify with `npx -y confluence-axi page get <id> --format storage --full`.
-3. Note which page went through the MCP and why, so the exception stays visible.
+1. **A page-body update the CLI refuses** because a full-body replace would drop an embedded macro you cannot faithfully reconstruct in storage format. Do that single write through the MCP, verify with `npx -y confluence-axi page get <id> --format storage --full`, and note which page went through the MCP and why.
+2. **Any Mermaid-diagram write** (the architecture page's viewer extension) — `create`/`update` are storage-format only in this CLI and have no path to ADF-only content at all; see *Mermaid diagrams* below for the exact procedure and why raw storage-format `ac:adf-extension` XML doesn't work either. Verify with `npx -y confluence-axi page get <id> --format adf --full` (ADF, not storage — see below for why storage-format verification is actively misleading here), and note the page went through the MCP for this reason.
+
+Either way, note which page went through the MCP and why, so the exception stays visible.
 
 The one other time the MCP takes over is the unauthenticated fallback in Preflight above — allowed, but announced with the token warning, never silent.
 
@@ -58,31 +59,31 @@ Flags come **after** the command.
 | Delete | `npx -y confluence-axi page delete <id>` |
 | Search (CQL) | `npx -y confluence-axi search "space = MS AND type = page"` |
 
-`page get`/`create`/`update` use **storage format** (Confluence XHTML) by default (`--format adf` for ADF). `page update` takes `--title`, `--body`/`--body-file`, or both (at least one required). Bodies truncate on `page get` by default — pass `--full` to get the whole body.
+`page get` supports both **storage format** (Confluence XHTML, default) and `--format adf`. **`create`/`update` are storage-format only** — as of `confluence-axi` 1.0.4 (the latest published version) neither has a `--format` flag at all, so the CLI cannot write ADF-only content. `page update` takes `--title`, `--body`/`--body-file`, or both (at least one required). Bodies truncate on `page get` by default — pass `--full` to get the whole body.
 
 ## Notes
 
-- **Body is storage format**, not Markdown. Markdown passed literally is stored as-is (not converted). Convert Markdown → storage before `create`/`update`. Tables go in as `<table>`. Mermaid needs ADF, see below.
-- **Mermaid diagrams**: publish them with the Atlassian Labs **Mermaid Diagrams Viewer** app, which renders a code block on the page at view time and so works for API-written pages. Never use the "Mermaid Chart for Confluence" macro (`ac:name="mermaid"`): it caches a pre-rendered SVG in its config, which an API write cannot produce, so the diagram stays blank until a human re-saves it in the editor. Write the page with `--format adf` and emit a collapsed expand holding the source, immediately followed by the viewer macro:
+- **Body is storage format**, not Markdown. Markdown passed literally is stored as-is (not converted). Convert Markdown → storage before `create`/`update`. Tables go in as `<table>`. Mermaid needs ADF — this CLI cannot write it, see below.
+- **Mermaid diagrams — this is the one operation this CLI cannot do; use an MCP with the Atlassian HTML content format instead.** Publish with the Atlassian Labs **Mermaid Diagrams Viewer** app, which renders a code block on the page at view time. Never use the "Mermaid Chart for Confluence" macro (`ac:name="mermaid"`): it caches a pre-rendered SVG in its config, which an API write cannot produce, so the diagram stays blank until a human re-saves it in the editor.
 
-  ```json
-  {"type":"expand","attrs":{"title":"Diagram source"},"content":[
-    {"type":"codeBlock","attrs":{"language":"ruby"},
-     "content":[{"type":"text","text":"flowchart LR\n    Browser --> WebApp\n    WebApp --> DB[(Database)]"}]}]}
-  {"type":"extension","attrs":{
-    "layout":"default",
-    "extensionType":"com.atlassian.ecosystem",
-    "extensionKey":"23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
-    "text":"Mermaid diagram",
-    "parameters":{
-      "layout":"extension",
-      "guestParams":{"index":0},
-      "forgeEnvironment":"PRODUCTION",
-      "extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
-      "extensionTitle":"Mermaid diagram"}}}
+  `confluence-axi create`/`update` genuinely cannot write this: the extension is an ADF-only node with no storage-format macro, and raw `<ac:adf-extension>`/`<ac:adf-parameter>` XML — the storage-format escape hatch for ADF-only content — silently **flattens or kebab-cases every nested parameter key** on the way through (`guestParams` → `guestparams` or `guest-params`, confirmed both ways in practice). The Mermaid app reads `parameters.guestParams.index` case-sensitively, so a mangled key produces *Error while loading diagram* even though the write "succeeded". This is the sanctioned exception in the Hybrid rule above (the CLI cannot complete the operation): do this one write through an MCP that supports the Atlassian **HTML content format** (`@atlassian/atlassian-html-format` — e.g. the `getContentFormatGuide`/`updateConfluencePage` tools on a first-party Atlassian/Rovo connector, if the current session has one configured; this is a different, session-level capability from the community `atlassian`/`mcp-atlassian` server Phase 4 wires into the target repo's own `.mcp.json`, whose ADF-write fidelity for extensions is unverified — don't assume it behaves the same). That format takes a single JSON-encoded `data-parameters` attribute (not decomposed XML attributes), which preserves key casing because it's parsed as JSON, not walked as a nested element tree:
+
+  ```html
+  <details><summary>Diagram source</summary><pre><code class="language-text">flowchart LR
+      Browser --&gt; WebApp
+      WebApp --&gt; DB[(Database)]</code></pre></details>
+  <div data-type="extension"
+       data-extension-key="23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram"
+       data-extension-type="com.atlassian.ecosystem"
+       data-layout="default"
+       data-parameters='{"layout":"extension","guestParams":{"index":0},"forgeEnvironment":"PRODUCTION","extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram","extensionTitle":"Mermaid diagram"}'>Mermaid diagram</div>
   ```
 
-  `guestParams` must be `{"index": N}`, with `N` the 0-based position of the source among **all** code blocks on the page, counted recursively so blocks inside expands count too. `""` ("Auto detect") gives *Error while loading diagram* on API-written pages. The code block `language` is cosmetic; do not tag it `mermaid`. The ids above are specific to the dept-nl install: if the app is reinstalled or another site is targeted, read a live page's ADF and copy the current ones. Verify with `page get <id> --format adf --full` and check for the expand plus extension pair; the rendered diagram itself takes 10 to 20 seconds to appear.
+  The `<details>` (a native HTML5 expand, collapsed by default — do not add `open`) converts to a real ADF `expand` node holding a real `codeBlock`, not a wrapped/opaque one; only the extension itself needs the `data-type="extension"` treatment.
+
+  `guestParams` must be `{"index": N}`, with `N` the 0-based position of the source among **all** code blocks on the page, counted recursively so blocks nested inside expands count too. `""` ("Auto detect") gives *Error while loading diagram* on API-written pages. The code block `language` is cosmetic; do not tag it `mermaid`. The ids above are specific to the dept-nl install: if the app is reinstalled or another site is targeted, read a live page's ADF and copy the current ones.
+
+  **Verify by reading true ADF back, never the storage-format echo.** `npx -y confluence-axi page get <id> --format adf --full` (or the MCP's own ADF read) reflects what actually renders and must show `"type":"extension"` with camelCase `guestParams`/`forgeEnvironment`/`extensionId`/`extensionTitle` intact and `guestParams.index` as a **number**. `npx -y confluence-axi page get <id> --full` (storage format, the default) is **not a valid check here** — Confluence's storage-format serialization of an `ac:adf-extension` kebab-cases or flattens the same keys for display even when the underlying stored ADF is correct, so it will look broken when it isn't (and vice versa, cannot prove correctness). The rendered diagram itself takes 10 to 20 seconds to appear after page load — wait that long before calling it broken.
 - **Output is TOON-encoded** (token-efficient) — there is no plain-text or JSON mode.
 - **DEPT handover sync:** page ids + full titles live in `.ai/.meta.yml` `confluence:`. Resolve by walking `landing.id`'s children (rule 1), act by id, write resolved ids back.
 

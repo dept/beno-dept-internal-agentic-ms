@@ -120,24 +120,24 @@ After wiring is complete, create handover documentation in Confluence.
    - a short summary paragraph or bullet for each major package/feature/campaign explaining purpose, ownership/context, and notable dependencies or integrations when known
    - a **Mermaid diagram** at the top of the page that gives a quick structural overview of how the project works
 9. The Mermaid diagram must be a concise architecture overview, not an ASCII tree or screenshot-style code block. Prefer a simple `flowchart LR` or `flowchart TD` showing the main runtime path, major internal components, and key external systems/services.
-   **Publish it with the Atlassian Labs "Mermaid Diagrams Viewer" app** (app key `com.atlassian.confluence.plugins.mermaid-diagrams-viewer`), which renders a code block on the page client-side and therefore works for pages written purely through the API. Never use the "Mermaid Chart for Confluence" macro: it caches a pre-rendered SVG in the macro config, so an API-written page shows a blank diagram until a human re-saves it in the editor. The ADF shape is a collapsed expand holding the source, immediately followed by the viewer macro:
+   **Publish it with the Atlassian Labs "Mermaid Diagrams Viewer" app** (app key `com.atlassian.confluence.plugins.mermaid-diagrams-viewer`), which renders a code block on the page client-side and therefore works for pages written purely through the API. Never use the "Mermaid Chart for Confluence" macro: it caches a pre-rendered SVG in the macro config, so an API-written page shows a blank diagram until a human re-saves it in the editor.
 
-   ```json
-   {"type":"expand","attrs":{"title":"Diagram source"},"content":[
-     {"type":"codeBlock","attrs":{"language":"ruby"},
-      "content":[{"type":"text","text":"flowchart LR\n    Browser --> WebApp\n    WebApp --> DB[(Database)]"}]}]}
-   {"type":"extension","attrs":{
-     "layout":"default",
-     "extensionType":"com.atlassian.ecosystem",
-     "extensionKey":"23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
-     "text":"Mermaid diagram",
-     "parameters":{
-       "layout":"extension",
-       "guestParams":{"index":0},
-       "forgeEnvironment":"PRODUCTION",
-       "extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram",
-       "extensionTitle":"Mermaid diagram"}}}
+   **This node is ADF-only, and `confluence-axi` cannot write ADF at create/update time** (only `page get` supports `--format adf`; confirmed against 1.0.4, the latest published version). Raw storage-format `<ac:adf-extension>`/`<ac:adf-parameter>` XML doesn't work around this either — Confluence's storage-format serialization of the nested parameters kebab-cases or flattens every key (`guestParams` comes back `guestparams` or `guest-params`, tested both ways), and the app reads `guestParams.index` case-sensitively, so the diagram fails silently (*Error while loading diagram*) even though the write reports success.
+
+   **Do this one write through an MCP that speaks the Atlassian HTML content format** (`@atlassian/atlassian-html-format` — e.g. a first-party Atlassian/Rovo connector's `createConfluencePage`/`updateConfluencePage` tools, if the current session has one; this is a session-level capability, distinct from the community `atlassian`/`mcp-atlassian` server Phase 4 wires into the target repo's own `.mcp.json`, whose ADF-extension fidelity is unverified). That format's `data-parameters` is a single JSON-encoded attribute, parsed as JSON rather than walked as nested XML elements, which is what preserves the casing — confirmed end to end against a live page: the stored ADF read back showed `"guestParams":{"index":0}` (camelCase, numeric index) and `forgeEnvironment`/`extensionId`/`extensionTitle` all intact. Author it in this HTML dialect (not storage XML, not raw ADF JSON):
+
+   ```html
+   <details><summary>Diagram source</summary><pre><code class="language-text">flowchart LR
+       Browser --&gt; WebApp
+       WebApp --&gt; DB[(Database)]</code></pre></details>
+   <div data-type="extension"
+        data-extension-key="23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram"
+        data-extension-type="com.atlassian.ecosystem"
+        data-layout="default"
+        data-parameters='{"layout":"extension","guestParams":{"index":0},"forgeEnvironment":"PRODUCTION","extensionId":"ari:cloud:ecosystem::extension/23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram","extensionTitle":"Mermaid diagram"}'>Mermaid diagram</div>
    ```
+
+   `<details>` (a native, collapsed-by-default HTML5 expand — no `open` attribute) converts to a genuine ADF `expand`/`codeBlock` pair on its own; only the `<div data-type="extension">` needs the ADF-only treatment.
 
    Rules for it:
    - `guestParams` must be `{"index": N}`, with `N` the 0-based position of this source among **all** code blocks on the page, counted recursively so blocks inside expands count too. Two diagrams means index `0` and index `1`. Leaving it `""` ("Auto detect") produces *Error while loading diagram* on any API-written page, and is the single most common defect.
@@ -145,8 +145,8 @@ After wiring is complete, create handover documentation in Confluence.
    - The code block `language` is cosmetic for this app. Do not tag it `mermaid`.
    - The source must be a verbatim copy of the `mermaid` block in `.ai/architecture.md`, which stays the single source of truth. Add one sentence under the diagram saying so, and telling the reader to change the repository file and re-sync rather than editing the diagram in Confluence.
    - The app id and environment id above are specific to the dept-nl site install. If the app was reinstalled or another site is targeted, read a live page's ADF back and copy the current `extensionKey` and `extensionId`.
-   - After publishing, re-read the page with `npx -y confluence-axi page get <id> --format adf --full` and confirm the expand plus extension pair is present with the right `index`. Do not judge from the rendered page alone, and give it 10 to 20 seconds after load before calling a diagram broken.
-   - If no Mermaid app is installed on the target site, keep the plain code block and record "request the Atlassian Labs Mermaid Diagrams Viewer app" as an open handover item rather than silently shipping an unrendered diagram.
+   - **After publishing, re-read the page as true ADF, never storage format.** `npx -y confluence-axi page get <id> --format adf --full` (or the writing MCP's own ADF read) must show `"type":"extension"` with camelCase `guestParams`/`forgeEnvironment`/`extensionId`/`extensionTitle` intact and `guestParams.index` as a number. The storage-format default (`page get <id> --full` with no `--format`) is **not a valid check**: it kebab-cases/flattens the same keys for display even when the real stored ADF is correct, so it can look broken when it isn't. Give the rendered page 10 to 20 seconds after load before calling a diagram broken.
+   - If no MCP with the Atlassian HTML content format is reachable in the session, or the target site has no Mermaid app installed, keep the plain code block (skip the extension entirely) and record the specific reason — "no MCP available to publish the live diagram" or "request the Atlassian Labs Mermaid Diagrams Viewer app" — as an open handover item rather than silently shipping a broken or unrendered diagram.
 10. If the repository has a `doc/` or `docs/` folder, use it as a primary input for Confluence wording, package/campaign descriptions, and onboarding context — but still verify against code/config when facts conflict.
 11. In `Environments & Access`, include GitHub, test/acc/prod URLs, and Keeper reference.
 12. In `Onboarding & Handover`, include setup steps, troubleshooting, escalation, and project-specific gotchas. Do **not** repeat the Key Contacts table here — it lives on the main `[Project Name]` landing page. Write the reading path for a person: point at the Overview and Architecture pages for orientation, never at `.ai/` files (see rule 6b).

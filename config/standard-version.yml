@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.5.1"
+  version: "2.5.2"
   release_date: "2026-09-11"
   changelog:
+    - version: "2.5.2"
+      date: "2026-09-11"
+      changes:
+        - "docs/confluence-page-standard.md, prompts/03-integrate.prompt.md and templates/skills/confluence-axi/SKILL.md no longer tell an agent to publish the architecture page's Mermaid diagram by writing ADF through confluence-axi. The CLI (1.0.4, latest published) has no --format flag on page create/update at all, only on page get, so it cannot write the ADF-only Mermaid Diagrams Viewer extension. Falling back to raw storage-format <ac:adf-extension>/<ac:adf-parameter> XML doesn't work either: Confluence's storage serialization kebab-cases or flattens every nested parameter key (guestParams came back guestparams in one attempt and guest-params in another, both tested against a live dept-nl.atlassian.net page), and the app reads guestParams.index case-sensitively, so the diagram fails (\"Error while loading diagram\") even though the write reports success. All three files now document the working procedure instead: write it through an MCP that speaks the Atlassian HTML content format (data-parameters as one JSON-encoded attribute, not decomposed XML elements, which is what preserves casing), and verify with `page get --format adf --full`, never the storage-format default, since the storage echo mangles the same keys for display even when the underlying stored ADF is correct. Verified end to end against a live page: the stored ADF read back showed guestParams/forgeEnvironment/extensionId/extensionTitle all camelCase and index as a number. Found and fixed live, mid-migration, on beno-eon-cvp-platform's Architecture & Package Map page"
     - version: "2.5.1"
       date: "2026-09-11"
       changes:
