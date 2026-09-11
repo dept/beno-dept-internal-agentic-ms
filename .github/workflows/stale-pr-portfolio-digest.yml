@@ -31,15 +31,15 @@ jobs:
 
       - name: Report stale PRs across the portfolio
         env:
-          # GITHUB_TOKEN only ever sees this repository, so reading other repositories
-          # needs a token of its own: a fine-grained PAT or App token with Pull requests:
-          # read on the listed repositories.
+          # GITHUB_TOKEN only ever sees the repository the workflow runs in, so reading the
+          # other repositories needs a token of its own: a fine-grained PAT or App token with
+          # Pull requests: read on every repository in config/portfolio.yml.
           GH_TOKEN: ${{ secrets.PORTFOLIO_GH_TOKEN }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL: ${{ inputs.channel || vars.SLACK_MANAGER_CHANNEL }}
           PORTFOLIO_FILE: config/portfolio.yml
           STALE_DAYS: 5 # A PR older than this needs a manager to look at it.
-          MIN_PRS: 2 # Below this the backlog is normal, so the project is left out.
+          MIN_PRS: 1 # Projects with fewer stale PRs than this are left out.
         run: |
           set -euo pipefail
 
@@ -84,9 +84,13 @@ jobs:
               echo "::warning::Cannot read $repo with PORTFOLIO_GH_TOKEN. Skipping it."
               continue
             fi
-            count=$(gh pr list --repo "$repo" --state open --limit 100 \
-              --json isDraft,createdAt \
-              | jq --arg c "$cutoff" '[.[] | select(.isDraft == false and .createdAt < $c)] | length')
+            # The REST pulls endpoint, not `gh pr list`: that one goes through GraphQL, which
+            # a fine-grained PAT is refused on ("Resource not accessible by personal access
+            # token (repository.pullRequests)") even when Pull requests: read is granted.
+            # Counts are identical, verified against both. ISO 8601 timestamps sort as strings.
+            count=$(gh api "repos/$repo/pulls?state=open&per_page=100" --paginate \
+              --jq '.[] | select(.draft == false) | .created_at' \
+              | awk -v cutoff="$cutoff" '$0 < cutoff { n++ } END { print n + 0 }')
             jq -nc --arg repo "$repo" --argjson count "$count" '{repo: $repo, count: $count}' >> rows.jsonl
           done <<<"$repos"
 
@@ -95,7 +99,7 @@ jobs:
             | if length == 0 then "" else
                 ":info: *\(length) project\(if length == 1 then "" else "s" end) with PRs open longer than \($days) days*\n"
                 + (map(
-                    "• <https://github.com/\(.repo)/pulls?q=is%3Apr+is%3Aopen+draft%3Afalse+sort%3Acreated-asc|\(.repo | split("/") | last)>: \(.count) PRs"
+                    "• <https://github.com/\(.repo)/pulls?q=is%3Apr+is%3Aopen+draft%3Afalse+sort%3Acreated-asc|\(.repo | split("/") | last)>: \(.count) PR\(if .count == 1 then "" else "s" end)"
                   ) | join("\n"))
               end' rows.jsonl)
 
