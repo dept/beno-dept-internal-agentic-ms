@@ -1,0 +1,110 @@
+name: Stale PR portfolio digest
+
+# One weekly Slack message for the client managers, covering every migrated project.
+# This repository defines what "migrated" means, so it is also the one that reports on
+# it: a project qualifies when its repository has a .ai/.meta.yml, which means the list
+# maintains itself and a project joins the digest the Monday after it migrates.
+#
+# Repo-only CI, not standard content: nothing here is installed into a target repository,
+# so it needs no version bump (see .github/workflows/version-bump.yml).
+
+on:
+  schedule:
+    # 09:30 Amsterdam on Mondays. Both are scheduled and the job drops the wrong one,
+    # since which hour is 09:30 locally depends on daylight saving.
+    - cron: "30 7 * * 1" # 09:30 CEST (summer)
+    - cron: "30 8 * * 1" # 09:30 CET (winter)
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Slack channel or user ID to post to (defaults to the manager channel)"
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report stale PRs across migrated projects
+        env:
+          # GITHUB_TOKEN only ever sees this repository, so reading other repositories
+          # needs a token of its own: a fine-grained PAT or App token with Contents: read
+          # and Pull requests: read on the migrated repositories.
+          GH_TOKEN: ${{ secrets.PORTFOLIO_GH_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ inputs.channel || vars.SLACK_MANAGER_CHANNEL }}
+          ORG: ${{ github.repository_owner }}
+          STALE_DAYS: 5 # A PR older than this needs a manager to look at it.
+          MIN_PRS: 2 # Below this the backlog is normal, so the project is left out.
+        run: |
+          set -euo pipefail
+
+          # GitHub cron is UTC only and has no DST, so both candidate hours are scheduled and
+          # this drops the one that is not 09:30 in Amsterdam. The window is 09:25 to 10:25
+          # because GitHub delays scheduled runs under load: it absorbs up to 55 minutes of
+          # delay on the right run while still excluding the wrong one, which lands at 10:30
+          # in summer and 08:30 in winter. Manual dispatches bypass the window entirely.
+          now=$(TZ=Europe/Amsterdam date +%H%M)
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]] && [[ "$now" < "0925" || "$now" > "1025" ]]; then
+            echo "Local Amsterdam time is ${now:0:2}:${now:2:2}, outside the 09:25 to 10:25 window. Skipping."
+            exit 0
+          fi
+
+          # No credentials, no digest. A warning rather than a failure, so an unconfigured
+          # repository stays quiet while the run summary still says why nothing was posted.
+          if [[ -z "${GH_TOKEN:-}" || -z "${SLACK_BOT_TOKEN:-}" || -z "${SLACK_CHANNEL:-}" ]]; then
+            echo "::warning::PORTFOLIO_GH_TOKEN, SLACK_BOT_TOKEN or SLACK_MANAGER_CHANNEL is not set. Skipping the digest."
+            exit 0
+          fi
+
+          cutoff=$(date -u -d "$STALE_DAYS days ago" +%Y-%m-%dT%H:%M:%SZ)
+
+          # One code-search call finds every migrated repository, rather than a hand-kept list
+          # or a contents probe against all few hundred repositories in the org.
+          mapfile -t repos < <(gh api -X GET search/code \
+            -f q="org:$ORG path:.ai filename:.meta.yml" -f per_page=100 \
+            --jq '.items[].repository.full_name' | sort -u)
+
+          if [[ ${#repos[@]} -eq 0 ]]; then
+            echo "::warning::Code search returned no migrated repositories. Check PORTFOLIO_GH_TOKEN's scope."
+            exit 0
+          fi
+          echo "Found ${#repos[@]} migrated project(s)."
+
+          : > rows.jsonl
+          for repo in "${repos[@]}"; do
+            count=$(gh pr list --repo "$repo" --state open --limit 100 \
+              --json isDraft,createdAt \
+              | jq --arg c "$cutoff" '[.[] | select(.isDraft == false and .createdAt < $c)] | length')
+            jq -nc --arg repo "$repo" --argjson count "$count" '{repo: $repo, count: $count}' >> rows.jsonl
+          done
+
+          text=$(jq -rs --argjson min "$MIN_PRS" --arg days "$STALE_DAYS" '
+            map(select(.count >= $min)) | sort_by(-.count)
+            | if length == 0 then "" else
+                ":info: *\(length) project\(if length == 1 then "" else "s" end) with PRs open longer than \($days) days*\n"
+                + (map(
+                    "• <https://github.com/\(.repo)/pulls?q=is%3Apr+is%3Aopen+draft%3Afalse+sort%3Acreated-asc|\(.repo | split("/") | last)>: \(.count) PRs"
+                  ) | join("\n"))
+              end' rows.jsonl)
+
+          if [[ -z "$text" ]]; then
+            echo "No project reached the threshold of $MIN_PRS stale PRs. Nothing to post."
+            exit 0
+          fi
+          echo "$text"
+
+          response=$(curl -sS -X POST https://slack.com/api/chat.postMessage \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H 'Content-type: application/json; charset=utf-8' \
+            --data "$(jq -n --arg c "$SLACK_CHANNEL" --arg t "$text" \
+              '{channel: $c, text: $t, unfurl_links: false}')")
+
+          # Slack answers 200 even when it refuses, so the ok field is the real status.
+          if [[ "$(jq -r '.ok' <<<"$response")" != "true" ]]; then
+            echo "Slack rejected the message: $response" >&2
+            exit 1
+          fi
+          echo "Posted to $SLACK_CHANNEL."
