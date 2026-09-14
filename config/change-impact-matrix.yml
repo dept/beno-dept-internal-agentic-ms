@@ -67,6 +67,7 @@ change_impact_rules:
       - "changes to package.json dependencies (not devDependencies)"
       - "changes to requirements.txt, pyproject.toml [dependencies]"
       - "changes to *.csproj PackageReference"
+      - "changes to Directory.Packages.props or Directory.Build.props — a central-package-management repo pins versions there, and a version bump never touches a *.csproj"
       - "new MCP server config in .vscode/mcp.json"
     impacts:
       - file: dependencies.md
@@ -173,7 +174,7 @@ change_impact_rules:
     detect_by:
       - "changes to AGENTS.md, CLAUDE.md, .github/agents/, .github/prompts/"
       - "changes to MCP config files"
-      - "new skills installed in .agents/skills/"
+      - "changes anywhere under .agents/skills/ — a new skill, or an edit to an existing skill body"
     impacts:
       - file: agent-registry.md
         severity: critical
@@ -202,10 +203,14 @@ conflict_resolution:
     - "Fold an update into the section that owns the topic. Never open a separate 'Updates' or 'Changes' section: standards/writing-rules.md bans it"
     - "Remove content only in the three cases in standards/writing-rules.md section 5: it breaks a writing rule, repository evidence contradicts it, or a human asked. Otherwise add or update, and never delete a fact just because this agent did not write it"
 
+  # The Maintainer agent can only open a pull request: its allowed tools are `gh pr create`,
+  # `gh pr view` and `gh pr list` (see templates/workflows/maintainer.yml), so it cannot assign
+  # reviewers, cannot merge, and must not assume a CODEOWNERS file exists. Severity therefore
+  # changes what the PR says, not what the agent does to it — a human merges every one.
   escalation:
     - severity: critical
-      action: "Create PR with changes, assign to CODEOWNERS, require human review"
+      action: "Open a PR whose title names the drift, and state in the body that it needs human review before merge"
     - severity: moderate
-      action: "Create PR with changes, auto-merge after 48h if no objections"
+      action: "Open a PR describing the change and leave it for a human to merge; there is no auto-merge"
     - severity: minor
-      action: "Batch into weekly maintenance PR"
+      action: "Batch into the next scheduled maintenance PR"

@@ -97,9 +97,12 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 
 ### Phase 8: Metadata Update
 
-Update `.ai/.meta.yml` — **only when Phase 4/5 changed real documentation content**:
-- `last_maintained`: current timestamp
-- `last_maintained_by`: agent identifier
+Update `.ai/.meta.yml` — **only when Phase 4/5 changed real documentation content**. Both keys
+already exist under the top-level `meta:` mapping and are updated in place; written at the YAML root
+instead they leave `meta.last_maintained` at `null`, which makes Phase 2 treat every run as a first
+run and rescan the whole history:
+- `meta.last_maintained`: current timestamp
+- `meta.last_maintained_by`: agent identifier
 
 **No-op rule:** if `git status --porcelain -- .ai/` shows only `.meta.yml`, or the diff is limited to
 bookkeeping fields (`last_maintained`, `last_maintained_by`, `last_checked`, resolved Confluence page
