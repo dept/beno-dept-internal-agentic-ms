@@ -1,0 +1,35 @@
+name: No plugin jargon in shipped content
+
+on:
+  pull_request:
+
+jobs:
+  no-plugin-jargon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject ponytail/caveman markers in added lines
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Local Claude Code plugins (ponytail, caveman) prefix comments with their own name.
+          # Everything in this repository outside .github/ is vendored into client repositories,
+          # where "ponytail:" means nothing to the reader a year later (BENO-Optiver-Website #743).
+          # Only added lines are checked, so existing content is cleaned up by ordinary PRs. The
+          # changelog and this repo's own AGENTS.md are exempt: both need to be able to name the
+          # words this check bans, in order to describe removing them or document the rule itself.
+          hits=$(git diff -U0 "$BASE_SHA" "$HEAD_SHA" -- . ':!.github/' ':!config/standard-version.yml' ':!AGENTS.md' \
+            | grep -E '^\+[^+]' | grep -iE 'ponytail|caveman' || true)
+
+          if [[ -n "$hits" ]]; then
+            echo "::error::Added lines carry plugin jargon (ponytail/caveman). Keep what the comment says, drop the prefix."
+            printf '%s\n' "$hits"
+            exit 1
+          fi
+          echo "No plugin jargon added."
