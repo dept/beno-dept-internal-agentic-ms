@@ -275,10 +275,14 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 
 ## Phase 8: Metadata Update
 
-Update `.ai/.meta.yml` **only when Phase 4/5 actually changed documentation content**:
+Update `.ai/.meta.yml` **only when Phase 4/5 actually changed documentation content**. Both fields
+already exist under the top-level `meta:` mapping — update them in place, indented, never at the YAML
+root. A root-level `last_maintained` leaves `meta.last_maintained` at `null`, so Phase 2 reads no
+baseline and every scheduled run repeats a full-history scan:
 ```yaml
-last_maintained: "[current ISO 8601 timestamp]"
-last_maintained_by: "maintainer@2.0"
+meta:
+  last_maintained: "[current ISO 8601 timestamp]"
+  last_maintained_by: "maintainer@2.0"
 ```
 
 ### No-op rule — never open a PR for bookkeeping alone
