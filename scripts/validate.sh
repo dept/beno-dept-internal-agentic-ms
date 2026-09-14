@@ -252,10 +252,9 @@ read_version_field() {
 }
 
 version_lt() {
-  # $1 < $2 ? Pure bash, dotted-numeric only (major.minor.patch) — no `sort -V`, which is a GNU
-  # extension absent from the BSD `sort` macOS ships. A drift check that only runs correctly on
-  # Linux defeats the point of a local pre-push check.
-  local a="$1" b="$2" i n
+  # $1 < $2 ? Pure bash, dotted-numeric (major.minor.patch; a `-suffix` such as -rc1 is ignored).
+  # Keeps the drift check independent of which `sort` implementation the running machine has.
+  local a="${1%%-*}" b="${2%%-*}" i n
   local IFS=.
   local -a A=($a) B=($b)
   n=${#A[@]}

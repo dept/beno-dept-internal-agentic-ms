@@ -113,7 +113,9 @@ else
   git log --since="$last_maintained" --name-only --pretty=format: | sort -u
 
   # Read the DIFF, not full files — this is what drift detection needs and is far cheaper.
-  git diff "@{$last_maintained}" -- <changed-paths>
+  # Not `git diff "@{$last_maintained}"`: `@{<date>}` is reflog syntax, and a fresh CI checkout
+  # has no reflog, so resolve the baseline commit by date instead.
+  git diff "$(git rev-list -1 --before="$last_maintained" HEAD)" -- <changed-paths>
 fi
 ```
 

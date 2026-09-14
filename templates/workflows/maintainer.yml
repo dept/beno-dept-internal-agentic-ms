@@ -58,8 +58,10 @@ jobs:
       - name: Check required secrets
         id: secrets
         if: steps.gate.outputs.run == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "::warning::ANTHROPIC_API_KEY is not set — skipping this run. Configure it to enable the Maintainer Agent."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else

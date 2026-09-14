@@ -37,7 +37,7 @@ Keep the `.ai/` folder accurate and current as the project evolves. Detect drift
 1. Parse `last_maintained` as the scalar value, not the raw YAML line (`grep 'last_maintained' .ai/.meta.yml` alone captures `last_maintained: "..."`, which is not a valid `--since` argument). If it's unset or `null` (first run), there is no baseline — treat every change-impact-matrix area as in scope instead of diffing "since" nothing. Otherwise query git history since that timestamp, then read DIFFS (not full files):
    ```bash
    git log --since="$last_maintained" --name-only --pretty=format: | sort -u
-   git diff "@{$last_maintained}" -- <changed-paths>   # diff-first; full read only if diff insufficient
+   git diff "$(git rev-list -1 --before="$last_maintained" HEAD)" -- <changed-paths>   # diff-first; full read only if diff insufficient. Not "@{date}": reflog syntax, empty in a fresh CI checkout
    ```
 2. Classify each changed file using `config/change-impact-matrix.yml`
 3. Map changes to affected `.ai/` files with severity levels
