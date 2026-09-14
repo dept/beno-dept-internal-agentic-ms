@@ -251,6 +251,22 @@ read_version_field() {
     | sed "s/.*${field}:[[:space:]]*//; s/\"//g" | tr -d '[:space:]' || true
 }
 
+version_lt() {
+  # $1 < $2 ? Pure bash, dotted-numeric (major.minor.patch; a `-suffix` such as -rc1 is ignored).
+  # Keeps the drift check independent of which `sort` implementation the running machine has.
+  local a="${1%%-*}" b="${2%%-*}" i n
+  local IFS=.
+  local -a A=($a) B=($b)
+  n=${#A[@]}
+  ((${#B[@]} > n)) && n=${#B[@]}
+  for ((i = 0; i < n; i++)); do
+    local ai="${A[i]:-0}" bi="${B[i]:-0}"
+    ((10#$ai < 10#$bi)) && return 0
+    ((10#$ai > 10#$bi)) && return 1
+  done
+  return 1
+}
+
 RECORDED_VERSION=$(read_version_field "${AI_DIR}/.meta.yml" "standard_version")
 CURRENT_VERSION=$(read_version_field "${PROJECT_DIR}/config/standard-version.yml" "version")
 
@@ -263,16 +279,13 @@ elif [[ -z "$CURRENT_VERSION" ]]; then
 elif [[ "$RECORDED_VERSION" = "$CURRENT_VERSION" ]]; then
   echo -e "  ${GREEN}✓${NC} standard ${CURRENT_VERSION} (matches config/standard-version.yml)"
   PASSED=$((PASSED + 1))
+elif version_lt "$RECORDED_VERSION" "$CURRENT_VERSION"; then
+  echo -e "  ${YELLOW}△${NC} project is on standard ${RECORDED_VERSION}, current is ${CURRENT_VERSION}"
+  echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
+  WARNED=$((WARNED + 1))
 else
-  oldest=$(printf '%s\n%s\n' "$RECORDED_VERSION" "$CURRENT_VERSION" | sort -V | head -1)
-  if [[ "$oldest" = "$RECORDED_VERSION" ]]; then
-    echo -e "  ${YELLOW}△${NC} project is on standard ${RECORDED_VERSION}, current is ${CURRENT_VERSION}"
-    echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
-    WARNED=$((WARNED + 1))
-  else
-    echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records standard ${RECORDED_VERSION}, ahead of the vendored ${CURRENT_VERSION}"
-    WARNED=$((WARNED + 1))
-  fi
+  echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records standard ${RECORDED_VERSION}, ahead of the vendored ${CURRENT_VERSION}"
+  WARNED=$((WARNED + 1))
 fi
 
 echo ""

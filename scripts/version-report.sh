@@ -41,6 +41,22 @@ read_version_field() {
     | sed "s/.*${field}:[[:space:]]*//; s/\"//g" | tr -d '[:space:]' || true
 }
 
+version_lt() {
+  # $1 < $2 ? Pure bash, dotted-numeric (major.minor.patch; a `-suffix` such as -rc1 is ignored).
+  # Keeps the drift check independent of which `sort` implementation the running machine has.
+  local a="${1%%-*}" b="${2%%-*}" i n
+  local IFS=.
+  local -a A=($a) B=($b)
+  n=${#A[@]}
+  ((${#B[@]} > n)) && n=${#B[@]}
+  for ((i = 0; i < n; i++)); do
+    local ai="${A[i]:-0}" bi="${B[i]:-0}"
+    ((10#$ai < 10#$bi)) && return 0
+    ((10#$ai > 10#$bi)) && return 1
+  done
+  return 1
+}
+
 CURRENT_VERSION=$(read_version_field "$VERSION_FILE" "version")
 if [[ -z "$CURRENT_VERSION" ]]; then
   echo -e "${RED}ERROR:${NC} no version found in ${VERSION_FILE}"
@@ -74,8 +90,7 @@ for project in "$@"; do
     printf '  %-40s %-12s %-12s %b\n' "$name" "$recorded" "$CURRENT_VERSION" "${GREEN}no${NC}"
     OK_COUNT=$((OK_COUNT + 1))
   else
-    oldest=$(printf '%s\n%s\n' "$recorded" "$CURRENT_VERSION" | sort -V | head -1)
-    if [[ "$oldest" = "$recorded" ]]; then
+    if version_lt "$recorded" "$CURRENT_VERSION"; then
       printf '  %-40s %-12s %-12s %b\n' "$name" "$recorded" "$CURRENT_VERSION" "${RED}yes${NC}"
       BEHIND_COUNT=$((BEHIND_COUNT + 1))
     else

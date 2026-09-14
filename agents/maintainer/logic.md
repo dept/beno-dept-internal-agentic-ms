@@ -34,10 +34,10 @@ Keep the `.ai/` folder accurate and current as the project evolves. Detect drift
 
 ### Phase 2: Change Detection
 
-1. Query git history since last maintenance, then read DIFFS (not full files):
+1. Parse `last_maintained` as the scalar value, not the raw YAML line (`grep 'last_maintained' .ai/.meta.yml` alone captures `last_maintained: "..."`, which is not a valid `--since` argument). If it's unset or `null` (first run), there is no baseline — treat every change-impact-matrix area as in scope instead of diffing "since" nothing. Otherwise query git history since that timestamp, then read DIFFS (not full files):
    ```bash
    git log --since="$last_maintained" --name-only --pretty=format: | sort -u
-   git diff "@{$last_maintained}" -- <changed-paths>   # diff-first; full read only if diff insufficient
+   git diff "$(git rev-list -1 --before="$last_maintained" HEAD)" -- <changed-paths>   # diff-first; full read only if diff insufficient. Not "@{date}": reflog syntax, empty in a fresh CI checkout
    ```
 2. Classify each changed file using `config/change-impact-matrix.yml`
 3. Map changes to affected `.ai/` files with severity levels
@@ -87,12 +87,13 @@ Generate structured summary with:
 
 Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`).
 
-- Resolve empty page `id`s by title under the space; write resolved IDs back to `.meta.yml` (prevents duplicates)
-- Route each changed `.ai/` file to its `sync_map` page; `agent-registry.md` → landing page `## AI tooling status`
+- Resolve empty page `id`s by walking `confluence.pages.landing.id`'s children and matching the exact full title — never a bare title search across the shared space, which can select another project's similarly named page; write resolved IDs back to `.meta.yml` (prevents duplicates)
+- Route each changed `.ai/` file to its `sync_map` page, transformed into that page's storage/ADF format per the layout rule below — never the raw agent-facing Markdown (ownership header, agent pointers, confidence notes) pasted verbatim; `agent-registry.md` → landing page `## AI tooling status`
 - Push critical/moderate updates only; skip minor (reduce noise)
 - Update in place — never delete a page/section unless its subject no longer exists in the repo
 - Add "Last synced from .ai/ — [timestamp]" to each touched page
 - Render every section per `docs/confluence-layout.md` (block choice, canonical table columns, `H2` sections); bring an older-shaped section to the standard shape while updating it
+- The architecture page's Mermaid diagram is a special case: follow `docs/confluence-page-standard.md`'s Mermaid section exactly, not the general routing above. It needs an MCP speaking the Atlassian HTML content format — a session-level capability, distinct from (and not assumed equivalent to) whatever community Atlassian MCP the CI environment wires. If unreachable, keep the plain code block and record it as an open item per that section, rather than attempting the extension write
 
 ### Phase 8: Metadata Update
 
