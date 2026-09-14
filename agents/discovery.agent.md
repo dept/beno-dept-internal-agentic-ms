@@ -118,7 +118,7 @@ Document all findings in `agent-registry.md` under a dedicated **Existing Agenti
 - Identify external systems and trust boundaries.
 - Document data flows and integration points.
 - Record the repository tree and the technology stack table. `architecture.md` is their only home.
-- Identify the **high-fan-in symbols**: the shared functions, hooks, and helpers the rest of the codebase depends on. Capture the file path, the consumer count (from `graphify-out/graph.json` when Graphify ran, otherwise `grep -rc`; say which), and a one-line role. This is what stops an agent reimplementing a helper that already exists.
+- Identify the **high-fan-in symbols**: the shared functions, hooks, and helpers the rest of the codebase depends on. Capture the file path, the consumer count (derived from `graphify-out/graph.json` when Graphify ran, otherwise `grep -rc` — but do not name `graphify-out/` as the source in the file: it is ephemeral and gitignored, so a reader cannot open it), and a one-line role. This is what stops an agent reimplementing a helper that already exists.
 - Derive the **placement conventions**: for each kind of change this project actually receives, where the new file goes and which existing file to follow as the pattern. Confirm every path with `ls`/glob.
 - Both tables are required sections of `architecture.md` (see `templates/architecture.template.md`).
 
