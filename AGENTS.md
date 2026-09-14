@@ -57,6 +57,12 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   prompt and its `ms-migration` command, the discovery agent, phase prompts `01`-`04`,
   `graphify-bootstrap.sh`). A project with a `.ai/.meta.yml` never gets those installed or
   refreshed, so a version refresh does not undo the migrate prompt's Phase 5 cleanup. The installer never deletes: that stays the operator's choice.
+- **No plugin jargon in shipped content.** Local Claude Code plugins (ponytail, caveman) prefix
+  the comments they write with their own name, and `# ponytail: pinned to :latest` shipped in
+  `templates/workflows/maintainer.yml` into every migrated repo, where a client reviewer asked what
+  it meant (BENO-Optiver-Website #743). Keep what such a comment says and drop the prefix.
+  `.github/workflows/no-plugin-jargon.yml` fails a PR whose added lines outside `.github/` carry
+  either word; the changelog is exempt so it can describe the removal.
 - **A vendored script is scanned by the client's linters, not just ours.** `scripts/validate.sh`,
   `scripts/mirror-claude.sh`, `scripts/gen-dependabot.sh` and `scripts/graphify-bootstrap.sh` land
   inside the target repository, so a client pipeline running SonarQube treats them as first-party
