@@ -121,8 +121,11 @@ jobs:
             - Detect drift using `git diff` since `last_maintained` — read diffs, not full files.
               Open a full source file only when the diff can't tell you how docs must change.
             - Read only the .ai/ files impacted by the changed areas — not all of them.
-            - Apply surgical, evidence-cited updates only. NEVER delete existing content unless it references
-              something that was removed from the repo (i.e. it is provably no longer used).
+            - Apply surgical, evidence-cited updates only. Delete existing content only in the three cases
+              in the agent doc's writing rules: it breaks a `standards/writing-rules.md` rule (change
+              narration, a restated fact owned elsewhere, a banned absence), repository evidence
+              contradicts it (references something removed from the repo, i.e. provably no longer used),
+              or a human asked in this run. Content that is merely old or unfamiliar is not yours to remove.
             - Respect <!-- human-maintained --> sections — leave them untouched.
             - Confluence sync (space MS, base https://dept-nl.atlassian.net/wiki/spaces/MS/Projects):
               UPDATE existing pages in place. Never remove a page unless its underlying subject no longer exists

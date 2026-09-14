@@ -11,7 +11,9 @@ set -euo pipefail
 #   .claude/agents/<n>.md     -> ../../.github/agents/<n>.agent.md   one relative symlink per agent
 #
 # Idempotent: run it after adding or deleting a skill or an agent, and on every
-# `scripts/install.sh . --update` refresh, which calls it for you.
+# `scripts/install.sh . --update` refresh, which calls it for you — that's the standards repo's
+# own installer, run against this project (or via the documented curl one-liner), not a script
+# vendored into this repository: there is no local `scripts/install.sh` here to look for.
 #
 # Usage:
 #   ./scripts/mirror-claude.sh                  # current directory
@@ -169,7 +171,10 @@ sync_agents() {
 
   local mirrored
   for mirrored in "$mirror_dir"/*.md; do
-    [[ -e "$mirrored" ]] || continue
+    # `-e` alone follows a symlink and is false for one whose target is gone, so a deleted source
+    # agent's now-broken mirror link would skip this loop silently instead of being reported below.
+    # `-L` also matches the link itself, target or no target.
+    [[ -e "$mirrored" || -L "$mirrored" ]] || continue
     name="$(basename "$mirrored" .md)"
     if [[ -f "${src_dir}/${name}.agent.md" ]]; then continue; fi
 

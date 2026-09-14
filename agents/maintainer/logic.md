@@ -93,6 +93,7 @@ Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mappin
 - Update in place — never delete a page/section unless its subject no longer exists in the repo
 - Add "Last synced from .ai/ — [timestamp]" to each touched page
 - Render every section per `docs/confluence-layout.md` (block choice, canonical table columns, `H2` sections); bring an older-shaped section to the standard shape while updating it
+- The architecture page's Mermaid diagram is a special case: follow `docs/confluence-page-standard.md`'s Mermaid section exactly, not the general routing above. It needs an MCP speaking the Atlassian HTML content format — a session-level capability, distinct from (and not assumed equivalent to) whatever community Atlassian MCP the CI environment wires. If unreachable, keep the plain code block and record it as an open item per that section, rather than attempting the extension write
 
 ### Phase 8: Metadata Update
 
