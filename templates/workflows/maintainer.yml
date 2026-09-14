@@ -3,9 +3,8 @@ name: Maintainer Agent
 on:
   schedule:
     # Every 2 weeks: 1st and 15th at 09:00 UTC. GitHub cron has no "every other week"
-    # expression, so day-of-month is the cheap approximation.
-    # ponytail: day-of-month, not week parity. Good enough; swap for a parity gate if
-    # you truly need a fixed weekday cadence.
+    # expression, so day-of-month is the cheap approximation, not week parity. Good enough;
+    # swap for a parity gate if you truly need a fixed weekday cadence.
     - cron: "0 9 1,15 * *"
   workflow_dispatch: {} # Manual run from the Actions tab (bypasses the cost gate)
 
@@ -145,17 +144,22 @@ jobs:
             Commit message + PR title must follow this repo's commit convention (commitlint may be
             enforced). If the repo requires an issue key, use its no-op placeholder. Example title:
             "chore(docs): biweekly .ai/ maintenance".
+          # --max-turns is a hard limit, unlike the cost-gate/no-op-rule instructions above, which
+          # the agent can only be asked to follow. 60 is generous for a real drift-fixing run
+          # (read .meta.yml + git log/diff, up to 9 .ai/ files, Confluence resolve/write per
+          # touched page, commit/push/PR) without leaving unattended, twice-monthly, write-access
+          # runs as open-ended as 100. Raise it only with evidence a real run hit the ceiling.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
             --model claude-sonnet-5
-            --max-turns 100
+            --max-turns 60
 
       # Persist the agent's execution log so it's downloadable from the run page.
       # `if: always()` = upload even when the agent step fails/hits max-turns.
       - name: Upload agent execution log
         if: always() && steps.gate.outputs.run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: claude-execution-output
           path: ${{ runner.temp }}/claude-execution-output.json
