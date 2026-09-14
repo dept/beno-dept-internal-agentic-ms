@@ -120,11 +120,17 @@ page whose only delta would be the "Last synced" line.
 
 ## Escalation Levels
 
+Opening a pull request is the only action available: the harness grants `gh pr create`, `gh pr view`
+and `gh pr list` and nothing that can assign a reviewer or merge, and the target repository may have
+no `CODEOWNERS` file. Severity therefore changes what the PR *says*, not what happens to it — a human
+merges every one. This table and `config/change-impact-matrix.yml` → `escalation` state one rule; a
+change to either lands in both.
+
 | Severity | Action |
 |----------|--------|
-| Critical | Create PR, assign CODEOWNERS, require human review |
-| Moderate | Create PR, auto-merge after 48h if no objections |
-| Minor | Batch into weekly maintenance PR |
+| Critical | Open a PR whose title names the drift, and state in the body that it needs human review before merge |
+| Moderate | Open a PR describing the change and leave it for a human to merge; there is no auto-merge |
+| Minor | Batch into the next scheduled maintenance PR |
 
 ## Quality Gates
 
