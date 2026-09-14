@@ -37,12 +37,13 @@ check_command_refs() {
     if [[ -z "$first" ]]; then
       first="$w"
       case "$first" in
-        bash|sh|python3|python|node|npx|./*) ;;
+        # ./scripts/x.sh is the runner and the path at once, so it falls through to be checked.
+        ./*) ;;
+        bash|sh|python3|python|node|npx) continue ;;
         *) return 0 ;;
       esac
-      continue
     fi
-    w="${w%[),;.]}"
+    w="${w%[),;.]}"; w="${w#./}"
     case "$w" in
       *.sh|*.py|*.mjs|*.js|*.yml|*.yaml|*.md) ;;
       *) continue ;;
