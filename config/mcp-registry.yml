@@ -52,9 +52,9 @@ servers:
     detect: ["storybook", "@storybook/react", "@storybook/nextjs"]
     protocol: stdio
     command: npx
-    args: ["-y", "@storybook/addon-mcp"]
-    note: "No env var required."
-    last_verified: "2026-06-17"
+    args: ["-y", "@storybook/addon-mcp@10.6.0"]
+    note: "No env var required. Version pinned: an stdio MCP server launches with the developer's local tool access on every IDE start, so it is never resolved at run time."
+    last_verified: "2026-09-14"
 
   # ─── CMS ──────────────────────────────────────────────────────────────────
 
@@ -89,9 +89,9 @@ servers:
     detect: ["@shopify/shopify-api", "@shopify/storefront-api-client", "@shopify/admin-api-client"]
     protocol: stdio
     command: npx
-    args: ["-y", "@shopify/dev-mcp@latest"]
+    args: ["-y", "@shopify/dev-mcp@1.15.2"]
     note: "No env var required — authenticates via browser OAuth using Shopify CLI session"
-    last_verified: "2026-06-17"
+    last_verified: "2026-09-14"
 
   # ─── Database / ORM ──────────────────────────────────────────────────────
 
@@ -205,10 +205,10 @@ servers:
     auth: "OAuth"
     stdio_fallback:
       command: npx
-      args: ["-y", "@stripe/mcp", "--tools=all"]
+      args: ["-y", "@stripe/mcp@0.3.3", "--tools=all"]
       env_var: "STRIPE_SECRET_KEY"
     note: "Prefer remote OAuth server. Local npx option available if OAuth not feasible."
-    last_verified: "2026-06-17"
+    last_verified: "2026-09-14"
 
   # ─── Monorepo ─────────────────────────────────────────────────────────────
 
