@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.9"
+  version: "2.7.10"
   release_date: "2026-09-14"
   changelog:
+    - version: "2.7.10"
+      date: "2026-09-14"
+      changes:
+        - "agents/maintainer.agent.md line 308 named `scripts/install.sh` as a backticked path. That script is not vendored into a migrated project, so scripts/validate.sh's own Reference Integrity check failed on every repository the 2.7.9 refresh touched: `.github/agents/maintainer.agent.md:308 names scripts/install.sh, which does not exist`. The sentence was correct about behaviour and wrong about location, so it now refers to the installer's `--update` mode run from the standards repository rather than naming a path that has to resolve locally. 2.7.9 made the same correction in scripts/mirror-claude.sh's comment and missed this one. Caught by running the 2.7.9 refresh against a migrated repo before rolling it out"
     - version: "2.7.9"
       date: "2026-09-14"
       changes:
