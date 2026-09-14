@@ -15,7 +15,6 @@ Document system structure, runtime boundaries, and integration flows for safe AI
 - Failure domains
 - **High-fan-in symbols**: who owns what (see below)
 - **Placement conventions** (see below)
-- Structural discovery notes when Graphify materially helped identify boundaries or hotspots
 
 ## Writing rules
 
@@ -52,7 +51,7 @@ symbols cannot be changed casually.
 | `sendGTMEvent()` | `packages/analytics/src/gtm.ts` | 38 | Single entry point for GTM dataLayer pushes |
 
 - List the symbols with the highest fan-in, not every export. Roughly 10 rows is the useful size.
-- `Consumers` is the fan-in count. Take it from `graphify-out/graph.json` when Graphify ran; otherwise from `grep -rc`, and say which. Leave it blank rather than guessing. The number is what marks a symbol as load-bearing.
+- `Consumers` is the fan-in count. Derive it from `graphify-out/graph.json` when Graphify ran, otherwise from `grep -rc`. Leave it blank rather than guessing. The number is what marks a symbol as load-bearing. Do **not** name `graphify-out/` as the source in the file: it is ephemeral and gitignored, so it is gone by the time anyone reads this, and a source a reader cannot open is worse than no source. Cite a durable one, or state the count plainly with a confidence note.
 - One line per role, describing what it does and why everything depends on it.
 - Verify every symbol and path exists before writing the row.
 

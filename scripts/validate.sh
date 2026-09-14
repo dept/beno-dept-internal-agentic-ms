@@ -24,6 +24,43 @@ echo -e "${BLUE}  DEPT Agentic Standard — .ai/ Folder Validator${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo ""
 
+# A backticked command line, e.g. `bash scripts/graphify-bootstrap.sh .`. Warn when it runs a
+# standard-owned script that is not in this repository — the bootstrap-only artifacts (the migrate
+# prompt, the phase prompts, the discovery agent, graphify-bootstrap.sh) are deliberately removed
+# after a migration, so a durable file still telling an agent to run one is a dead instruction.
+# Anchored on a runner word plus a real file extension: without both, `docs/docs/Content
+# Management Implementation/labels.md` splits into words that look like missing paths.
+check_command_refs() {
+  local prefixes="$1" f="$2" line="$3" cmd="$4"
+  local first="" w p owned
+  for w in $cmd; do
+    if [[ -z "$first" ]]; then
+      first="$w"
+      case "$first" in
+        # ./scripts/x.sh is the runner and the path at once, so it falls through to be checked.
+        ./*) ;;
+        bash|sh|python3|python|node|npx) continue ;;
+        *) return 0 ;;
+      esac
+    fi
+    w="${w%[),;.]}"; w="${w#./}"
+    case "$w" in
+      *.sh|*.py|*.mjs|*.js|*.yml|*.yaml|*.md) ;;
+      *) continue ;;
+    esac
+    owned=0
+    for p in $prefixes; do
+      case "$w" in "$p"|"$p"/*) owned=1; break ;; esac
+    done
+    [[ "$owned" -eq 1 ]] || continue
+    git -C "${PROJECT_DIR}" check-ignore -q "$w" 2>/dev/null && continue
+    if [[ ! -e "${PROJECT_DIR}/${w}" ]]; then
+      echo -e "  ${YELLOW}△${NC} ${f#${PROJECT_DIR}/}:${line} runs ${w}, which is not in this repository"
+      WARNED=$((WARNED + 1))
+    fi
+  done
+}
+
 check_references() {
   local prefixes="$1"; shift
   local f hit line ref bad=0
@@ -43,7 +80,14 @@ check_references() {
       ref="${ref#\`}"; ref="${ref%\`}"
       # Placeholders, globs, command lines and URLs are not paths to resolve.
       case "$ref" in
-        *" "*|*"<"*|*">"*|*"*"*|*"{"*|*"$"*|*"|"*|*"://"*|*"..."*) continue ;;
+        *"<"*|*">"*|*"*"*|*"{"*|*"$"*|*"|"*|*"://"*|*"..."*) continue ;;
+        # A token with spaces is prose or a command line, not a path — but a *command* can still
+        # tell an agent to run a standard-owned script that the migration removed, and skipping
+        # the whole token is how `bash scripts/graphify-bootstrap.sh .` survived in a migrated
+        # repo's architecture.md with every reference reported as resolving. Inspect the words of
+        # a command line, and warn rather than fail: a doc may legitimately describe a command run
+        # from somewhere else (the standards repo's own installer), which this cannot tell apart.
+        *" "*) check_command_refs "$prefixes" "$f" "$line" "$ref"; continue ;;
       esac
       ref="${ref%/}"; ref="${ref%.}"; ref="${ref%,}"; ref="${ref%)}"
       [[ -n "$ref" ]] || continue

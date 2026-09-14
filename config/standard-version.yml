@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.10"
+  version: "2.7.11"
   release_date: "2026-09-14"
   changelog:
+    - version: "2.7.11"
+      date: "2026-09-14"
+      changes:
+        - "templates/architecture.template.md required a `Structural discovery notes` section \"when Graphify materially helped\", and it, prompts/02-discover.prompt.md and agents/discovery.agent.md all told Discovery to record which tool produced each fan-in count (\"and say which\") — naming `graphify-out/graph.json`, which is ephemeral and gitignored, in a durable file. The template says three lines later that standards/writing-rules.md governs it, and §1 bans exactly that process narration, so the standard was asking for two contradictory things and Discovery reasonably wrote the banned version. It shows in the output: all four migrated repositories cite graphify-out/ in .ai/architecture.md and two of the four carry the Structural discovery notes section; dtnl-bpd-corporate even documents graphify-out/ as a directory in its repository tree, which no checkout has. The required section is removed and all three files now say to derive the count from the graph but never to cite it, because Phase 5 deletes both the artifact and the script that rebuilds it. Existing migrations keep the residue until a Maintainer pass or a hand edit clears it"
+        - "scripts/validate.sh's reference checker skipped every backticked token containing a space, so a *command* naming a standard-owned script was never checked — `bash scripts/graphify-bootstrap.sh .` sat in a migrated repo's architecture.md (and its generated codebase-overview copy) telling agents to run a script Phase 5 deliberately removes, while the same run reported every reference as resolving. It now inspects the words of a command line, anchored on a runner (`bash`, `sh`, `python3`, `node`, `npx`, `./`) plus a real file extension so a path containing spaces does not split into phantom missing paths, and reports at warning level rather than failure: a doc may legitimately describe a command run from somewhere else (this repo's own installer), which the check cannot tell apart. Verified it catches the real case and stays silent across all four currently-migrated repositories and this one"
     - version: "2.7.10"
       date: "2026-09-14"
       changes:
