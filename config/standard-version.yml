@@ -3,9 +3,15 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.7"
-  release_date: "2026-09-11"
+  version: "2.7.8"
+  release_date: "2026-09-14"
   changelog:
+    - version: "2.7.8"
+      date: "2026-09-14"
+      changes:
+        - "docs/confluence-page-standard.md, prompts/03-integrate.prompt.md and templates/skills/confluence-axi/SKILL.md no longer tell an agent to publish the architecture page's Mermaid diagram by writing ADF through confluence-axi. The CLI (1.0.4, latest published) has no --format flag on page create/update at all, only on page get, so it cannot write the ADF-only Mermaid Diagrams Viewer extension. Falling back to raw storage-format <ac:adf-extension>/<ac:adf-parameter> XML doesn't work either: Confluence's storage serialization kebab-cases or flattens every nested parameter key (guestParams came back guestparams in one attempt and guest-params in another, both tested against a live dept-nl.atlassian.net page), and the app reads guestParams.index case-sensitively, so the diagram fails (\"Error while loading diagram\") even though the write reports success. All three files now document the working procedure instead: write it through an MCP that speaks the Atlassian HTML content format (data-parameters as one JSON-encoded attribute, not decomposed XML elements, which is what preserves casing), and verify with `page get --format adf --full`, never the storage-format default, since the storage echo mangles the same keys for display even when the underlying stored ADF is correct. Verified end to end against a live page: the stored ADF read back showed guestParams/forgeEnvironment/extensionId/extensionTitle all camelCase and index as a number. Found and fixed live, mid-migration, on beno-eon-cvp-platform's Architecture & Package Map page"
+        - "Released as 2.5.2 on the branch this lands from, cut when main was still on 2.5.0. Main had already shipped 2.6.0 through 2.7.7, so the number is corrected here rather than reused: a migration stamped 2.5.2 reports a version that never existed upstream and sorts below every release it is actually missing"
+        - "The three files' HTML example escapes `-->` to `--&gt;` but never stated the rule: the content-format converter parses the `<code>` block as HTML, so an unescaped `&`, `<` or `>` in a real diagram's source (a `<br/>` label, a class-diagram `<<Interface>>` marker, a bare `&`) is read as markup or a named entity instead of literal text, silently breaking the verbatim-copy-of-.ai/architecture.md rule even though the write reports success. Caught by GitHub Copilot's PR review on all three files. Each now states the escaping rule explicitly: `&` to `&amp;` first, then `<` to `&lt;` and `>` to `&gt;`"
     - version: "2.7.7"
       date: "2026-09-11"
       changes:
