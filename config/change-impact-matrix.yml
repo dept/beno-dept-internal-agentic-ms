@@ -90,9 +90,10 @@ change_impact_rules:
   # --- CMS & Content ---
   - trigger: "CMS configuration changed"
     detect_by:
-      - "changes to contentful config, sanity schema, storyblok config"
+      - "changes to contentful config, sanity schema, storyblok config (headless/JS stacks)"
+      - "changes to Optimizely/Sitecore/Umbraco content models, CMS initialization or DI setup, or appsettings*.json CMS sections (.NET stacks)"
       - "changes to CMS SDK initialization or client setup"
-      - "new content types or webhook registrations"
+      - "new content types, page/block models, or webhook registrations"
     impacts:
       - file: cms.md
         severity: critical

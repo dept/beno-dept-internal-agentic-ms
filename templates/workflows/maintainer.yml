@@ -40,7 +40,12 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "Manual dispatch — running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          last=$(grep -oE 'last_maintained:[[:space:]]*"[^"]*"' .ai/.meta.yml | head -1 | sed -E 's/.*"(.*)"/\1/')
+          # `|| true`: on first run last_maintained is unquoted `null`, so this regex has no
+          # match. Under GitHub Actions' default `-e -o pipefail` bash, an unmatched `grep -o`
+          # inside `$(...)` would fail the assignment itself and exit the whole step *before*
+          # the `-z "$last"` first-run check below ever runs — killing the exact case this was
+          # written to handle.
+          last=$(grep -oE 'last_maintained:[[:space:]]*"[^"]*"' .ai/.meta.yml | head -1 | sed -E 's/.*"(.*)"/\1/' || true)
           if [ -z "$last" ]; then
             echo "No last_maintained — first run, running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
@@ -48,23 +53,52 @@ jobs:
           echo "Non-doc files changed since $last: $changed"
           if [ "$changed" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
 
-      # Optional — only needed when this repo syncs .ai/ to Confluence.
+      # Secrets preflight: ANTHROPIC_API_KEY is required for every run past this point. Without
+      # this, the cost gate passing (real drift) still walks into the Claude action with an empty
+      # key, and it fails noisily mid-run instead of skipping cleanly with an explainable log line.
+      - name: Check required secrets
+        id: secrets
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::warning::ANTHROPIC_API_KEY is not set — skipping this run. Configure it to enable the Maintainer Agent."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # Build the Atlassian MCP config at runtime. The token is NEVER written to disk:
       # the config only lists the docker command + `-e VAR` passthrough flags, and docker
       # reads the actual values from the agent step's env below. This keeps the token out
       # of any file a prompt-injected agent could read.
       # Uses the community sooperset/mcp-atlassian server (API-token auth = non-interactive, works in CI).
-      # ponytail: pinned to :latest; pin a digest if you need reproducible runs.
+      # Pinned to a digest, not `:latest`: this container receives CONFLUENCE_API_TOKEN, so a
+      # mutable tag would let a later, unaudited image run with that credential. Re-resolve and
+      # bump the digest deliberately (`docker buildx imagetools inspect
+      # ghcr.io/sooperset/mcp-atlassian:latest`), not automatically.
+      # Always runs (unconditionally on the gate/secrets check) so the next step's
+      # `--mcp-config` flag always finds a valid file — but when either Confluence secret is
+      # absent, it writes an EMPTY mcpServers config instead of skipping outright: Phase 7 in the
+      # agent doc already leaves Confluence content untouched when it has no reachable MCP, so a
+      # repo that hasn't configured sync yet still gets its plain .ai/ maintenance PR.
       - name: Build Atlassian MCP config
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs.run == 'true' && steps.secrets.outputs.ok == 'true'
+        env:
+          CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+          CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
         run: |
-          jq -n \
-            '{mcpServers:{atlassian:{command:"docker",args:["run","-i","--rm","-e","CONFLUENCE_URL","-e","CONFLUENCE_USERNAME","-e","CONFLUENCE_API_TOKEN","ghcr.io/sooperset/mcp-atlassian:latest"]}}}' \
-            > /tmp/mcp-atlassian.json
+          if [ -z "$CONFLUENCE_USERNAME" ] || [ -z "$CONFLUENCE_API_TOKEN" ]; then
+            echo "::notice::CONFLUENCE_USERNAME/CONFLUENCE_API_TOKEN not set — Confluence sync unavailable this run."
+            jq -n '{mcpServers:{}}' > /tmp/mcp-atlassian.json
+          else
+            jq -n \
+              '{mcpServers:{atlassian:{command:"docker",args:["run","-i","--rm","-e","CONFLUENCE_URL","-e","CONFLUENCE_USERNAME","-e","CONFLUENCE_API_TOKEN","ghcr.io/sooperset/mcp-atlassian@sha256:5b7c9b64d4eb3210cab74be8bf3e6aeea9ed14f3042dc59ba5c5287bd4dbe466"]}}}' \
+              > /tmp/mcp-atlassian.json
+          fi
           jq empty /tmp/mcp-atlassian.json
 
       - name: Run Maintainer Agent
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs.run == 'true' && steps.secrets.outputs.ok == 'true'
         uses: anthropics/claude-code-action@37b464ce72700f7b2c5ff8d2db7fa7b15df792f5 # v1.0.169
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -110,7 +144,7 @@ jobs:
             "chore(docs): biweekly .ai/ maintenance".
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
             --model claude-sonnet-5
             --max-turns 100
 

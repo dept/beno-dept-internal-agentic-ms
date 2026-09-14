@@ -98,14 +98,23 @@ Determine what changed since last maintenance.
 ### 2a: Git History Analysis
 
 ```bash
-# Get last maintenance date from .meta.yml
-last_maintained=$(grep 'last_maintained' .ai/.meta.yml | head -1)
+# Get last maintenance date from .meta.yml — the scalar value, not the whole YAML line
+# (`grep 'last_maintained' .ai/.meta.yml` alone captures `last_maintained: "..."`, and
+# `git log --since=` on that literal text is invalid on every run, `null` included).
+last_maintained=$(grep -E '^\s*last_maintained:' .ai/.meta.yml | head -1 \
+  | sed 's/.*last_maintained:\s*//; s/"//g' | tr -d '[:space:]')
 
-# List changed files since then
-git log --since="$last_maintained" --name-only --pretty=format: | sort -u
+if [[ -z "$last_maintained" || "$last_maintained" == "null" ]]; then
+  # First run, or the field was reset: no baseline to diff from. Treat as full-drift —
+  # every impacted file in the change-impact matrix is in scope, not just what's "changed".
+  git log --name-only --pretty=format: | sort -u
+else
+  # List changed files since then
+  git log --since="$last_maintained" --name-only --pretty=format: | sort -u
 
-# Read the DIFF, not full files — this is what drift detection needs and is far cheaper.
-git diff "@{$last_maintained}" -- <changed-paths>
+  # Read the DIFF, not full files — this is what drift detection needs and is far cheaper.
+  git diff "@{$last_maintained}" -- <changed-paths>
+fi
 ```
 
 **Diff-first rule:** inspect changes via `git diff`. Only open a full file when the diff alone
@@ -250,8 +259,8 @@ Generate a structured summary of all changes:
 
 Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`). It declares the space, the page tree with each page's recorded `id`, and the `sync_map` routing each `.ai/` file to a page.
 
-1. **Resolve page IDs.** For each page whose `id` is empty, find the existing page by its `title` under the configured space/base URL and write the resolved `id` back into `.ai/.meta.yml`. Titles are the **full, collision-safe values** (subpages prefixed with the landing title — `<landing title> - <subpage>`; landing unaffixed — see `docs/confluence-page-standard.md` → *Page titles*), so match the exact stored title. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found — and use the prefixed title when doing so.
-2. **Route updates** via `sync_map`: send each changed `.ai/` file's content to its mapped page. `agent-registry.md` updates only the landing page's `## AI tooling status` section. A `sync_map` source that does not exist is a missing target; see *Missing target files* above.
+1. **Resolve page IDs by walking the landing page's children, never by a bare title search.** `confluence.pages.landing.id` is always populated (see `docs/confluence-page-standard.md`); list its children and match the exact **full, collision-safe title** among them (subpages prefixed with the landing title — `<landing title> - <subpage>`; landing unaffixed — see `docs/confluence-page-standard.md` → *Page titles*). A title search across the shared `MS` space can return another project's similarly named page — walking one page's own children cannot. Write the resolved `id` back into `.ai/.meta.yml`. Never create a page that already exists (this is what prevents duplicates). Only create a missing page if its subject genuinely exists in the repo but no page is found among the landing page's children — and use the prefixed title when doing so.
+2. **Route updates** via `sync_map`, transformed — never verbatim. A changed `.ai/` file is agent-facing: it carries an ownership header, agent pointers, confidence/process notes, and Markdown syntax. None of that belongs on a page a human reads. Convert the changed section into the mapped page's storage/ADF format per #6 below and write only that. `agent-registry.md` updates only the landing page's `## AI tooling status` section. A `sync_map` source that does not exist is a missing target; see *Missing target files* above.
 3. Push **critical/moderate** updates only. Skip minor (avoid noise).
 4. **Update in place** — never delete a page or remove existing sections unless the underlying subject no longer exists in the repo.
 5. Add a "Last synced from .ai/ — [timestamp]" note to each page touched.
@@ -293,7 +302,7 @@ Same rule for Confluence: a page whose only delta would be the "Last synced" lin
 
 Automated triggering runs this agent via a **cost-gated GitHub Actions workflow**: a cheap `git log` step skips the paid agent run whenever nothing outside `.ai/**` changed, and the agent opens a PR (never pushes to `main`) — and only when the run produced real content changes (see the no-op rule above). Triggers: biweekly `schedule` (1st + 15th, 09:00 UTC) + manual `workflow_dispatch`.
 
-Setup is not part of this agent's runtime job. The full workflow (permissions, cost-gate step, model choice, and the Atlassian-MCP-for-Confluence note) is not vendored into a migrated repository; fetch it from the standards repository at `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/maintainer.yml` and write it to `.github/workflows/maintainer.yml` to enable automation. A repo may already have its own. (The migrate prompt's Phase 4b does this for you on a fresh migration.)
+Setup is not part of this agent's runtime job. Check `.github/workflows/maintainer.yml` before assuming it is missing — the migrate prompt's Phase 4b installs it on a fresh migration, and `scripts/install.sh` never touches it afterward (a project's own schedule/permissions stay project-tuned, not overwritten by a refresh). If it is genuinely absent, or `scripts/validate.sh`'s Maintainer Workflow Guard check flags it, fetch the current template (permissions, cost-gate step, model choice, the Atlassian-MCP-for-Confluence note, the default-branch guard) from the standards repository at `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/maintainer.yml`, write it to `.github/workflows/maintainer.yml`, and set the guard's branch name to this repo's actual default branch.
 
 ---
 
