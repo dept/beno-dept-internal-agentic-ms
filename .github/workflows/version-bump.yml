@@ -43,7 +43,20 @@ jobs:
             | grep -qE '^\+[[:space:]]+version:'; then
             new_version=$(grep -E '^[[:space:]]+version:' "$VERSION_FILE" | head -1 \
               | sed 's/.*version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
-            echo "Version bumped to ${new_version}."
+
+            # The field changed, but a branch cut from an old main can still invent a number
+            # below every release main has shipped since (#20, #21 both did this). Require the
+            # new version to sort strictly above main's current one, not merely differ from it.
+            base_version=$(git show "$BASE_SHA:$VERSION_FILE" | grep -E '^[[:space:]]+version:' | head -1 \
+              | sed 's/.*version:[[:space:]]*//; s/"//g' | tr -d '[:space:]')
+            highest=$(printf '%s\n%s\n' "$base_version" "$new_version" | sort -V | tail -1)
+
+            if [ "$highest" != "$new_version" ] || [ "$new_version" = "$base_version" ]; then
+              echo "::error::${VERSION_FILE} bumps 'standard.version' to ${new_version}, which does not sort above the base branch's current ${base_version}. This branch was likely cut before a later release shipped on the base branch - rebase and re-bump above ${base_version}."
+              exit 1
+            fi
+
+            echo "Version bumped from ${base_version} to ${new_version}."
             exit 0
           fi
 
