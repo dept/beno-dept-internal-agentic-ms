@@ -68,10 +68,27 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Build the Atlassian MCP config at runtime. The token is NEVER written to disk:
-      # the config only lists the docker command + `-e VAR` passthrough flags, and docker
-      # reads the actual values from the agent step's env below. This keeps the token out
-      # of any file a prompt-injected agent could read.
+      # Build the Atlassian MCP config at runtime. The config only lists the docker command plus
+      # `-e VAR` passthrough flags, so no credential is written to /tmp.
+      #
+      # That is worth doing and it is not isolation. The values still have to be in the agent
+      # step's env for docker to forward them, so anything running inside that step can read them
+      # out of its own environment, `Bash(cat:*)` or not. The trust boundary this workflow
+      # actually has: repository content that reached the default branch is trusted, because the
+      # scheduled run only ever reads merged content and a poisoned document had to pass review to
+      # get there. Someone who can merge arbitrary text into main can also just edit this file.
+      #
+      # What follows from that, and what to check before enabling it on a repository:
+      #   - branch protection and required review on the default branch, which is what makes the
+      #     "merged content is reviewed content" assumption true;
+      #   - a dedicated Confluence bot account whose API token reaches the MS space and nothing
+      #     else. Repositories enabled before that account exists run on a personal token, which
+      #     widens the blast radius to everything that person can reach in Confluence: swap them
+      #     over once the shared account is available;
+      #   - the `permissions:` block above stays at contents/pull-requests write, so the worst a
+      #     compromised run can do with GITHUB_TOKEN is open a branch and a PR.
+      # Narrowing the tool allowlist further does not close it: Read, grep and sed reach a
+      # process environment as easily as cat does.
       # Uses the community sooperset/mcp-atlassian server (API-token auth = non-interactive, works in CI).
       # Pinned to a digest, not `:latest`: this container receives CONFLUENCE_API_TOKEN, so a
       # mutable tag would let a later, unaudited image run with that credential. Re-resolve and
