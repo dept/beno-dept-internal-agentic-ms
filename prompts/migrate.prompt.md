@@ -370,9 +370,29 @@ Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
 ### Next Steps
 1. Review .ai/ files and resolve Validation Questions
 2. Commit changes to a feature branch
-3. Open a pull request for team review
+3. Open a pull request for team review, carrying the two required links (below)
 4. After merging, run Maintainer Agent after each sprint
 ```
+
+### The pull request description
+
+The reviewers of this pull request did not ask for it, and most of them have not heard of the
+standard. A description that lists only what changed reads as an unexplained drop of a hundred
+files into their repository, so it opens with why, in two links, before anything else:
+
+```markdown
+Why this PR: https://dept-nl.atlassian.net/wiki/spaces/MS/pages/21504720935/Why+is+this+DEPT+standard+being+added+to+your+project
+
+More about the standard: https://github.com/dept/beno-dept-internal-agentic-ms
+```
+
+The Confluence page is the explanation written for the receiving team: what is added, what is not
+touched (no application code, no dependencies, no pipeline config), and what it costs them. The
+repository link is for whoever wants the mechanics. Put both in the description itself, not in a
+follow-up comment, because a comment is what a reviewer reads after already forming an opinion.
+
+The rest of the description then states what the migration added, the `scripts/validate.sh` result,
+what Phase 5 deleted, and the Validation Questions the team has to answer.
 
 ---
 
