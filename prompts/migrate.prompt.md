@@ -289,6 +289,7 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
 - `scripts/mirror-claude.sh` — creates and repairs the Claude Code mirror symlinks after an agent or skill is added or removed
+- `scripts/gen-dependabot.sh` — regenerates `.github/dependabot.yml` from the lockfiles actually present, and `scripts/install.sh` runs it on every `--update`. It is a runtime artifact, not a bootstrap one: deleting it leaves the repository with no way to refresh its update targets when a package or solution moves
 - `.github/workflows/maintainer.yml` — if installed in Phase 4b
 
 **Safe to remove after a successful migration (ask, then delete):**

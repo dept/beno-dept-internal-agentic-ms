@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.11"
-  release_date: "2026-09-14"
+  version: "2.7.12"
+  release_date: "2026-09-15"
   changelog:
+    - version: "2.7.12"
+      date: "2026-09-15"
+      changes:
+        - "config/mcp-registry.yml wired the Datadog MCP to `https://mcp.datadoghq.eu/api/unstable/mcp-server/mcp`. That path is deprecated: the server answers but returns a notice on every connection telling the client to move to `/v1/mcp` on the same host, which every agent session then has to read and relay. The registry now names `https://mcp.datadoghq.eu/v1/mcp?toolsets=core,synthetics`. Host and required toolsets query param are unchanged, so only the path moves; US1 orgs still substitute mcp.datadoghq.com. Already-migrated repositories carry the old URL in their three MCP configs until edited"
+        - "prompts/migrate.prompt.md's Phase 5 keep list named scripts/validate.sh and scripts/mirror-claude.sh but not scripts/gen-dependabot.sh, and the remove list right below it describes scripts/graphify-bootstrap.sh as a one-time pre-pass. Two migrations read the pattern as \"install-time scripts go\" and deleted the dependabot generator, and because neither had reached the point of generating .github/dependabot.yml, both repositories ended with no Dependabot configuration at all and a fully COMPLIANT validate run: nothing checks for it. The generator is now in the keep list, with the reason (scripts/install.sh runs it on every --update, so it is how a repository refreshes its update targets when a package moves)"
     - version: "2.7.11"
       date: "2026-09-14"
       changes:
