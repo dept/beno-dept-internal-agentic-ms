@@ -250,10 +250,13 @@ done
 # does, so a project that removed the discovery agent in Phase 5 gets no mirror back.
 echo ""
 echo -e "${BLUE}── Claude Code mirrors ──${NC}"
+# `|| true`: the script exits non-zero when it found mirror drift only a human can resolve. That
+# is information, not a reason to abandon an install that has already written most of its files,
+# and it has already printed which entries need the manual step.
 if [[ -f "${REPO_DIR}/scripts/mirror-claude.sh" ]]; then
-  bash "${REPO_DIR}/scripts/mirror-claude.sh" "$TARGET_DIR"
+  bash "${REPO_DIR}/scripts/mirror-claude.sh" "$TARGET_DIR" || true
 else
-  bash "${TARGET_DIR}/scripts/mirror-claude.sh" "$TARGET_DIR"
+  bash "${TARGET_DIR}/scripts/mirror-claude.sh" "$TARGET_DIR" || true
 fi
 echo ""
 
