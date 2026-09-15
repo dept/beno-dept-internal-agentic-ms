@@ -28,6 +28,13 @@ ROOT="${1:-.}"
 ROOT="$(cd "$ROOT" && pwd)"
 
 CHANGED=0
+# Drift this script refuses to resolve on its own (a copied mirror whose body the source does not
+# have, a stale legacy name that has diverged). It is reported and left alone, which used to mean
+# the script printed a red line and still exited 0: an installer or a CI job saw success and the
+# mirror stayed broken. Counted here and turned into a non-zero exit at the end, so a caller that
+# wants to know can ask. scripts/install.sh deliberately tolerates it and prints a notice instead
+# of aborting a half-finished install.
+UNRECONCILED=0
 
 # ── Skills: one symlink instead of a copy per skill ────────────────────────────
 # A copied mirror has to be re-copied on every source edit, and when it is not, the two
@@ -109,6 +116,7 @@ link_agent() {
       echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md was a copy with the same body, replaced by a symlink"
     else
       echo -e "  ${RED}✗${NC} .claude/agents/${name}.md has content the .github/agents/${name}.agent.md source does not. Nothing was changed: fold anything worth keeping into the .github/ source (a copy that only points at that source is worth nothing, delete it), then delete the copy and run this script again"
+      UNRECONCILED=$((UNRECONCILED + 1))
       return 0
     fi
   fi
@@ -191,6 +199,7 @@ sync_agents() {
         CHANGED=$((CHANGED + 1))
       else
         echo -e "  ${RED}✗${NC} .claude/agents/${name}.md is the old name of ${legacy_of} and its body has drifted. Nothing was changed: reconcile it into .github/agents/${legacy_of}.agent.md and delete it, or it registers a second agent under the same name"
+        UNRECONCILED=$((UNRECONCILED + 1))
       fi
       continue
     fi
@@ -205,3 +214,7 @@ echo "Rebuilding Claude Code mirrors in ${ROOT}"
 sync_skills
 sync_agents
 echo "  ${CHANGED} mirror(s) written"
+if [[ "$UNRECONCILED" -gt 0 ]]; then
+  echo "  ${UNRECONCILED} mirror(s) need manual reconciliation (see the lines marked above)"
+  exit 1
+fi
