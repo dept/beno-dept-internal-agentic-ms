@@ -52,7 +52,10 @@ sync_skills() {
     # reported before the source copy wins.
     local entry name
     for entry in "$mirror"/* "$mirror"/.[!.]*; do
-      [[ -e "$entry" ]] || continue
+      # `-e` alone follows a symlink and is false for one whose target is gone, so a dangling
+      # symlink left over in an old copied mirror would be skipped here and then silently lost
+      # to the `rm -rf "$mirror"` below. `-L` also matches the link itself, target or no target.
+      [[ -e "$entry" || -L "$entry" ]] || continue
       name="$(basename "$entry")"
       if [[ ! -e "${src}/${name}" ]]; then
         mv "$entry" "${src}/${name}"

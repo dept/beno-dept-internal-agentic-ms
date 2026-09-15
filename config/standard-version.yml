@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.12"
-  release_date: "2026-09-14"
+  version: "2.7.13"
+  release_date: "2026-09-15"
   changelog:
+    - version: "2.7.13"
+      date: "2026-09-15"
+      changes:
+        - "templates/workflows/maintainer.yml's `--allowedTools` granted `Bash(git:*)` — every git subcommand, push included — to an unattended, twice-monthly, write-access agent whose whole documented boundary is \"open a PR, never push to main\". That boundary was an instruction to the model, not an enforced one: a prompt-injected instruction or a mistaken model action could run `git push origin main` directly. Scoped to the specific subcommands Phases 2/4/8 of the agent doc actually run (log, diff, rev-list, status, checkout, add, commit, branch); publication is left to the already-scoped `gh pr create`, which pushes the current branch itself and, since the agent only ever checks out a new branch, can never touch main. Found by GitHub Copilot's review on BENO-Optiver-Website#743"
+        - "scripts/mirror-claude.sh's copied-mirror migration loop tested only `[[ -e \"$entry\" ]]`, so a dangling symlink left over in an old copied `.claude/skills` directory was skipped by the loop and then silently deleted by the `rm -rf \"$mirror\"` right after it — the exact class of bug the agent-mirror cleanup loop further down already guards against with `-L`. Added the same `-L` check here. Found by GitHub Copilot's review on BENO-Optiver-Website#743"
     - version: "2.7.12"
       date: "2026-09-14"
       changes:
