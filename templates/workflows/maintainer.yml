@@ -151,16 +151,23 @@ jobs:
           # (read .meta.yml + git log/diff, up to 9 .ai/ files, Confluence resolve/write per
           # touched page, commit/push/PR) without leaving unattended, twice-monthly, write-access
           # runs as open-ended as 100. Raise it only with evidence a real run hit the ceiling.
-          # No `Bash(git:*)`: that wildcard includes `git push`, which would let a
-          # prompt-injected instruction (or a mistaken model action) push straight to `main`
-          # despite this prompt's "open a PR, never push directly" instruction — an instruction,
-          # not an enforced boundary. Publication is `gh pr create` alone, which pushes the
-          # current (never-main, since the agent only ever checks out a new branch) branch
-          # itself; the commands below are only what Phase 2/4/8 of the agent doc actually runs
-          # (history/diff analysis, staging the .ai/ commit, reverting a no-op change).
+          # Not `Bash(git:*)`: that wildcard also hands an unattended agent `git config`,
+          # `git remote set-url` and history rewriting. The list below is what Phases 2/4/6/8 of
+          # the agent doc actually run — history/diff analysis, staging the .ai/ commit,
+          # reverting a no-op change, and publishing the branch.
+          # `git push` has to stay. `gh pr create` only offers to push when it can prompt, and a
+          # runner has no TTY, so without a prior push the run aborts with "you must first push
+          # the current branch to a remote, or use the --head flag" (cli/cli#6468, #10188) — the
+          # agent would commit the maintenance branch and then fail to publish it every time.
+          # So note what this does NOT close: an allowedTools entry is a command prefix and
+          # cannot express "push anywhere except main", and the runner starts checked out on the
+          # default branch. "Open a PR, never push to main" is still an instruction to the model,
+          # not an enforced boundary. Enforcing it means either a branch protection rule on main
+          # (outside this file) or moving the push and `gh pr create` into their own workflow
+          # step, where the refusal to publish the default branch is YAML the agent cannot reach.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
             --model claude-sonnet-5
             --max-turns 60
 
