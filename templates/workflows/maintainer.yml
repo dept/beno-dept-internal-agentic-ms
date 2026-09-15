@@ -159,12 +159,14 @@ jobs:
           # runner has no TTY, so without a prior push the run aborts with "you must first push
           # the current branch to a remote, or use the --head flag" (cli/cli#6468, #10188) — the
           # agent would commit the maintenance branch and then fail to publish it every time.
-          # So note what this does NOT close: an allowedTools entry is a command prefix and
-          # cannot express "push anywhere except main", and the runner starts checked out on the
-          # default branch. "Open a PR, never push to main" is still an instruction to the model,
-          # not an enforced boundary. Enforcing it means either a branch protection rule on main
-          # (outside this file) or moving the push and `gh pr create` into their own workflow
-          # step, where the refusal to publish the default branch is YAML the agent cannot reach.
+          # So note where the boundary actually is, because it is not in this file: an
+          # allowedTools entry is a command prefix and cannot express "push anywhere except
+          # main", and the runner starts checked out on the default branch. "Open a PR, never
+          # push to main" is an instruction to the model. What enforces it is branch protection
+          # on main, which DEPT repositories have on by default, so a push from this job is
+          # rejected server-side. Confirm it is on before enabling this workflow somewhere that
+          # does not inherit that default — and do not try to close the gap by narrowing the
+          # allowlist further, because no prefix rule can express it.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
