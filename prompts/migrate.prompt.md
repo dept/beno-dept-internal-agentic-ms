@@ -315,8 +315,8 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - Discovery agent (`.github/agents/discovery.agent.md`, `.claude/agents/discovery.md`) — needed only for initial bootstrap / a full re-discovery; the Maintainer handles incremental updates and does not invoke it. Keep only if you want a cheap re-bootstrap.
 - Phase prompts `01`–`04` and their command mirrors (`.claude/commands/ms-install|ms-discover|ms-integrate|ms-stack-tooling.md`, same under `.cursor/commands/`) — one-time steps that otherwise clutter the slash-command palette permanently.
 - The migration entry point itself: `.github/prompts/migrate.prompt.md` and its `.claude/commands/ms-migration.md` and `.cursor/commands/ms-migration.md` mirrors — one-time too. A full re-run is started from the standards repository bootstrap (`bash <(curl -fsSL .../scripts/install.sh) .`), which reinstalls a current copy of the prompt, so a vendored copy is a stale slash command in the palette forever.
-- `scripts/graphify-bootstrap.sh` — one-time structural pre-pass. Keep only if periodic re-graphing is planned.
-- `graphify-out/` — ephemeral (already gitignored).
+- `scripts/graphify-bootstrap.sh` **and `.graphifyignore`** — the one-time structural pre-pass and the exclude list it writes. Delete the two together: `.graphifyignore` is read by the Graphify CLI, not by the script, so keeping it after the script is gone leaves an inert config file for a tool the repository no longer carries, and a later re-run bootstraps a fresh copy from the standards repository anyway. Keep both only if periodic re-graphing is planned.
+- `graphify-out/` — ephemeral. **Leave the `graphify-out/` line in `.gitignore`** either way: it is one line, and it is what stops a later re-graph committing a multi-megabyte `graph.json`.
 
 **A later version refresh does not undo this cleanup.** `bash scripts/install.sh . --update` treats the migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only and installs none of them in a project that has a `.ai/.meta.yml`, naming what it skipped in its summary. The runtime set above is refreshed as usual.
 
@@ -382,7 +382,7 @@ Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
 - Confluence drafts removed: [yes / n/a — staged, kept]
 - Discovery agent removed: [yes / kept for re-bootstrap]
 - Phase prompts 01–04 removed: [yes / kept]
-- graphify-bootstrap.sh removed: [yes / kept]
+- graphify-bootstrap.sh + .graphifyignore removed: [yes / kept]
 - Post-cleanup validate.sh: [COMPLIANT / unchanged]
 
 ### Next Steps
