@@ -281,6 +281,8 @@ Ask, verbatim in spirit:
 
 Before installing, check what a merge into the base branch actually triggers. If merging the default branch starts a production release, either answer no, or first point Dependabot at an integration branch (`target-branch:` in `.github/dependabot.yml`) so auto-merged patches land there and reach production through the team's normal promotion.
 
+When you set `target-branch`, set it on the package ecosystems only. Leave it off the `github-actions` entry unless the target branch actually carries a `.github/workflows` directory: Dependabot reads workflow files from the target branch, and on a branch without them the job aborts with `/action.yml or /.github/workflows/<anything>.yml not found`. Workflow files normally live on the default branch, so the `github-actions` entry belongs there too. Same rule for every package ecosystem: verify each configured directory exists on the target branch before pointing Dependabot at it.
+
 If **yes**:
 1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/dependabot-auto-merge.yml` → write to `.github/workflows/dependabot-auto-merge.yml`. If that file already exists, show the diff and ask before overwriting.
 2. Confirm this repo reports its pipeline back to the pull request (a check run or a commit status, e.g. an Azure DevOps build validation policy). The workflow refuses to merge when no checks report, so on a repo without pull request CI it is inert by design, not silently permissive.
