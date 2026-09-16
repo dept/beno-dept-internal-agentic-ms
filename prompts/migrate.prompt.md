@@ -272,6 +272,22 @@ If **yes**:
 
 If **no**: skip it and note in the summary that the Maintainer runs on demand only (`@agent maintainer` / run the agent manually after each sprint).
 
+### Phase 4c: Dependabot patch auto-merge (optional, ask first)
+**Does:** Installs a workflow that merges Dependabot's patch-level pull requests once every check on them is green. Minor and major bumps stay a human decision. Inline (no separate prompt file). **Always ask first**, and ask the delivery lead, not only the developer running the migration: this hands a bot the right to move code into the base branch.
+
+Ask, verbatim in spirit:
+
+> Auto-merge Dependabot patch bumps when the pipeline passes? Minors and majors stay manual. [yes / no]
+
+Before installing, check what a merge into the base branch actually triggers. If merging the default branch starts a production release, either answer no, or first point Dependabot at an integration branch (`target-branch:` in `.github/dependabot.yml`) so auto-merged patches land there and reach production through the team's normal promotion.
+
+If **yes**:
+1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/dependabot-auto-merge.yml` → write to `.github/workflows/dependabot-auto-merge.yml`. If that file already exists, show the diff and ask before overwriting.
+2. Confirm this repo reports its pipeline back to the pull request (a check run or a commit status, e.g. an Azure DevOps build validation policy). The workflow refuses to merge when no checks report, so on a repo without pull request CI it is inert by design, not silently permissive.
+3. It needs no repository setting and no secret: `GITHUB_TOKEN` is enough, and it deliberately does not use "Allow auto-merge".
+
+If **no**: skip it. Dependabot's patch pull requests stay in the normal review queue.
+
 ### Phase 5: Cleanup (recommended)
 **Does:** Removes one-time migration artifacts so the repo keeps only what has ongoing value. This is inline (no separate prompt file). **Ask the user before deleting** — some teams prefer to keep the migration tooling in-repo for cheap re-runs.
 

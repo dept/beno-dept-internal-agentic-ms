@@ -71,7 +71,8 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   accepts over the shortest one, because the finding lands on a client's dashboard where nobody can
   explain it.
 
-- **`templates/workflows/maintainer.yml` is shipped but never installed.** It is not in
+- **Nothing in `templates/workflows/` is installed by the installer.** `maintainer.yml` and
+  `dependabot-auto-merge.yml` are not in
   `ARTIFACTS`, so no `--update` refresh propagates a change to it and every already-migrated repo
   keeps whatever workflow its migration wrote. That is why 2.6.0's default-branch guard was still
   missing from eight client repos weeks later, and why `scripts/validate.sh` asserts the guard
