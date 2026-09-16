@@ -3,10 +3,10 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.7.12"
+  version: "2.8.0"
   release_date: "2026-09-15"
   changelog:
-    - version: "2.7.12"
+    - version: "2.8.0"
       date: "2026-09-15"
       changes:
         - "scripts/mirror-claude.sh now owns the slash-command mirrors as well as the skill and agent ones. .claude/commands/<n>.md and .cursor/commands/<n>.md are generated from .github/prompts/<n>.prompt.md: body verbatim, frontmatter reduced to an allow-list of name, description and argument-hint. They are the one mirror that cannot be a symlink, and frontmatter is the reason — an agent file carries description and name only, so one file serves both harnesses, but a prompt carries `agent:` (binds a Copilot agent) and `model:` (names a Copilot model), and a link would hand Claude Code and Cursor a model id they cannot resolve. Until now the migration wrote plain copies and nothing rebuilt or checked them: dtnl-pggm-website#399 shipped three byte-identical files per prompt, `model: \"GPT-5 (copilot)\"` included, into .github/prompts, .claude/commands and .cursor/commands. scripts/validate.sh gains a content check to match — check_mirror only ever counted files, which is why a stale or untransformed mirror passed. It asserts the body matches the source and that no frontmatter key outside the allow-list survived, and names scripts/mirror-claude.sh as the repair. The five bootstrap prompts are skipped: scripts/install.sh installs those under their ms- names, so identity naming does not apply. Raised in review on dtnl-pggm-website#399, which asked why the command mirrors were not symlinks like everything else"
