@@ -81,7 +81,12 @@ VS Code Copilot default-scans BOTH `.github/agents/` and `.claude/agents/`, so e
 | `.github/prompts/03-integrate.prompt.md` | `.claude/commands/ms-integrate.md` | `.cursor/commands/ms-integrate.md` |
 | `.github/prompts/04-stack-tooling.prompt.md` | `.claude/commands/ms-stack-tooling.md` | `.cursor/commands/ms-stack-tooling.md` |
 
-Body content carries over unchanged (it's already tool-agnostic prose). Keep `description`/`argument-hint` from the source frontmatter; drop `agent:` (Copilot-only — Claude Code invokes the Discovery Agent via `.claude/agents/discovery.md`, referenced by name in the body instead).
+Do not write these by hand. `scripts/mirror-claude.sh` generates them from `.github/prompts/`: body
+verbatim, frontmatter reduced to `name`, `description` and `argument-hint`. Everything else is
+Copilot-only — `agent:` binds the prompt to a Copilot agent (Claude Code invokes the Discovery Agent
+by name in the body instead) and `model:` names a Copilot model no other harness can resolve. The
+table above is what the script produces for the five bootstrap prompts, which `scripts/install.sh`
+installs under their `ms-` names; the script generates the mirrors for a project's own prompts.
 
 **OpenAI Codex:** Codex has no project-level command/agent/skill folders — it reads `AGENTS.md` (created in Phase 3) and any file you point it at. No mirror to write here; `AGENTS.md` references the migrate prompt so Codex users run it via "read `.github/prompts/migrate.prompt.md` and follow it."
 
