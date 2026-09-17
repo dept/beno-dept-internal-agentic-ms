@@ -170,8 +170,8 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
 | Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
 | Migrate prompt + `ms-migration` command mirrors (`.github/prompts/migrate.prompt.md`, `.claude/commands/`, `.cursor/commands/`) | **Remove** (optional) | One-time too; a full re-run starts from the standards repo bootstrap, which installs a current copy |
-| `scripts/graphify-bootstrap.sh` | **Remove** (optional) | One-time pre-pass; keep if re-graphing planned |
-| `graphify-out/` | **Remove** | Ephemeral (already gitignored) |
+| `scripts/graphify-bootstrap.sh` + `.graphifyignore` | **Remove** (optional) | One-time pre-pass and the exclude list it writes; keep both if re-graphing planned |
+| `graphify-out/` | **Remove** | Ephemeral (already gitignored) — **unless the repository tracked it before the migration**, in which case it is the team's own graph: keep it, leave `.gitignore` alone, and keep a tracked `.graphifyignore` |
 
 > **A version refresh does not bring the removed artifacts back.** `scripts/install.sh` treats the
 > migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and
