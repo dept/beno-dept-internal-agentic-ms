@@ -290,6 +290,36 @@ If **yes**:
 
 If **no**: skip it. Dependabot's patch pull requests stay in the normal review queue.
 
+### Phase 4d: Branch hygiene (optional, ask first)
+**Does:** Installs a monthly workflow that classifies every branch into one of five tiers (delete,
+promote, flag, archive, untouched) and acts on it: deletes what is merged everywhere, opens
+promotion pull requests for what reached production but not every lower environment, and archives
+(tags, then deletes) what has not been touched in a long time. Inline (no separate prompt file).
+**Always ask first**, and ask the delivery lead, not only the developer running the migration: this
+hands a bot the right to delete branches and open pull requests unattended.
+
+Ask, verbatim in spirit:
+
+> Install the monthly branch hygiene workflow? First run is a dry run and only reports. [yes / no]
+
+If **yes**:
+1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/branch-hygiene.yml` → write to `.github/workflows/branch-hygiene.yml`. If that file already exists, show the diff and ask before overwriting.
+2. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/branch-hygiene.sh` → write to `scripts/branch-hygiene.sh`. If that file already exists, show the diff and ask before overwriting.
+3. Do not edit the workflow to tune it. Every threshold is a repository variable, each optional,
+   each falling back to the default in the workflow's header comment. Set only what differs from
+   the default, under Settings > Secrets and variables > Actions > Variables, or with
+   `gh variable set <NAME> --body "<value>" --repo <owner>/<repo>`:
+   `BRANCH_HYGIENE_ENV_BRANCHES` (this repo's real promotion chain, lowest to highest, last entry
+   treated as production), `BRANCH_HYGIENE_STALE_DAYS` (default 60), `BRANCH_HYGIENE_ARCHIVE_DAYS`
+   (default 180), `BRANCH_HYGIENE_KEEP_PATTERNS` (globs never touched). Keeping the workflow file
+   byte-identical across repositories is the point: a later fix is one copy, not a merge into
+   whatever each repo edited.
+4. Confirm the default-branch guard names this repo's actual default branch (`main` or `master`).
+5. Run it once via `workflow_dispatch` with `dry_run` left at its default `true`, and read the
+   report, before trusting the monthly schedule (which always runs for real).
+
+If **no**: skip it. Stale branches stay a manual cleanup.
+
 ### Phase 5: Cleanup (recommended)
 **Does:** Removes one-time migration artifacts so the repo keeps only what has ongoing value. This is inline (no separate prompt file). **Ask the user before deleting** — some teams prefer to keep the migration tooling in-repo for cheap re-runs.
 

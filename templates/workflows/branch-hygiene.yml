@@ -1,0 +1,79 @@
+# Tiered stale-branch cleanup. Once a month it classifies every branch on origin and acts:
+#   1. delete    merged into every configured env branch                -> deletes it
+#   2. promote   merged into production, missing from a lower env       -> opens a promotion PR
+#   3. flag      merged into a lower env, missing from a higher one, stale -> listed in a report issue
+#   4. archive   merged nowhere, stale beyond ARCHIVE_DAYS               -> tags archive/<branch>, deletes
+#   5. untouched everything else                                        -> counted only
+#
+# Not installed by the standard's installer. Copy it into a repository together with
+# scripts/branch-hygiene.sh, see prompts/migrate.prompt.md Phase 4d.
+#
+# Tuned through repository variables, not by editing this file, so one identical copy of the
+# workflow serves every repository and a team changes its own thresholds in the GitHub UI
+# (Settings > Secrets and variables > Actions > Variables) without a pull request. Every
+# variable is optional and falls back to the value shown here:
+#
+#   BRANCH_HYGIENE_ENV_BRANCHES    develop,test,acceptance,main
+#                                  promotion chain, lowest to highest, last entry is
+#                                  production; branches that do not exist are dropped
+#   BRANCH_HYGIENE_STALE_DAYS      60    tier 3 threshold
+#   BRANCH_HYGIENE_ARCHIVE_DAYS    180   tier 4 threshold
+#   BRANCH_HYGIENE_KEEP_PATTERNS   release/*,hotfix/*,keep/*,dependabot/*,renovate/*
+#                                  globs never deleted, archived or promoted
+#   BRANCH_HYGIENE_PROMOTE_MAX     5     most tier 2 pull requests one run may open; the rest
+#                                  are reported and picked up next month
+#
+# Run the first pass with dry_run true (the default below): it prints the full report and
+# an issue preview but deletes, tags and opens nothing. Only trust the schedule once a dry
+# run has been read and the env chain and keep patterns look right for this repo.
+name: Branch hygiene
+
+on:
+  schedule:
+    # 1st of the month, 06:00 UTC.
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (report only, no deletes/tags/PRs)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: branch-hygiene
+  cancel-in-progress: false
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    # Default-branch guard: only ever run on main/master, never on any other ref. `schedule`
+    # always fires with github.ref = the default branch, so this passes. `workflow_dispatch`
+    # passes only when dispatched against main/master, so a manual run against a feature
+    # branch is skipped instead of deleting or tagging branches from the wrong base.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history: merge-base ancestry checks need every commit
+
+      - name: Run branch hygiene
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Scheduled runs always act for real; workflow_dispatch honours the dry_run input
+          # (default true), so a first manual run is safe by default.
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          # Repository variables, each optional. An unset variable is the empty string, which
+          # is falsy in an Actions expression, so `||` supplies the default without the repo
+          # having to define anything. The script applies the same defaults again, so a local
+          # run without the workflow behaves identically.
+          ENV_BRANCHES: ${{ vars.BRANCH_HYGIENE_ENV_BRANCHES || 'develop,test,acceptance,main' }}
+          STALE_DAYS: ${{ vars.BRANCH_HYGIENE_STALE_DAYS || '60' }}
+          ARCHIVE_DAYS: ${{ vars.BRANCH_HYGIENE_ARCHIVE_DAYS || '180' }}
+          KEEP_PATTERNS: ${{ vars.BRANCH_HYGIENE_KEEP_PATTERNS || 'release/*,hotfix/*,keep/*,dependabot/*,renovate/*' }}
+          PROMOTE_MAX: ${{ vars.BRANCH_HYGIENE_PROMOTE_MAX || '5' }}
+        run: bash scripts/branch-hygiene.sh
