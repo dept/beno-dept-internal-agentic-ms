@@ -375,21 +375,26 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
 
 `config/standard-version.yml` is the single source of truth for the standard's version.
 
-- **Every change to standard content bumps it.** Standard content is everything the standard
-  installs into a target repository: agents, prompts, templates, standards, scripts and config.
-  The `.github/workflows/version-bump.yml` check fails a pull request that changes standard
-  content without changing the `version` field, so bump the field and add a changelog entry in
-  the same PR. Repo-only changes (`docs/`, `examples/`, `README.md`, `AGENTS.md`, CI) do not
-  need a bump.
+- **Every change to standard content is recorded in the changelog.** Standard content is everything
+  the standard installs into a target repository: agents, prompts, templates, standards, scripts and
+  config. Each such change adds a bullet to the changelog entry of the current unreleased version.
+  The `.github/workflows/version-bump.yml` check fails a pull request whose `version` sorts below the
+  base branch's current one; it does not require a new number, because a change may stack onto the
+  current unreleased version rather than open a new one. Repo-only changes (`docs/`, `examples/`,
+  `README.md`, `AGENTS.md`, CI) do not need a changelog entry.
 - **Patch for a fix, minor for a change.** A correction inside an existing artifact (a missing rule,
   a wrong path, a clarified instruction) is a patch bump: `2.7.0` to `2.7.1`. A new artifact, a new
   installed file, a changed workflow or anything a migrated project has to act on is a minor bump.
   A file-layout change stays a major bump. Reserve minor bumps for changes worth a project's
   attention, so the changelog stays a signal.
-- **One bump per pull request, not per commit.** While a PR is open and unmerged, further commits
-  on that branch amend the changelog entry for the version being released; they never add another
-  version. A new version number is only introduced by a PR that does not already carry an
-  unreleased bump.
+- **The version advances per release, not per pull request.** `config/standard-version.yml`'s
+  `version` is the current *unreleased* line; production tracks whatever was last deployed, which is
+  usually behind it (this repo tags no releases). While that version has not shipped, every
+  standard-content PR stacks its changelog bullets under it and leaves the number alone, so several
+  merged PRs can share one version. The number only advances to the next patch, minor or major when
+  a new release cycle starts, after the current version reaches production. So do not bump to the
+  next number just because the base branch already carries the current one: stack onto it unless its
+  release has shipped.
 - **Every migrated project reports its version.** `.ai/.meta.yml` carries `standard_version`.
   `scripts/install.sh` refreshes the project's vendored `config/standard-version.yml` and stamps
   the current version into an existing `.ai/.meta.yml`, so a refreshed project reports what it
