@@ -55,6 +55,10 @@ Fetch these files from the DEPT Agentic Standards repository:
 
 **Action:** Create `.github/agents/`, `.github/prompts/`, `.agents/skills/confluence-axi/`, `.agents/skills/context-ownership/`, `config/`, `docs/`, `standards/`, and `scripts/` directories. Write each file. Skip if already exists. Ensure `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `scripts/mirror-claude.sh` are executable. (The `confluence-axi` skill bundles no script: it drives the `confluence-axi` npm CLI via `npx`, so nothing to chmod.)
 
+`config/standard-version.yml` is the one artifact you do not write verbatim. Keep the `standard:` header (`version`, `release_date`) and drop the `changelog:` block and everything under it: the changelog is this standard's own release history, it is tens of kilobytes and grows every release, and a target repository never reads it. End the file with a comment pointing at
+`https://github.com/dept/beno-dept-internal-agentic-ms/blob/main/config/standard-version.yml`
+for the full history. `scripts/install.sh` does the same trim, so both bootstrap routes produce the same file.
+
 `standards/writing-rules.md` is the file every later phase points at when it says what may be written into `.ai/`. Install it before Phase 2 runs. The `context-ownership` skill is its working procedure, applied per section while Phase 2 writes, so it has to be in place before Phase 2 as well.
 
 **Build the Claude Code mirrors:** run

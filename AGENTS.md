@@ -87,6 +87,14 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   instead of the installer fixing it. Adding it to `ARTIFACTS` would overwrite a project's tuned
   schedule and cost gate, so a workflow change is applied per repo by hand, and the check is what
   finds the repos that need it.
+- **The changelog is repo-only, and the installer enforces that.** `config/standard-version.yml`
+  here holds the full release history; the copy vendored into a target repository holds the
+  `standard:` header alone, because `validate.sh`, `scaffold.sh` and `install.sh` read
+  `standard.version` and nothing else, while the changelog passed 50 KB and every agent session in
+  the client repo paid for it. `trim_version_file` in `scripts/install.sh` cuts it at the
+  `changelog:` line on every install and `--update`; `prompts/01-install.prompt.md` states the same
+  trim for the in-session bootstrap route that never runs the installer. A change to the format of
+  those header fields lands in both.
 - **A file-layout change is a breaking change.** Bump `config/standard-version.yml` and add a
   changelog entry naming what moved, so a repository migrated under an older version can be told
   what to do.

@@ -333,7 +333,9 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
 - **Every migrated project reports its version.** `.ai/.meta.yml` carries `standard_version`.
   `scripts/install.sh` refreshes the project's vendored `config/standard-version.yml` and stamps
   the current version into an existing `.ai/.meta.yml`, so a refreshed project reports what it
-  actually runs.
+  actually runs. The vendored copy carries the `standard:` header only: the changelog is this
+  repository's release history, nothing in a target repository reads it, and the installer trims
+  it out and leaves a link back here instead.
 - **`scripts/version-report.sh` answers "which projects are behind?"** Run it from this repository
   against one or more project paths. It reads each project's `.ai/.meta.yml` `standard_version`,
   compares it against the current version in this repository's `config/standard-version.yml`, and
