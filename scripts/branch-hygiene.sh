@@ -500,15 +500,26 @@ post_to_slack() {
       num=$(pr_number "$branch" || true)
       if [[ -n "$login" ]]; then handle="<https://github.com/${login}|@${login}>"; else handle="$author"; fi
       if [[ -n "$num" ]]; then branch_disp="<https://github.com/${repo}/pull/${num}|${branch}>"; else branch_disp="\`${branch}\`"; fi
-      # Turn "merged:a b missing:c" into emoji badges: :white_check_mark: for the envs it is in,
-      # :warning: for the ones it still needs. The envs string keeps its plain form in the issue
-      # tables; only the Slack line is badged.
-      local merged_part missing_part badges=""
+      # Env column, no emoji: each env name is a `code` pill like the age, behind a plain label.
+      # merged = the envs it is already in, missing = the envs it still needs. The envs string
+      # keeps its plain "merged:.. missing:.." form in the issue tables; only the Slack line is
+      # rendered this way.
+      local merged_part missing_part e badges=""
+      local -a marr=() misarr=()
       merged_part="${envs#merged:}"; merged_part="${merged_part%% missing:*}"
       missing_part="${envs#*missing:}"
-      [[ "$merged_part" != "none" ]] && badges=":white_check_mark: ${merged_part}"
-      [[ "$missing_part" != "none" ]] && badges="${badges:+${badges}  }:warning: ${missing_part}"
-      flag_lines="${flag_lines}${branch_disp}  ${badges}  ${handle}  \`${age}d\`"$'\n'
+      if [[ "$merged_part" != "none" ]]; then
+        read -r -a marr <<<"$merged_part"
+        for e in "${marr[@]}"; do badges="${badges:+${badges} }\`${e}\`"; done
+        badges="merged ${badges}"
+      fi
+      if [[ "$missing_part" != "none" ]]; then
+        read -r -a misarr <<<"$missing_part"
+        local mis=""
+        for e in "${misarr[@]}"; do mis="${mis:+${mis} }\`${e}\`"; done
+        badges="${badges:+${badges}   }missing ${mis}"
+      fi
+      flag_lines="${flag_lines}${branch_disp}   ${badges}   ${handle}   \`${age}d\`"$'\n'
       shown=$((shown + 1))
     done
   fi
@@ -561,10 +572,17 @@ post_to_slack() {
                     else [] end)
                else [] end)
             + (if ($issue_url | length) > 0 or ($run_url | length) > 0 then
-                 [ { type: "context", elements: [ { type: "mrkdwn",
-                     text: ([ (if ($issue_url | length) > 0 then "<\($issue_url)|report issue>" else empty end),
-                              (if ($run_url | length) > 0 then "<\($run_url)|full report>" else empty end) ]
-                            | join("  ·  ")) } ] } ]
+                 [ { type: "actions",
+                     elements: [
+                       (if ($issue_url | length) > 0 then
+                          { type: "button", action_id: "report_issue",
+                            text: { type: "plain_text", text: "Report issue" }, url: $issue_url }
+                        else empty end),
+                       (if ($run_url | length) > 0 then
+                          { type: "button", action_id: "full_report",
+                            text: { type: "plain_text", text: "Full report" }, url: $run_url }
+                        else empty end)
+                     ] } ]
                else [] end)
           )
         }')
