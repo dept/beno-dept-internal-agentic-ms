@@ -135,9 +135,9 @@ matches_keep_pattern() {
 
 # One PR fetch for the whole run. GITHUB_TOKEN is limited to 1000 API requests per hour per
 # repository, and a per-branch `gh pr list` on a 300-branch repo would spend that budget before
-# the run finished. Lines are "STATE|head|base" (STATE is OPEN, MERGED or CLOSED).
-PR_INDEX=$(gh pr list --state all --limit 5000 --json state,headRefName,baseRefName,author \
-  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")"' 2>/dev/null || true)
+# the run finished. Lines are "STATE|head|base|author|number" (STATE is OPEN, MERGED or CLOSED).
+PR_INDEX=$(gh pr list --state all --limit 5000 --json state,headRefName,baseRefName,author,number \
+  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)"' 2>/dev/null || true)
 
 # $1 = state (or "" for any), $2 = head, $3 = base (or "" for any). The trailing \|* tolerates
 # the author field appended to each line: without it an exact base match would fail because the
@@ -156,10 +156,21 @@ pr_exists() {
 # only to label the Slack digest; a tier 3 branch was merged into a lower env, so it almost
 # always has a PR in the index.
 pr_author() {
-  local head="$1" s h b a
-  while IFS='|' read -r s h b a; do
+  local head="$1" s h b a n
+  while IFS='|' read -r s h b a n; do
     [[ "$h" == "$head" ]] || continue
     [[ -n "$a" ]] && { echo "$a"; return 0; }
+  done <<<"$PR_INDEX"
+  return 1
+}
+
+# PR number of the first PR whose head is this branch, empty if none. Used to link the branch in
+# the Slack digest; a tier 3 branch's PR is merged (closed), so the link points at a closed PR.
+pr_number() {
+  local head="$1" s h b a n
+  while IFS='|' read -r s h b a n; do
+    [[ "$h" == "$head" ]] || continue
+    [[ -n "$n" ]] && { echo "$n"; return 0; }
   done <<<"$PR_INDEX"
   return 1
 }
@@ -476,16 +487,28 @@ post_to_slack() {
   # Slack section block is rejected above 3000 characters and lucardi has 69 of them.
   local flag_lines=""
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    local row branch sha age author envs action handle shown=0
+    local row branch sha age author envs action login num handle branch_disp shown=0
     for row in "${ROWS_FLAG[@]}"; do
       [[ "$shown" -ge "$SLACK_MAX_LISTED" ]] && break
       IFS='|' read -r branch sha age author envs action <<<"$row"
-      # Prefer the PR author's GitHub login (@handle) so the digest names who owns the branch;
-      # fall back to the git author name from the row when no PR carried an author. This is
-      # display text, not a Slack ping: a real notification needs the person's Slack user ID.
-      handle=$(pr_author "$branch" || true)
-      if [[ -n "$handle" ]]; then handle="@${handle}"; else handle="$author"; fi
-      flag_lines="${flag_lines}\`${branch}\`  ${envs}  ${handle}  \`${age}d\`"$'\n'
+      # Link the branch to its PR and the owner to their GitHub profile, using Slack's
+      # `<url|text>` link syntax. The @handle links to the person, not a Slack ping: a real
+      # notification needs the person's Slack user id, which we cannot map a GitHub login to.
+      # Slack does not render backticks inside link text, so a linked branch loses its code
+      # font; an unlinked one (no PR found) keeps it.
+      login=$(pr_author "$branch" || true)
+      num=$(pr_number "$branch" || true)
+      if [[ -n "$login" ]]; then handle="<https://github.com/${login}|@${login}>"; else handle="$author"; fi
+      if [[ -n "$num" ]]; then branch_disp="<https://github.com/${repo}/pull/${num}|${branch}>"; else branch_disp="\`${branch}\`"; fi
+      # Turn "merged:a b missing:c" into emoji badges: :white_check_mark: for the envs it is in,
+      # :warning: for the ones it still needs. The envs string keeps its plain form in the issue
+      # tables; only the Slack line is badged.
+      local merged_part missing_part badges=""
+      merged_part="${envs#merged:}"; merged_part="${merged_part%% missing:*}"
+      missing_part="${envs#*missing:}"
+      [[ "$merged_part" != "none" ]] && badges=":white_check_mark: ${merged_part}"
+      [[ "$missing_part" != "none" ]] && badges="${badges:+${badges}  }:warning: ${missing_part}"
+      flag_lines="${flag_lines}${branch_disp}  ${badges}  ${handle}  \`${age}d\`"$'\n'
       shown=$((shown + 1))
     done
   fi
