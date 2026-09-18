@@ -22,6 +22,8 @@
 #                                  globs never deleted, archived or promoted
 #   BRANCH_HYGIENE_PROMOTE_MAX     5     most tier 2 pull requests one run may open; the rest
 #                                  are reported and picked up next month
+#   BRANCH_HYGIENE_PROMOTE_DELAY_DAYS 7  grace window before tier 2 opens a promotion PR; a
+#                                  younger branch is left for its author. 0 opens immediately
 #   BRANCH_HYGIENE_SLACK_MAX       10    most branches listed in the Slack digest
 #
 # Slack is optional and silent unless both are present: the SLACK_BOT_TOKEN secret and the
@@ -82,6 +84,7 @@ jobs:
           ARCHIVE_DAYS: ${{ vars.BRANCH_HYGIENE_ARCHIVE_DAYS || '180' }}
           KEEP_PATTERNS: ${{ vars.BRANCH_HYGIENE_KEEP_PATTERNS || 'release/*,hotfix/*,keep/*,dependabot/*,renovate/*' }}
           PROMOTE_MAX: ${{ vars.BRANCH_HYGIENE_PROMOTE_MAX || '5' }}
+          PROMOTE_DELAY_DAYS: ${{ vars.BRANCH_HYGIENE_PROMOTE_DELAY_DAYS || '7' }}
           SLACK_MAX_LISTED: ${{ vars.BRANCH_HYGIENE_SLACK_MAX || '10' }}
           # Both optional. Missing either one skips the digest without failing the run.
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

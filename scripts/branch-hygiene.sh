@@ -8,7 +8,8 @@
 #
 # Tiers, evaluated in this order (first match wins):
 #   1. delete    merged into every existing env branch                 -> delete the branch
-#   2. promote   merged into production, missing from a lower env      -> open a promotion PR
+#   2. promote   merged into production, missing from a lower env,
+#                tip older than PROMOTE_DELAY_DAYS (default 7)         -> open a promotion PR
 #   3. flag      merged into a lower env, missing from a higher one,
 #                tip older than STALE_DAYS (default 60)                -> list in the report
 #   4. archive   merged nowhere, no open PR, tip older than ARCHIVE_DAYS -> tag then delete
@@ -27,7 +28,8 @@ set -euo pipefail
 # Every setting below is read from the environment and falls back to the default shown. In
 # CI, templates/workflows/branch-hygiene.yml supplies them from repository variables
 # (BRANCH_HYGIENE_ENV_BRANCHES, BRANCH_HYGIENE_STALE_DAYS, BRANCH_HYGIENE_ARCHIVE_DAYS,
-# BRANCH_HYGIENE_KEEP_PATTERNS, BRANCH_HYGIENE_PROMOTE_MAX), each optional and each defaulting to the same value here, so
+# BRANCH_HYGIENE_KEEP_PATTERNS, BRANCH_HYGIENE_PROMOTE_MAX, BRANCH_HYGIENE_PROMOTE_DELAY_DAYS),
+# each optional and each defaulting to the same value here, so
 # a local run and a scheduled run of an unconfigured repository behave identically.
 # ---------------------------------------------------------------------------
 
@@ -52,6 +54,11 @@ KEEP_PATTERNS_RAW="${KEEP_PATTERNS:-release/*,hotfix/*,keep/*,dependabot/*,renov
 # that has never been cleaned finds years of them at once. The cap bounds that first run to
 # something a team can actually review; the rest are reported and picked up next month.
 PROMOTE_MAX="${PROMOTE_MAX:-5}"
+# Grace window before tier 2 opens a promotion PR for a branch. A branch merged to production is
+# usually promoted by its own author within a few days, so opening a PR the same day is noise.
+# Only branches whose tip is older than this get an automatic promotion PR; younger ones are
+# reported as waiting and left for the author. Set to 0 to open immediately.
+PROMOTE_DELAY_DAYS="${PROMOTE_DELAY_DAYS:-7}"
 # Most tier 3 branches listed in the Slack digest. A Slack section block is rejected above
 # 3000 characters and a neglected repository has dozens, so the rest are a count plus a link.
 SLACK_MAX_LISTED="${SLACK_MAX_LISTED:-10}"
@@ -60,7 +67,7 @@ LABEL="branch-hygiene"
 NOW_EPOCH=$(date -u +%s)
 
 echo "== Branch hygiene =="
-echo "dry_run=${DRY_RUN} stale_days=${STALE_DAYS} archive_days=${ARCHIVE_DAYS} promote_max=${PROMOTE_MAX}"
+echo "dry_run=${DRY_RUN} stale_days=${STALE_DAYS} archive_days=${ARCHIVE_DAYS} promote_max=${PROMOTE_MAX} promote_delay_days=${PROMOTE_DELAY_DAYS}"
 
 # ---------------------------------------------------------------------------
 # Fetch + resolve the env chain
@@ -275,6 +282,11 @@ for b in "${ALL_BRANCHES[@]}"; do
   if [[ "$merged_into_production" == "true" ]]; then
     # Tier 2: promote, merged into production but missing from a lower env.
     actions=""
+    # Give the author a grace window to open the promotion PR themselves before we do it for them.
+    if [[ "$age" -le "$PROMOTE_DELAY_DAYS" ]]; then
+      ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|within grace (${PROMOTE_DELAY_DAYS}d), author to promote")
+      continue
+    fi
     if [[ "$PROMOTED_COUNT" -ge "$PROMOTE_MAX" ]]; then
       ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|over PROMOTE_MAX (${PROMOTE_MAX}), not opened this run")
       continue
