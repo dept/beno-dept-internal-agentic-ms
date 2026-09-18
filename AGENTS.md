@@ -33,7 +33,7 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   and `.cursor/commands/` are built from `.github/prompts/` by `scripts/mirror-claude.sh`: body
   verbatim, frontmatter reduced to `name`, `description`, `argument-hint`. A prompt cannot be
   symlinked the way an agent can, because `agent:` and `model:` are Copilot-only and a link would
-  hand the other harnesses a model id they cannot resolve. Before 2.7.12 the migration wrote plain
+  hand the other harnesses a model id they cannot resolve. Before 2.8.0 the migration wrote plain
   copies, which shipped three identical files per prompt carrying `model: "GPT-5 (copilot)"` into
   Claude Code and Cursor (dtnl-pggm-website#399), with nothing rebuilding or checking them.
   `scripts/validate.sh` now compares each mirror's body and frontmatter keys against its source.
