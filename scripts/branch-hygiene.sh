@@ -547,7 +547,7 @@ post_to_slack() {
     --arg run_url "$run_url" \
     --arg issue_url "$issue_url" \
     --argjson deleted "${#ROWS_DELETE[@]}" \
-    --argjson promoted "${#ROWS_PROMOTE[@]}" \
+    --argjson promoted "$PROMOTED_COUNT" \
     --argjson flagged "${#ROWS_FLAG[@]}" \
     --argjson archived "${#ROWS_ARCHIVE[@]}" \
     --argjson untouched "$UNTOUCHED_COUNT" \
