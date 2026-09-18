@@ -136,16 +136,30 @@ matches_keep_pattern() {
 # One PR fetch for the whole run. GITHUB_TOKEN is limited to 1000 API requests per hour per
 # repository, and a per-branch `gh pr list` on a 300-branch repo would spend that budget before
 # the run finished. Lines are "STATE|head|base" (STATE is OPEN, MERGED or CLOSED).
-PR_INDEX=$(gh pr list --state all --limit 5000 --json state,headRefName,baseRefName \
-  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)"' 2>/dev/null || true)
+PR_INDEX=$(gh pr list --state all --limit 5000 --json state,headRefName,baseRefName,author \
+  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")"' 2>/dev/null || true)
 
-# $1 = state (or "" for any), $2 = head, $3 = base (or "" for any)
+# $1 = state (or "" for any), $2 = head, $3 = base (or "" for any). The trailing \|* tolerates
+# the author field appended to each line: without it an exact base match would fail because the
+# line no longer ends at the base.
 pr_exists() {
   local state="${1:-[A-Z]*}" head="$2" base="${3:-*}" line
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     # shellcheck disable=SC2053
-    [[ "$line" == ${state}\|${head}\|${base} ]] && return 0
+    [[ "$line" == ${state}\|${head}\|${base}\|* ]] && return 0
+  done <<<"$PR_INDEX"
+  return 1
+}
+
+# GitHub login of the first PR whose head is this branch, empty if none carried an author. Used
+# only to label the Slack digest; a tier 3 branch was merged into a lower env, so it almost
+# always has a PR in the index.
+pr_author() {
+  local head="$1" s h b a
+  while IFS='|' read -r s h b a; do
+    [[ "$h" == "$head" ]] || continue
+    [[ -n "$a" ]] && { echo "$a"; return 0; }
   done <<<"$PR_INDEX"
   return 1
 }
@@ -462,11 +476,16 @@ post_to_slack() {
   # Slack section block is rejected above 3000 characters and lucardi has 69 of them.
   local flag_lines=""
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    local row branch sha age author envs action shown=0
+    local row branch sha age author envs action handle shown=0
     for row in "${ROWS_FLAG[@]}"; do
       [[ "$shown" -ge "$SLACK_MAX_LISTED" ]] && break
       IFS='|' read -r branch sha age author envs action <<<"$row"
-      flag_lines="${flag_lines}\`${branch}\`  ${envs}  \`${age}d\`"$'\n'
+      # Prefer the PR author's GitHub login (@handle) so the digest names who owns the branch;
+      # fall back to the git author name from the row when no PR carried an author. This is
+      # display text, not a Slack ping: a real notification needs the person's Slack user ID.
+      handle=$(pr_author "$branch" || true)
+      if [[ -n "$handle" ]]; then handle="@${handle}"; else handle="$author"; fi
+      flag_lines="${flag_lines}\`${branch}\`  ${envs}  ${handle}  \`${age}d\`"$'\n'
       shown=$((shown + 1))
     done
   fi
