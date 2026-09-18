@@ -314,8 +314,13 @@ If **yes**:
    (default 180), `BRANCH_HYGIENE_KEEP_PATTERNS` (globs never touched). Keeping the workflow file
    byte-identical across repositories is the point: a later fix is one copy, not a merge into
    whatever each repo edited.
-4. Confirm the default-branch guard names this repo's actual default branch (`main` or `master`).
-5. Run it once via `workflow_dispatch` with `dry_run` left at its default `true`, and read the
+4. If this repo already has the `SLACK_BOT_TOKEN` secret and the `SLACK_CHANNEL` variable (the
+   pair the stale pull request digest uses), every run also posts its counts and the branches
+   needing a decision to that channel. Nothing to configure: the workflow passes both through
+   and stays silent when either is missing. `BRANCH_HYGIENE_SLACK_MAX` (default 10) caps how
+   many branches the message lists.
+5. Confirm the default-branch guard names this repo's actual default branch (`main` or `master`).
+6. Run it once via `workflow_dispatch` with `dry_run` left at its default `true`, and read the
    report, before trusting the monthly schedule (which always runs for real).
 
 If **no**: skip it. Stale branches stay a manual cleanup.

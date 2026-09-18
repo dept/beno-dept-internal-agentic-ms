@@ -22,6 +22,12 @@
 #                                  globs never deleted, archived or promoted
 #   BRANCH_HYGIENE_PROMOTE_MAX     5     most tier 2 pull requests one run may open; the rest
 #                                  are reported and picked up next month
+#   BRANCH_HYGIENE_SLACK_MAX       10    most branches listed in the Slack digest
+#
+# Slack is optional and silent unless both are present: the SLACK_BOT_TOKEN secret and the
+# SLACK_CHANNEL variable, the same pair the stale pull request digest uses. With them, every
+# run posts its counts and the branches needing a decision to the channel, so the team sees
+# what happened without opening the run. Without them the run says so and carries on.
 #
 # Run the first pass with dry_run true (the default below): it prints the full report and
 # an issue preview but deletes, tags and opens nothing. Only trust the schedule once a dry
@@ -76,4 +82,8 @@ jobs:
           ARCHIVE_DAYS: ${{ vars.BRANCH_HYGIENE_ARCHIVE_DAYS || '180' }}
           KEEP_PATTERNS: ${{ vars.BRANCH_HYGIENE_KEEP_PATTERNS || 'release/*,hotfix/*,keep/*,dependabot/*,renovate/*' }}
           PROMOTE_MAX: ${{ vars.BRANCH_HYGIENE_PROMOTE_MAX || '5' }}
+          SLACK_MAX_LISTED: ${{ vars.BRANCH_HYGIENE_SLACK_MAX || '10' }}
+          # Both optional. Missing either one skips the digest without failing the run.
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ vars.SLACK_CHANNEL }}
         run: bash scripts/branch-hygiene.sh

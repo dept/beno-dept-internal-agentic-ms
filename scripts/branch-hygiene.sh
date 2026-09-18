@@ -52,6 +52,9 @@ KEEP_PATTERNS_RAW="${KEEP_PATTERNS:-release/*,hotfix/*,keep/*,dependabot/*,renov
 # that has never been cleaned finds years of them at once. The cap bounds that first run to
 # something a team can actually review; the rest are reported and picked up next month.
 PROMOTE_MAX="${PROMOTE_MAX:-5}"
+# Most tier 3 branches listed in the Slack digest. A Slack section block is rejected above
+# 3000 characters and a neglected repository has dozens, so the rest are a count plus a link.
+SLACK_MAX_LISTED="${SLACK_MAX_LISTED:-10}"
 LABEL="branch-hygiene"
 
 NOW_EPOCH=$(date -u +%s)
@@ -393,6 +396,8 @@ if [[ ${#ISSUE_BODY} -gt 60000 ]]; then
 _Truncated at 60000 characters. The complete report is in the job summary._"
 fi
 
+ISSUE_NUMBER=""
+
 # ---------------------------------------------------------------------------
 # Upsert the report issue (only outside dry run, and only when tier 3 or 4 has entries)
 # ---------------------------------------------------------------------------
@@ -403,13 +408,135 @@ if [[ "$DRY_RUN" != "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -g
     --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)
   if [[ -n "$existing" && "$existing" != "null" ]]; then
     gh issue edit "$existing" --body "$ISSUE_BODY" >/dev/null
+    ISSUE_NUMBER="$existing"
     echo "Updated issue #${existing}"
   else
-    gh issue create --title "Branch hygiene report" --label "$LABEL" --body "$ISSUE_BODY" >/dev/null
-    echo "Created branch hygiene report issue"
+    ISSUE_URL=$(gh issue create --title "Branch hygiene report" --label "$LABEL" --body "$ISSUE_BODY")
+    ISSUE_NUMBER="${ISSUE_URL##*/}"
+    echo "Created branch hygiene report issue #${ISSUE_NUMBER}"
   fi
 elif [[ "$DRY_RUN" == "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 ) ]]; then
   echo "(dry run: would upsert the 'Branch hygiene report' issue, ${#ISSUE_BODY} characters, tiers 3 and 4 only)"
 fi
+
+# ---------------------------------------------------------------------------
+# Slack digest (optional)
+# ---------------------------------------------------------------------------
+
+# Silent unless both SLACK_BOT_TOKEN and SLACK_CHANNEL are set. A repository without a Slack
+# app configured must stay quiet rather than fail, which is why this is a warning and an
+# early return, not an error. Same rule the stale pull request digest uses.
+post_to_slack() {
+  if [[ -z "${SLACK_BOT_TOKEN:-}" || -z "${SLACK_CHANNEL:-}" ]]; then
+    echo "No SLACK_BOT_TOKEN or SLACK_CHANNEL; skipping the Slack digest."
+    return 0
+  fi
+
+  # In Actions GITHUB_REPOSITORY is owner/name already. Locally, derive it from the remote
+  # URL with parameter expansion rather than a regex: sed has no non-greedy quantifier, so
+  # the obvious pattern silently matched nothing and the digest went out with a blank name.
+  local repo="${GITHUB_REPOSITORY:-}"
+  if [[ -z "$repo" ]]; then
+    repo=$(git remote get-url "$REMOTE")
+    repo="${repo%.git}"      # drop a trailing .git
+    repo="${repo%/}"         # drop a trailing slash
+    repo="${repo#*://*/}"    # https://host/owner/name -> owner/name
+    repo="${repo#*:}"        # git@host:owner/name     -> owner/name
+  fi
+  local run_url=""
+  [[ -n "${GITHUB_RUN_ID:-}" ]] && run_url="https://github.com/${repo}/actions/runs/${GITHUB_RUN_ID}"
+  local issue_url=""
+  [[ -n "$ISSUE_NUMBER" ]] && issue_url="https://github.com/${repo}/issues/${ISSUE_NUMBER}"
+
+  # Tier 3 is the only tier a developer has to act on: tiers 1, 2 and 4 already happened.
+  # So the message leads with the counts and then lists tier 3 alone, capped, because a
+  # Slack section block is rejected above 3000 characters and lucardi has 69 of them.
+  local flag_lines=""
+  if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
+    local row branch sha age author envs action shown=0
+    for row in "${ROWS_FLAG[@]}"; do
+      [[ "$shown" -ge "$SLACK_MAX_LISTED" ]] && break
+      IFS='|' read -r branch sha age author envs action <<<"$row"
+      flag_lines="${flag_lines}\`${branch}\`  ${envs}  \`${age}d\`"$'\n'
+      shown=$((shown + 1))
+    done
+  fi
+
+  local payload
+  payload=$(jq -n \
+    --arg channel "$SLACK_CHANNEL" \
+    --arg repo "$repo" \
+    --arg dry "$DRY_RUN" \
+    --arg flag_lines "$flag_lines" \
+    --arg run_url "$run_url" \
+    --arg issue_url "$issue_url" \
+    --argjson deleted "${#ROWS_DELETE[@]}" \
+    --argjson promoted "${#ROWS_PROMOTE[@]}" \
+    --argjson flagged "${#ROWS_FLAG[@]}" \
+    --argjson archived "${#ROWS_ARCHIVE[@]}" \
+    --argjson untouched "$UNTOUCHED_COUNT" \
+    --argjson max "$SLACK_MAX_LISTED" '
+      ($dry == "true") as $isdry
+      | (if $isdry then "would delete" else "deleted" end) as $d
+      | (if $isdry then "would open" else "opened" end) as $p
+      | (if $isdry then "would archive" else "archived" end) as $a
+      | (if $isdry then "Branch hygiene dry run" else "Branch hygiene" end) as $title
+      | {
+          channel: $channel,
+          text: "\($title) in \($repo): \($deleted) \($d), \($promoted) promotion PR\(if $promoted == 1 then "" else "s" end) \($p), \($flagged) need a decision, \($archived) \($a)",
+          unfurl_links: false,
+          blocks: (
+            [ { type: "header",
+                text: { type: "plain_text", emoji: true, text: $title } },
+              { type: "context",
+                elements: [ { type: "mrkdwn",
+                  text: (["<https://github.com/\($repo)|\($repo)>"]
+                         + (if $isdry then ["_dry run, nothing was changed_"] else [] end)
+                         | join("  ·  ")) } ] },
+              { type: "section",
+                fields: [
+                  { type: "mrkdwn", text: "*Merged everywhere*\n\($deleted) \($d)" },
+                  { type: "mrkdwn", text: "*Awaiting promotion*\n\($promoted) PR\(if $promoted == 1 then "" else "s" end) \($p)" },
+                  { type: "mrkdwn", text: "*Need a decision*\n\($flagged)" },
+                  { type: "mrkdwn", text: "*Stale, no merge*\n\($archived) \($a)" }
+                ] } ]
+            + (if ($flag_lines | length) > 0 then
+                 [ { type: "section",
+                     text: { type: "mrkdwn",
+                             text: ("*Promote or revert*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
+                 + (if $flagged > $max then
+                      [ { type: "context", elements: [ { type: "mrkdwn",
+                          text: "\($flagged - $max) more not shown" } ] } ]
+                    else [] end)
+               else [] end)
+            + (if ($issue_url | length) > 0 or ($run_url | length) > 0 then
+                 [ { type: "context", elements: [ { type: "mrkdwn",
+                     text: ([ (if ($issue_url | length) > 0 then "<\($issue_url)|report issue>" else empty end),
+                              (if ($run_url | length) > 0 then "<\($run_url)|full report>" else empty end) ]
+                            | join("  ·  ")) } ] } ]
+               else [] end)
+          )
+        }')
+
+  if [[ "${SLACK_PAYLOAD_ONLY:-false}" == "true" ]]; then
+    echo "$payload"
+    return 0
+  fi
+
+  local response
+  response=$(curl -sS -X POST https://slack.com/api/chat.postMessage \
+    -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+    -H 'Content-type: application/json; charset=utf-8' \
+    --data "$payload")
+
+  # Slack answers HTTP 200 even when it refuses, so the ok field is the real status.
+  if [[ "$(jq -r '.ok' <<<"$response")" != "true" ]]; then
+    echo "Slack rejected the message: ${response}" >&2
+    return 1
+  fi
+  echo "Posted the digest to ${SLACK_CHANNEL}."
+}
+
+post_to_slack
 
 exit 0
