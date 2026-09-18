@@ -211,6 +211,64 @@ Run with no argument in this repository and it validates the standard's own refe
 
 Agent logic is separated from tool-specific wiring — see `agents/*/logic.md` for portable workflow definitions.
 
+## Automated maintenance workflows
+
+Three GitHub Actions workflows ship as templates under `templates/workflows/`. None of them is
+installed by `scripts/install.sh`: each is opt-in and copied into a repository by hand, so a
+project keeps whatever thresholds and schedule it has tuned and a later change to the template
+never overwrites it. The migrate prompt offers them (Phases 4b, 4c and 4d) and asks the delivery
+lead first, because each one acts on the repository unattended.
+
+| Workflow | Cadence | What it does |
+|---|---|---|
+| `maintainer.yml` | Twice a month | Runs the Maintainer Agent to keep `.ai/` current, opens a PR, guarded to the default branch so it never pushes to main/master |
+| `dependabot-auto-merge.yml` | On each Dependabot PR | Merges patch-level updates once every check is green; leaves minors and majors for a human |
+| `branch-hygiene.yml` | Monthly (1st, 06:00 UTC) | Classifies every branch on origin into tiers and cleans up, dry run by default |
+
+### Branch hygiene
+
+`branch-hygiene.yml` plus `scripts/branch-hygiene.sh` clean up repositories that have
+accumulated hundreds of branches with nobody deleting the merged ones. Every branch on origin is
+sorted into exactly one tier, first match wins:
+
+| Tier | Condition | Action |
+|---|---|---|
+| 1. delete | Merged into every configured env branch | Delete the branch |
+| 2. promote | Merged into production, missing from a lower env | Open a `chore(promote): <branch> into <env>` PR per missing env (capped) |
+| 3. flag | Merged into a lower env but not a higher one, stale past `STALE_DAYS` | List in a report issue for a human to promote or revert |
+| 4. archive | Merged nowhere, stale past `ARCHIVE_DAYS` | Tag `archive/<branch>`, then delete (restore with `git checkout -b <branch> archive/<branch>`) |
+| 5. untouched | Everything else | Counted only |
+
+"Merged" is tested two ways: `git merge-base --is-ancestor` catches a fast-forward or true merge
+commit, and a merged-PR lookup catches a squash or rebase merge, which rewrites the commits onto
+the target and defeats the ancestor test on its own. Any branch with an open PR is skipped
+outright, and the keep patterns and the env branches themselves are never touched.
+
+**Safe by default.** A `workflow_dispatch` run is a dry run unless you clear the `dry_run` box: it
+prints the full report and deletes, tags and opens nothing. Only the schedule runs for real. Run
+one dispatch dry run and read its report before trusting the monthly schedule for a repository.
+
+**A run reports to three places.** The job summary carries all five tiers, each row with the
+branch's tip sha, which is the recovery record for a tier 1 delete (`git branch <branch> <tip>`).
+A single `Branch hygiene report` issue (label `branch-hygiene`, upserted, not one per run) carries
+tiers 3 and 4 only, the branches that need a human. When the repository already has a
+`SLACK_BOT_TOKEN` secret and a `SLACK_CHANNEL` variable, a Slack digest posts the four counts plus
+the tier 3 list; without them the run says so in the log and carries on.
+
+**Tuning is through repository variables, never by editing the workflow**, so one identical copy
+serves every repository and a team changes its own thresholds in the GitHub UI (Settings > Secrets
+and variables > Actions > Variables). Each variable is optional and falls back to the default
+shown:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `BRANCH_HYGIENE_ENV_BRANCHES` | `develop,test,acceptance,main` | Promotion chain, lowest to highest; last entry is production; branches that do not exist are dropped; `main` falls back to `master` |
+| `BRANCH_HYGIENE_STALE_DAYS` | `60` | Tier 3 age threshold, in days |
+| `BRANCH_HYGIENE_ARCHIVE_DAYS` | `180` | Tier 4 age threshold, in days |
+| `BRANCH_HYGIENE_KEEP_PATTERNS` | `release/*,hotfix/*,keep/*,dependabot/*,renovate/*` | Globs never deleted, archived or promoted |
+| `BRANCH_HYGIENE_PROMOTE_MAX` | `5` | Most tier 2 PRs one run may open; the rest are reported and picked up next month |
+| `BRANCH_HYGIENE_SLACK_MAX` | `10` | Most branches listed in the Slack digest |
+
 ## Repository Structure
 
 ```
@@ -266,9 +324,11 @@ dept-agentic-standards/
     │   ├── codebase-overview/SKILL.md
     │   ├── confluence-axi/SKILL.md
     │   └── context-ownership/SKILL.md
-    ├── workflows/maintainer.yml
+    ├── workflows/
+    │   ├── maintainer.yml            # Scheduled .ai/ drift maintenance (opt-in)
+    │   ├── dependabot-auto-merge.yml # Auto-merge green Dependabot patch PRs (opt-in)
+    │   └── branch-hygiene.yml        # Monthly tiered stale-branch cleanup (opt-in)
     └── agents/support.template.md
-        └── support.template.md
 ```
 
 ## Configuration
@@ -315,21 +375,26 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
 
 `config/standard-version.yml` is the single source of truth for the standard's version.
 
-- **Every change to standard content bumps it.** Standard content is everything the standard
-  installs into a target repository: agents, prompts, templates, standards, scripts and config.
-  The `.github/workflows/version-bump.yml` check fails a pull request that changes standard
-  content without changing the `version` field, so bump the field and add a changelog entry in
-  the same PR. Repo-only changes (`docs/`, `examples/`, `README.md`, `AGENTS.md`, CI) do not
-  need a bump.
+- **Every change to standard content is recorded in the changelog.** Standard content is everything
+  the standard installs into a target repository: agents, prompts, templates, standards, scripts and
+  config. Each such change adds a bullet to the changelog entry of the current unreleased version.
+  The `.github/workflows/version-bump.yml` check fails a pull request whose `version` sorts below the
+  base branch's current one; it does not require a new number, because a change may stack onto the
+  current unreleased version rather than open a new one. Repo-only changes (`docs/`, `examples/`,
+  `README.md`, `AGENTS.md`, CI) do not need a changelog entry.
 - **Patch for a fix, minor for a change.** A correction inside an existing artifact (a missing rule,
   a wrong path, a clarified instruction) is a patch bump: `2.7.0` to `2.7.1`. A new artifact, a new
   installed file, a changed workflow or anything a migrated project has to act on is a minor bump.
   A file-layout change stays a major bump. Reserve minor bumps for changes worth a project's
   attention, so the changelog stays a signal.
-- **One bump per pull request, not per commit.** While a PR is open and unmerged, further commits
-  on that branch amend the changelog entry for the version being released; they never add another
-  version. A new version number is only introduced by a PR that does not already carry an
-  unreleased bump.
+- **The version advances per release, not per pull request.** `config/standard-version.yml`'s
+  `version` is the current *unreleased* line; production tracks whatever was last deployed, which is
+  usually behind it (this repo tags no releases). While that version has not shipped, every
+  standard-content PR stacks its changelog bullets under it and leaves the number alone, so several
+  merged PRs can share one version. The number only advances to the next patch, minor or major when
+  a new release cycle starts, after the current version reaches production. So do not bump to the
+  next number just because the base branch already carries the current one: stack onto it unless its
+  release has shipped.
 - **Every migrated project reports its version.** `.ai/.meta.yml` carries `standard_version`.
   `scripts/install.sh` refreshes the project's vendored `config/standard-version.yml` and stamps
   the current version into an existing `.ai/.meta.yml`, so a refreshed project reports what it

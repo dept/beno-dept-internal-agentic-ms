@@ -72,15 +72,16 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   `.github/workflows/no-plugin-jargon.yml` fails a PR whose added lines outside `.github/` carry
   either word; the changelog is exempt so it can describe the removal.
 - **A vendored script is scanned by the client's linters, not just ours.** `scripts/validate.sh`,
-  `scripts/mirror-claude.sh`, `scripts/gen-dependabot.sh` and `scripts/graphify-bootstrap.sh` land
-  inside the target repository, so a client pipeline running SonarQube treats them as first-party
+  `scripts/mirror-claude.sh`, `scripts/gen-dependabot.sh`, `scripts/graphify-bootstrap.sh` and
+  `scripts/branch-hygiene.sh` land inside the target repository, so a client pipeline running
+  SonarQube treats them as first-party
   source and raises its shell rules on them: single-bracket `[ ]` tests produced a finding per line
   across the 2.7.3 refresh pull requests. Use `[[ ]]`, and prefer the form a generic shell linter
   accepts over the shortest one, because the finding lands on a client's dashboard where nobody can
   explain it.
 
-- **Nothing in `templates/workflows/` is installed by the installer.** `maintainer.yml` and
-  `dependabot-auto-merge.yml` are not in
+- **Nothing in `templates/workflows/` is installed by the installer.** `maintainer.yml`,
+  `dependabot-auto-merge.yml` and `branch-hygiene.yml` are not in
   `ARTIFACTS`, so no `--update` refresh propagates a change to it and every already-migrated repo
   keeps whatever workflow its migration wrote. That is why 2.6.0's default-branch guard was still
   missing from eight client repos weeks later, and why `scripts/validate.sh` asserts the guard
@@ -98,11 +99,16 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   `docs/confluence-layout.md` owns rendering (block choice per section, heading depth, canonical
   table columns, panels). Neither restates the other, and both are vendored into target repos by
   `scripts/install.sh` and fetched by `prompts/01-install.prompt.md`.
-- **Every standard-content change bumps the version.** `.github/workflows/version-bump.yml` fails a
-  PR that touches standard content without changing the `version` field. See the Versioning section
-  of `README.md` for what counts as standard content and how a project reports its version.
-- **One bump per PR, not per commit.** While a PR is open, later commits amend its changelog entry
-  for the version being released; only a PR without an unreleased bump introduces a new version.
+- **Every standard-content change is recorded in the changelog.** `.github/workflows/version-bump.yml`
+  fails a PR whose `version` sorts below the base branch's current one, not one that leaves the number
+  equal: a change stacks its changelog bullets onto the current unreleased version. See the Versioning
+  section of `README.md` for what counts as standard content and how a project reports its version.
+- **The version advances per release, not per PR.** The base branch's `version` is the current
+  *unreleased* line (this repo tags no releases; production is usually behind it). While it has not
+  shipped, every standard-content PR stacks onto it and leaves the number alone, so several merged PRs
+  share one version. Do not bump to the next number just because the base already carries the current
+  one: `2.8.0` on `main` with prod on `2.7.x` means stack onto `2.8.0`, not open `2.9.0`. The number
+  advances only when a new release cycle starts, after the current version reaches production.
 - **Every script runs under `set -euo pipefail`.** A `grep ... | head | sed` reader that finds
   nothing exits non-zero, and inside `$(...)` that kills the whole script with no message, skipping
   every later check. End such pipelines with `|| true` when a no-match is a legitimate result.
