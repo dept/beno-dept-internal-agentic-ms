@@ -64,16 +64,27 @@ emit() {
     # Majors are not ignored here: an action pinned to a major that stopped
     # receiving fixes is the risk, and the blast radius is CI, not the product.
     # Grouped so a week of action bumps is one pull request, not one per action.
+    # Split by update type so patch bumps can be merged on a green build
+    # without a human, while minors and majors stay a decision someone makes.
     echo "    groups:"
+    echo "      actions-patch:"
+    echo "        patterns: [\"*\"]"
+    echo "        update-types: [\"patch\"]"
     echo "      actions:"
     echo "        patterns: [\"*\"]"
+    echo "        update-types: [\"minor\", \"major\"]"
   else
     echo "    ignore:"
     echo "      - dependency-name: \"*\""
     echo "        update-types: [\"version-update:semver-major\"]"
+    # A grouped pull request reports the highest update type it contains, so a
+    # mixed minor+patch group can never be recognised as patch-only downstream.
+    # Separate groups keep the patch pull request mergeable without a human.
     echo "    groups:"
-    echo "      minor-and-patch:"
-    echo "        update-types: [\"minor\", \"patch\"]"
+    echo "      patch:"
+    echo "        update-types: [\"patch\"]"
+    echo "      minor:"
+    echo "        update-types: [\"minor\"]"
   fi
 }
 

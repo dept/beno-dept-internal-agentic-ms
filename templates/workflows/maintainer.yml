@@ -26,7 +26,7 @@ jobs:
     # run against a feature branch is skipped instead of committing .ai/ to the wrong base.
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # full history for `git log` drift analysis
 
@@ -68,10 +68,27 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Build the Atlassian MCP config at runtime. The token is NEVER written to disk:
-      # the config only lists the docker command + `-e VAR` passthrough flags, and docker
-      # reads the actual values from the agent step's env below. This keeps the token out
-      # of any file a prompt-injected agent could read.
+      # Build the Atlassian MCP config at runtime. The config only lists the docker command plus
+      # `-e VAR` passthrough flags, so no credential is written to /tmp.
+      #
+      # That is worth doing and it is not isolation. The values still have to be in the agent
+      # step's env for docker to forward them, so anything running inside that step can read them
+      # out of its own environment, `Bash(cat:*)` or not. The trust boundary this workflow
+      # actually has: repository content that reached the default branch is trusted, because the
+      # scheduled run only ever reads merged content and a poisoned document had to pass review to
+      # get there. Someone who can merge arbitrary text into main can also just edit this file.
+      #
+      # What follows from that, and what to check before enabling it on a repository:
+      #   - branch protection and required review on the default branch, which is what makes the
+      #     "merged content is reviewed content" assumption true;
+      #   - a dedicated Confluence bot account whose API token reaches the MS space and nothing
+      #     else. Repositories enabled before that account exists run on a personal token, which
+      #     widens the blast radius to everything that person can reach in Confluence: swap them
+      #     over once the shared account is available;
+      #   - the `permissions:` block above stays at contents/pull-requests write, so the worst a
+      #     compromised run can do with GITHUB_TOKEN is open a branch and a PR.
+      # Narrowing the tool allowlist further does not close it: Read, grep and sed reach a
+      # process environment as easily as cat does.
       # Uses the community sooperset/mcp-atlassian server (API-token auth = non-interactive, works in CI).
       # Pinned to a digest, not `:latest`: this container receives CONFLUENCE_API_TOKEN, so a
       # mutable tag would let a later, unaudited image run with that credential. Re-resolve and
@@ -100,7 +117,7 @@ jobs:
 
       - name: Run Maintainer Agent
         if: steps.gate.outputs.run == 'true' && steps.secrets.outputs.ok == 'true'
-        uses: anthropics/claude-code-action@37b464ce72700f7b2c5ff8d2db7fa7b15df792f5 # v1.0.169
+        uses: anthropics/claude-code-action@9cdae7f0d995e3ba7c33f226087fdf82a59cd520 # v1.0.223
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -151,9 +168,25 @@ jobs:
           # (read .meta.yml + git log/diff, up to 9 .ai/ files, Confluence resolve/write per
           # touched page, commit/push/PR) without leaving unattended, twice-monthly, write-access
           # runs as open-ended as 100. Raise it only with evidence a real run hit the ceiling.
+          # Not `Bash(git:*)`: that wildcard also hands an unattended agent `git config`,
+          # `git remote set-url` and history rewriting. The list below is what Phases 2/4/6/8 of
+          # the agent doc actually run — history/diff analysis, staging the .ai/ commit,
+          # reverting a no-op change, and publishing the branch.
+          # `git push` has to stay. `gh pr create` only offers to push when it can prompt, and a
+          # runner has no TTY, so without a prior push the run aborts with "you must first push
+          # the current branch to a remote, or use the --head flag" (cli/cli#6468, #10188) — the
+          # agent would commit the maintenance branch and then fail to publish it every time.
+          # So note where the boundary actually is, because it is not in this file: an
+          # allowedTools entry is a command prefix and cannot express "push anywhere except
+          # main", and the runner starts checked out on the default branch. "Open a PR, never
+          # push to main" is an instruction to the model. What enforces it is branch protection
+          # on main, which DEPT repositories have on by default, so a push from this job is
+          # rejected server-side. Confirm it is on before enabling this workflow somewhere that
+          # does not inherit that default — and do not try to close the gap by narrowing the
+          # allowlist further, because no prefix rule can express it.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
             --model claude-sonnet-5
             --max-turns 60
 
@@ -161,7 +194,7 @@ jobs:
       # `if: always()` = upload even when the agent step fails/hits max-turns.
       - name: Upload agent execution log
         if: always() && steps.gate.outputs.run == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: claude-execution-output
           path: ${{ runner.temp }}/claude-execution-output.json

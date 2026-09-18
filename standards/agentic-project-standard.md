@@ -123,12 +123,30 @@ reader to go and read the 106-line `.github/` file).
 |---|---|---|
 | `.claude/skills` | one relative symlink to `.agents/skills` | nothing to rebuild, it cannot drift |
 | `.claude/agents/<role>.md` | one relative symlink to `.github/agents/<role>.agent.md` | nothing to rebuild, it cannot drift |
-| `.claude/commands/<name>.md`, `.cursor/commands/<name>.md` | copied from `.github/prompts/<name>.prompt.md` | the phase prompts, on change |
+| `.claude/commands/<name>.md`, `.cursor/commands/<name>.md` | generated from `.github/prompts/<name>.prompt.md`: body verbatim, frontmatter reduced to `name`, `description`, `argument-hint` | `scripts/mirror-claude.sh` |
 
-`scripts/mirror-claude.sh` creates and repairs both Claude mirrors and is idempotent.
+**Why the command mirror is generated and not a link.** It is the one mirror that cannot be a
+symlink, and frontmatter is the reason. An agent file carries `description` and `name` only, which
+both harnesses accept, so one file serves both. A prompt does not: `agent:` binds it to a Copilot
+agent and `model:` names a Copilot model, and a link would hand Claude Code and Cursor a model id
+they cannot resolve. So the mirror keeps the body verbatim and rewrites the frontmatter down to the
+keys every harness understands — an allow-list, because the source is Copilot's and anything not on
+it is Copilot-facing until shown otherwise. Generated is not authored: the script rewrites it from
+source, so it still cannot drift. A plain `cp` of the prompt is the failure this replaces, and it
+shipped — three identical copies per prompt in a client repository, `model: "GPT-5 (copilot)"` and
+all, with nothing rebuilding them and nothing checking them.
+
+`scripts/mirror-claude.sh` creates and repairs all three mirrors and is idempotent.
 `scripts/install.sh` runs it on install and on every `--update` refresh, so a refresh converts a
-project still carrying copied `.claude/skills/` and `.claude/agents/*.md` files. Run it yourself
-after adding or deleting a skill or an agent; an *edit* needs nothing, both mirrors are links.
+project still carrying copied `.claude/skills/` and `.claude/agents/*.md` files, and regenerates any
+command mirror that was copied rather than transformed. Run it yourself after adding or deleting a
+skill, an agent or a prompt, and after *editing* a prompt — the skill and agent mirrors are links and
+need nothing, the command mirrors are generated and do. `scripts/validate.sh` checks the generated
+mirrors against their source, so a missed run is a warning rather than a silent divergence.
+
+The five bootstrap prompts are the exception the script skips: `scripts/install.sh` installs them
+under `ms-` names (`migrate.prompt.md` becomes `ms-migration.md`), so identity naming does not apply
+and install.sh owns them. Phase 5 of the migrate prompt deletes them from a migrated project.
 
 **Agent frontmatter is one file's worth.** `tools:` is optional in both harnesses and omitting it
 means the agent has every available tool, MCP servers included, so the standard's agents carry no

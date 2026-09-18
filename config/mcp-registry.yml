@@ -52,9 +52,9 @@ servers:
     detect: ["storybook", "@storybook/react", "@storybook/nextjs"]
     protocol: stdio
     command: npx
-    args: ["-y", "@storybook/addon-mcp"]
-    note: "No env var required."
-    last_verified: "2026-06-17"
+    args: ["-y", "@storybook/addon-mcp@10.6.0"]
+    note: "No env var required. Version pinned: an stdio MCP server launches with the developer's local tool access on every IDE start, so it is never resolved at run time."
+    last_verified: "2026-09-14"
 
   # ─── CMS ──────────────────────────────────────────────────────────────────
 
@@ -89,9 +89,9 @@ servers:
     detect: ["@shopify/shopify-api", "@shopify/storefront-api-client", "@shopify/admin-api-client"]
     protocol: stdio
     command: npx
-    args: ["-y", "@shopify/dev-mcp@latest"]
+    args: ["-y", "@shopify/dev-mcp@1.15.2"]
     note: "No env var required — authenticates via browser OAuth using Shopify CLI session"
-    last_verified: "2026-06-17"
+    last_verified: "2026-09-14"
 
   # ─── Database / ORM ──────────────────────────────────────────────────────
 
@@ -177,10 +177,10 @@ servers:
     protocol: http
     vscode_config:
       type: "http"
-      url: "https://mcp.datadoghq.eu/api/unstable/mcp-server/mcp?toolsets=core,synthetics"
+      url: "https://mcp.datadoghq.eu/v1/mcp?toolsets=core,synthetics"
     auth: "OAuth (browser flow on first connect)"
-    note: "Remote server, browser OAuth (no API keys). EU URL shown (DEPT default); US1 orgs use mcp.datadoghq.com. The `?toolsets=core,synthetics` query param is REQUIRED — the MCP loads only the `core` toolset by default, and Synthetics (the 'key features' source, by client:<name> tag) lives in the opt-in `synthetics` toolset. Without it, synthetic tests are not reachable and you would fall back to the Synthetics REST API. A freshly-added MCP is callable only after the tool/IDE reloads + OAuth, so first-run migrations stage the Key Features section as [To fill in] and backfill once authed."
-    last_verified: "2026-07-20"
+    note: "Remote server, browser OAuth (no API keys). EU URL shown (DEPT default); US1 orgs use mcp.datadoghq.com. `/v1/mcp` is the supported path: the older `/api/unstable/mcp-server/mcp` still answers but warns on every connection. The `?toolsets=core,synthetics` query param is REQUIRED — the MCP loads only the `core` toolset by default, and Synthetics (the 'key features' source, by client:<name> tag) lives in the opt-in `synthetics` toolset. Without it, synthetic tests are not reachable and you would fall back to the Synthetics REST API. A freshly-added MCP is callable only after the tool/IDE reloads + OAuth, so first-run migrations stage the Key Features section as [To fill in] and backfill once authed."
+    last_verified: "2026-09-15"
 
   sentry:
     display: "Sentry"
@@ -205,10 +205,10 @@ servers:
     auth: "OAuth"
     stdio_fallback:
       command: npx
-      args: ["-y", "@stripe/mcp", "--tools=all"]
+      args: ["-y", "@stripe/mcp@0.3.3", "--tools=all"]
       env_var: "STRIPE_SECRET_KEY"
     note: "Prefer remote OAuth server. Local npx option available if OAuth not feasible."
-    last_verified: "2026-06-17"
+    last_verified: "2026-09-14"
 
   # ─── Monorepo ─────────────────────────────────────────────────────────────
 

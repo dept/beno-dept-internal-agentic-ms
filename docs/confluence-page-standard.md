@@ -202,9 +202,9 @@ The page shape is a collapsed expand holding the source, immediately followed by
 
 ```html
 <details><summary>Diagram source</summary><pre><code class="language-text">flowchart LR
-    User[User / Editor] --> Frontend[Frontend App]
-    Frontend --> API[Backend / API Layer]
-    API --> DB[(Primary Database)]</code></pre></details>
+    User[User / Editor] --&gt; Frontend[Frontend App]
+    Frontend --&gt; API[Backend / API Layer]
+    API --&gt; DB[(Primary Database)]</code></pre></details>
 <div data-type="extension"
      data-extension-key="23392b90-4271-4239-98ca-a3e96c663cbb/63d4d207-ac2f-4273-865c-0240d37f044a/static/mermaid-diagram"
      data-extension-type="com.atlassian.ecosystem"

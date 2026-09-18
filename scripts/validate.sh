@@ -453,6 +453,52 @@ check_mirror ".agents/skills"  ".claude/skills"   dir  "Skills (Claude)"
 check_mirror ".github/prompts" ".claude/commands" md   "Commands (Claude)"
 check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
 
+# check_mirror counts files; it cannot see a mirror whose *content* has gone stale. The command
+# mirrors are the ones that can: skills and agents are symlinks and cannot drift, but a command
+# mirror is generated (see the header of scripts/mirror-claude.sh for why it cannot be a link), so
+# a source edit that never reached it, or a copy made before the frontmatter transform existed,
+# both survive a count. Two assertions, neither of which re-implements the transform:
+#   - the body below the frontmatter is the source's body, verbatim
+#   - no frontmatter key outside the allow-list survived, which is what a plain `cp` leaves behind
+#     (`agent:` binds a Copilot agent, `model:` names a Copilot model no other harness resolves)
+# Both are repaired by running scripts/mirror-claude.sh.
+COMMAND_KEEP_KEYS=" name description argument-hint "
+body_of() { awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm {print}' "$1"; }
+frontmatter_keys_of() {
+  awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {exit} fm && /^[A-Za-z_][A-Za-z0-9_-]*:/ { sub(/:.*/,""); print }' "$1"
+}
+check_command_mirror_content() {
+  local mirror_dir="$1" what="$2"
+  local src mirror name stray drifted=0 foreign=0
+  [[ -d "${PROJECT_DIR}/.github/prompts" ]] || return 0
+  [[ -d "${PROJECT_DIR}/${mirror_dir}" ]] || return 0
+  for src in "${PROJECT_DIR}"/.github/prompts/*.prompt.md; do
+    [[ -f "$src" ]] || continue
+    name="$(basename "$src" .prompt.md)"
+    mirror="${PROJECT_DIR}/${mirror_dir}/${name}.md"
+    [[ -f "$mirror" ]] || continue
+    if [[ "$(body_of "$mirror")" != "$(body_of "$src")" ]]; then
+      echo -e "  ${YELLOW}△${NC} ${what}: ${mirror_dir}/${name}.md body has drifted from .github/prompts/${name}.prompt.md — run scripts/mirror-claude.sh"
+      drifted=$((drifted + 1))
+      continue
+    fi
+    while read -r stray; do
+      [[ -n "$stray" ]] || continue
+      [[ "$COMMAND_KEEP_KEYS" == *" ${stray} "* ]] && continue
+      echo -e "  ${YELLOW}△${NC} ${what}: ${mirror_dir}/${name}.md keeps the Copilot-only key '${stray}:' — run scripts/mirror-claude.sh"
+      foreign=$((foreign + 1))
+    done < <(frontmatter_keys_of "$mirror")
+  done
+  if [[ "$drifted" -eq 0 && "$foreign" -eq 0 ]]; then
+    echo -e "  ${GREEN}✓${NC} ${what}: every mirror matches its .github/prompts/ source"
+    PASSED=$((PASSED + 1))
+  else
+    WARNED=$((WARNED + drifted + foreign))
+  fi
+}
+check_command_mirror_content ".claude/commands" "Commands (Claude)"
+check_command_mirror_content ".cursor/commands" "Commands (Cursor)"
+
 echo ""
 
 # ── 5b. Maintainer Workflow Guard ──────────────────────────

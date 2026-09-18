@@ -9,8 +9,18 @@ set -euo pipefail
 #
 #   .claude/skills            -> ../.agents/skills                   one relative symlink
 #   .claude/agents/<n>.md     -> ../../.github/agents/<n>.agent.md   one relative symlink per agent
+#   .claude/commands/<n>.md   generated from .github/prompts/<n>.prompt.md
+#   .cursor/commands/<n>.md   generated from the same source
 #
-# Idempotent: run it after adding or deleting a skill or an agent, and on every
+# The command mirrors are the one pair that cannot be a symlink, and the reason is frontmatter.
+# An agent file carries `description` and `name` only, which both harnesses accept, so one file
+# serves both and the mirror is a link. A prompt does not: `agent:` binds it to a Copilot agent
+# and `model:` names a Copilot model, and neither means anything to Claude Code or Cursor — a
+# link would hand them a model id they cannot resolve. The mirror therefore keeps the body
+# verbatim and rewrites the frontmatter down to the keys every harness understands. Because it
+# is generated rather than authored, it still cannot drift: this script rewrites it from source.
+#
+# Idempotent: run it after adding or deleting a skill, an agent or a prompt, and on every
 # `scripts/install.sh . --update` refresh, which calls it for you — that's the standards repo's
 # own installer, run against this project (or via the documented curl one-liner), not a script
 # vendored into this repository: there is no local `scripts/install.sh` here to look for.
@@ -28,6 +38,13 @@ ROOT="${1:-.}"
 ROOT="$(cd "$ROOT" && pwd)"
 
 CHANGED=0
+# Drift this script refuses to resolve on its own (a copied mirror whose body the source does not
+# have, a stale legacy name that has diverged). It is reported and left alone, which used to mean
+# the script printed a red line and still exited 0: an installer or a CI job saw success and the
+# mirror stayed broken. Counted here and turned into a non-zero exit at the end, so a caller that
+# wants to know can ask. scripts/install.sh deliberately tolerates it and prints a notice instead
+# of aborting a half-finished install.
+UNRECONCILED=0
 
 # ── Skills: one symlink instead of a copy per skill ────────────────────────────
 # A copied mirror has to be re-copied on every source edit, and when it is not, the two
@@ -52,7 +69,10 @@ sync_skills() {
     # reported before the source copy wins.
     local entry name
     for entry in "$mirror"/* "$mirror"/.[!.]*; do
-      [[ -e "$entry" ]] || continue
+      # `-e` alone follows a symlink and is false for one whose target is gone, so a dangling
+      # symlink left over in an old copied mirror would be skipped here and then silently lost
+      # to the `rm -rf "$mirror"` below. `-L` also matches the link itself, target or no target.
+      [[ -e "$entry" || -L "$entry" ]] || continue
       name="$(basename "$entry")"
       if [[ ! -e "${src}/${name}" ]]; then
         mv "$entry" "${src}/${name}"
@@ -106,6 +126,7 @@ link_agent() {
       echo -e "  ${YELLOW}△${NC} .claude/agents/${name}.md was a copy with the same body, replaced by a symlink"
     else
       echo -e "  ${RED}✗${NC} .claude/agents/${name}.md has content the .github/agents/${name}.agent.md source does not. Nothing was changed: fold anything worth keeping into the .github/ source (a copy that only points at that source is worth nothing, delete it), then delete the copy and run this script again"
+      UNRECONCILED=$((UNRECONCILED + 1))
       return 0
     fi
   fi
@@ -188,6 +209,7 @@ sync_agents() {
         CHANGED=$((CHANGED + 1))
       else
         echo -e "  ${RED}✗${NC} .claude/agents/${name}.md is the old name of ${legacy_of} and its body has drifted. Nothing was changed: reconcile it into .github/agents/${legacy_of}.agent.md and delete it, or it registers a second agent under the same name"
+        UNRECONCILED=$((UNRECONCILED + 1))
       fi
       continue
     fi
@@ -198,7 +220,92 @@ sync_agents() {
   done
 }
 
+# ── Commands: generated from the prompt source, for Claude Code and Cursor ─────
+# Frontmatter keys a mirror keeps. An allow-list, not a deny-list: the source is Copilot's, so
+# anything not named here is Copilot-facing until proven otherwise, and a key that means nothing
+# to the target harness is better dropped than passed through. `name` is harmless in both,
+# `description` and `argument-hint` are what they render in the slash-command palette.
+MIRROR_KEEP_KEYS=" name description argument-hint "
+
+# The standard's own bootstrap prompts are installed under different names by scripts/install.sh
+# (migrate.prompt.md -> ms-migration.md, 01-install.prompt.md -> ms-install.md, and so on), so
+# identity naming does not apply to them and generating <basename>.md here would put a second,
+# wrongly-named copy of each into the palette. install.sh owns those five; this function owns
+# everything a project authors itself. Phase 5 of the migrate prompt deletes them anyway.
+BOOTSTRAP_PROMPTS=" migrate 01-install 02-discover 03-integrate 04-stack-tooling "
+
+# Body verbatim, frontmatter filtered to MIRROR_KEEP_KEYS. A folded or multi-line value belongs to
+# the key above it, so continuation lines (leading whitespace, no `key:` of their own) follow that
+# key's verdict instead of being tested as keys themselves and silently dropped.
+render_command_mirror() {
+  awk -v keep="$MIRROR_KEEP_KEYS" '
+    BEGIN { fm = 0; keeping = 0 }
+    NR == 1 && $0 == "---" { fm = 1; print; next }
+    fm && $0 == "---"      { fm = 0; print; next }
+    fm {
+      if ($0 ~ /^[[:space:]]/ || $0 !~ /^[A-Za-z_][A-Za-z0-9_-]*:/) {
+        if (keeping) print
+        next
+      }
+      key = $0; sub(/:.*/, "", key)
+      keeping = (index(keep, " " key " ") > 0)
+      if (keeping) print
+      next
+    }
+    { print }
+  ' "$1"
+}
+
+write_command_mirror() {
+  local src="$1" mirror="$2" rendered
+  rendered="$(render_command_mirror "$src")"
+
+  if [[ -f "$mirror" ]] && [[ "$(cat "$mirror")" == "$rendered" ]]; then
+    echo -e "  ${GREEN}✓${NC} ${mirror#"${ROOT}/"}"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$mirror")"
+  printf '%s\n' "$rendered" > "$mirror"
+  echo -e "  ${GREEN}✓${NC} ${mirror#"${ROOT}/"} (written from ${src#"${ROOT}/"})"
+  CHANGED=$((CHANGED + 1))
+}
+
+sync_commands() {
+  local src_dir="${ROOT}/.github/prompts"
+  local src name
+
+  [[ -d "$src_dir" ]] || return 0
+
+  for src in "$src_dir"/*.prompt.md; do
+    [[ -f "$src" ]] || continue
+    name="$(basename "$src" .prompt.md)"
+    [[ "$BOOTSTRAP_PROMPTS" == *" ${name} "* ]] && continue
+    write_command_mirror "$src" "${ROOT}/.claude/commands/${name}.md"
+    write_command_mirror "$src" "${ROOT}/.cursor/commands/${name}.md"
+  done
+
+  # A mirror with no source is reported, never deleted — same policy as the agent mirrors. It may
+  # be a command a project wrote for one harness on purpose, and removing it is the operator's call.
+  local mirror_dir mirrored
+  for mirror_dir in "${ROOT}/.claude/commands" "${ROOT}/.cursor/commands"; do
+    [[ -d "$mirror_dir" ]] || continue
+    for mirrored in "$mirror_dir"/*.md; do
+      [[ -f "$mirrored" ]] || continue
+      name="$(basename "$mirrored" .md)"
+      [[ -f "${src_dir}/${name}.prompt.md" ]] && continue
+      [[ "$name" == ms-* ]] && continue   # installed by scripts/install.sh, not from .github/prompts
+      echo -e "  ${YELLOW}△${NC} ${mirrored#"${ROOT}/"} has no ${src_dir#"${ROOT}/"}/${name}.prompt.md source, left in place"
+    done
+  done
+}
+
 echo "Rebuilding Claude Code mirrors in ${ROOT}"
 sync_skills
 sync_agents
+sync_commands
 echo "  ${CHANGED} mirror(s) written"
+if [[ "$UNRECONCILED" -gt 0 ]]; then
+  echo "  ${UNRECONCILED} mirror(s) need manual reconciliation (see the lines marked above)"
+  exit 1
+fi

@@ -28,6 +28,45 @@ fi
 
 PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
 
+# A `graphify-out/` the repository already tracks is the project's own graph, not
+# our pre-pass output. dtnl-keter-webshop committed one at the root with a
+# hand-written README.md and query_graph.py next to it, plus a nested
+# cartridges/app_keter/graphify-out/ cache and a .claude/commands/graphify.md that
+# reads them: a pre-pass run rewrites those files in place, the `graphify-out/`
+# line appended to .gitignore then hides every later change to them, and Phase 5's
+# "graphify-out/ is ephemeral" removes them for good (dtnl-keter-webshop#2124,
+# which deleted 10 committed files). Tracked means project-owned: write nothing,
+# and let Discovery read what is already there. An untracked graphify-out/ is a
+# previous local run and is still ours to overwrite.
+project_owns_graph() {
+  git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+  # `|| true` on both: no match is a legitimate result, and grep -q closing the
+  # pipe early makes ls-files exit non-zero under `set -euo pipefail`.
+  [[ -n "$( { git -C "$PROJECT_DIR" ls-files || true; } | grep -m1 -E '(^|/)graphify-out/' || true)" ]]
+}
+
+if [[ "${GRAPHIFY_OVERWRITE_TRACKED_OUT:-0}" != "1" ]] && project_owns_graph; then
+  cat <<EOF
+This repository tracks graphify-out/ in Git, so its graph is project content,
+not pre-pass output. The pre-pass writes nothing and does not run.
+
+What this means for the rest of the migration:
+- Discovery reads the committed graph as it stands (GRAPH_REPORT.md, graph.json).
+  Treat it as supplemental evidence and check its age before leaning on it.
+- Do NOT add graphify-out/ to .gitignore, and do NOT delete it in Phase 5
+  cleanup. Both belong to the team, not to this migration.
+- To refresh the graph anyway, that is the team's call and a separate commit:
+  GRAPHIFY_OVERWRITE_TRACKED_OUT=1 bash scripts/graphify-bootstrap.sh $(printf '%q' "$PROJECT_DIR")
+
+Tracked graph files:
+$( { git -C "$PROJECT_DIR" ls-files || true; } | grep -E '(^|/)graphify-out/' | head -5 || true)
+
+Next step: run Phase 2 Discovery
+  @workspace /02-discover
+EOF
+  exit 0
+fi
+
 GRAPHIFY_RUNNER=(graphify)
 TEMP_GRAPHIFYIGNORE_MARKER_BEGIN="# --- DEPT graphify no-LLM fallback: begin ---"
 TEMP_GRAPHIFYIGNORE_MARKER_END="# --- DEPT graphify no-LLM fallback: end ---"
@@ -103,6 +142,14 @@ repo_has_semantic_files() {
 ensure_graphifyignore() {
   local ignore_file entry added_any=0
   ignore_file="$PROJECT_DIR/.graphifyignore"
+
+  # A tracked .graphifyignore is the team's exclude list for their own Graphify
+  # runs. Appending DEPT defaults edits project content, and Phase 5 then deletes
+  # the file as pre-pass residue.
+  if git -C "$PROJECT_DIR" ls-files --error-unmatch .graphifyignore >/dev/null 2>&1; then
+    echo "Left .graphifyignore alone: it is tracked, so the repository owns it"
+    return 0
+  fi
 
   if [[ ! -f "$ignore_file" ]]; then
     cat > "$ignore_file" <<'EOF'
@@ -434,7 +481,14 @@ if [[ ! -f graphify-out/graph.json ]]; then
   echo "and rerun 'bash scripts/graphify-bootstrap.sh .'."
 fi
 
-if [[ -f .gitignore ]]; then
+if project_owns_graph; then
+  # Reached only through GRAPHIFY_OVERWRITE_TRACKED_OUT=1. The pattern matches at
+  # any depth, so one root line would also hide a nested tracked graph such as
+  # dtnl-keter-webshop's cartridges/app_keter/graphify-out/ cache.
+  echo ""
+  echo "Left .gitignore alone: this repository tracks graphify-out/ deliberately."
+  echo "Review and commit the refreshed graph as the team's own change."
+elif [[ -f .gitignore ]]; then
   if ! grep -qx 'graphify-out/' .gitignore 2>/dev/null; then
     printf '\ngraphify-out/\n' >> .gitignore
     echo "Added graphify-out/ to .gitignore"

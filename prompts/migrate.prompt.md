@@ -122,6 +122,17 @@ After Phase 1 installs the local prompts, agents, and helper script, **attempt t
 3. If the helper is missing for some reason, fall back to the direct Graphify commands below.
 4. If installation or execution fails, **continue the migration anyway** — Graphify is a strong accelerator, not a hard blocker.
 
+### If the repository already tracks `graphify-out/`
+Check first: `git ls-files | grep -E '(^|/)graphify-out/'`. A **tracked** `graphify-out/` is the team's own graph — project content they committed on purpose, sometimes with a hand-written `README.md`, a query script and a `/graphify` command beside it — not this migration's scratch output. The helper detects that case, writes nothing, exits 0, and the migration continues. The raw fallback commands below have no such guard, so do not run them here.
+
+For the rest of the migration:
+- Discovery reads the committed graph as it stands and checks how old it is before leaning on it. It is still supplemental evidence, verified against the real files like any other.
+- Do **not** add `graphify-out/` to `.gitignore`: the pattern matches at every depth, so one root line also hides any nested committed graph.
+- Do **not** touch a tracked `.graphifyignore` — it is the team's exclude list for their own runs.
+- Phase 5 removes none of it. See the cleanup section.
+
+Refreshing a committed graph is the team's call and belongs in its own commit, not in the migration PR: `GRAPHIFY_OVERWRITE_TRACKED_OUT=1 bash scripts/graphify-bootstrap.sh .`. An **untracked** `graphify-out/` is a previous local run and is handled normally.
+
 ### Important Graphify prerequisite
 Graphify now has **two supported migration modes** in this repo:
 
@@ -202,12 +213,14 @@ Upstream warns plain `pip install` can create PATH/interpreter mismatches on som
 - Use `graphify-out/` as the Discovery Agent's short-term structural working context for this run, then translate verified findings into durable `.ai/` files so future sessions do not depend on the generated graph artifacts alone
 
 ### Git hygiene
-If `graphify-out/` was created, ensure it is ignored by default unless the team explicitly wants to commit it:
+If the pre-pass **created** `graphify-out/`, ensure it is ignored:
 - If `.gitignore` exists and does not already contain `graphify-out/`, append it
 - If `.gitignore` does not exist, create one with `graphify-out/`
 
+If the repository already tracked `graphify-out/`, the team has explicitly chosen to commit it: leave `.gitignore` alone.
+
 ### Graphify ignore hygiene
-If Graphify is used, ensure a root `.graphifyignore` exists so the pre-pass skips obvious migration noise. At minimum include:
+If Graphify is used and `.graphifyignore` is not already tracked, ensure a root `.graphifyignore` exists so the pre-pass skips obvious migration noise. At minimum include:
 - `.history/`
 - `.ai/`
 - `graphify-out/`
@@ -230,13 +243,13 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
-**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Builds the Claude Code mirrors with `scripts/mirror-claude.sh` (`.claude/skills` as a symlink to `.agents/skills`, and one symlink per agent in `.claude/agents/`) and copies the prompts into `.claude/commands/`, so both Copilot and Claude Code auto-load them.
+**Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Builds the Claude Code mirrors with `scripts/mirror-claude.sh` (`.claude/skills` as a symlink to `.agents/skills`, one symlink per agent in `.claude/agents/`, and the prompt mirrors in `.claude/commands/` and `.cursor/commands/` generated from `.github/prompts/`), so Copilot, Claude Code and Cursor all auto-load them.
 **Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` and `.agents/skills/context-ownership/` exist and resolve through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
-**Does:** Creates or updates `.graphifyignore`, attempts Graphify, preserves `graphify-out/` for the Discovery Agent when successful
-**Verify before continuing:** `.graphifyignore` exists when Graphify was attempted; if Graphify succeeded, `graphify-out/GRAPH_REPORT.md` or `graphify-out/graph.json` exists
+**Does:** Creates or updates `.graphifyignore`, attempts Graphify, preserves `graphify-out/` for the Discovery Agent when successful. Writes nothing at all when the repository tracks `graphify-out/` itself.
+**Verify before continuing:** `.graphifyignore` exists when Graphify was attempted; if Graphify succeeded, `graphify-out/GRAPH_REPORT.md` or `graphify-out/graph.json` exists. If the helper reported a tracked `graphify-out/`, verify instead that `git status` is clean — the pre-pass must have changed nothing.
 
 ### Phase 2: Discovery & Analysis
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/02-discover.prompt.md`
@@ -272,6 +285,24 @@ If **yes**:
 
 If **no**: skip it and note in the summary that the Maintainer runs on demand only (`@agent maintainer` / run the agent manually after each sprint).
 
+### Phase 4c: Dependabot patch auto-merge (optional, ask first)
+**Does:** Installs a workflow that merges Dependabot's patch-level pull requests once every check on them is green. Minor and major bumps stay a human decision. Inline (no separate prompt file). **Always ask first**, and ask the delivery lead, not only the developer running the migration: this hands a bot the right to move code into the base branch.
+
+Ask, verbatim in spirit:
+
+> Auto-merge Dependabot patch bumps when the pipeline passes? Minors and majors stay manual. [yes / no]
+
+Before installing, check what a merge into the base branch actually triggers. If merging the default branch starts a production release, either answer no, or first point Dependabot at an integration branch (`target-branch:` in `.github/dependabot.yml`) so auto-merged patches land there and reach production through the team's normal promotion.
+
+When you set `target-branch`, set it on the package ecosystems only. Leave it off the `github-actions` entry unless the target branch actually carries a `.github/workflows` directory: Dependabot reads workflow files from the target branch, and on a branch without them the job aborts with `/action.yml or /.github/workflows/<anything>.yml not found`. Workflow files normally live on the default branch, so the `github-actions` entry belongs there too. Same rule for every package ecosystem: verify each configured directory exists on the target branch before pointing Dependabot at it.
+
+If **yes**:
+1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/dependabot-auto-merge.yml` → write to `.github/workflows/dependabot-auto-merge.yml`. If that file already exists, show the diff and ask before overwriting.
+2. Confirm this repo reports its pipeline back to the pull request (a check run or a commit status, e.g. an Azure DevOps build validation policy). The workflow refuses to merge when no checks report, so on a repo without pull request CI it is inert by design, not silently permissive.
+3. It needs no repository setting and no secret: `GITHUB_TOKEN` is enough, and it deliberately does not use "Allow auto-merge".
+
+If **no**: skip it. Dependabot's patch pull requests stay in the normal review queue.
+
 ### Phase 5: Cleanup (recommended)
 **Does:** Removes one-time migration artifacts so the repo keeps only what has ongoing value. This is inline (no separate prompt file). **Ask the user before deleting** — some teams prefer to keep the migration tooling in-repo for cheap re-runs.
 
@@ -289,6 +320,7 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
 - `scripts/mirror-claude.sh` — creates and repairs the Claude Code mirror symlinks after an agent or skill is added or removed
+- `scripts/gen-dependabot.sh` — regenerates `.github/dependabot.yml` from the lockfiles actually present, and `scripts/install.sh` runs it on every `--update`. It is a runtime artifact, not a bootstrap one: deleting it leaves the repository with no way to refresh its update targets when a package or solution moves
 - `.github/workflows/maintainer.yml` — if installed in Phase 4b
 
 **Safe to remove after a successful migration (ask, then delete):**
@@ -296,8 +328,10 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - Discovery agent (`.github/agents/discovery.agent.md`, `.claude/agents/discovery.md`) — needed only for initial bootstrap / a full re-discovery; the Maintainer handles incremental updates and does not invoke it. Keep only if you want a cheap re-bootstrap.
 - Phase prompts `01`–`04` and their command mirrors (`.claude/commands/ms-install|ms-discover|ms-integrate|ms-stack-tooling.md`, same under `.cursor/commands/`) — one-time steps that otherwise clutter the slash-command palette permanently.
 - The migration entry point itself: `.github/prompts/migrate.prompt.md` and its `.claude/commands/ms-migration.md` and `.cursor/commands/ms-migration.md` mirrors — one-time too. A full re-run is started from the standards repository bootstrap (`bash <(curl -fsSL .../scripts/install.sh) .`), which reinstalls a current copy of the prompt, so a vendored copy is a stale slash command in the palette forever.
-- `scripts/graphify-bootstrap.sh` — one-time structural pre-pass. Keep only if periodic re-graphing is planned.
-- `graphify-out/` — ephemeral (already gitignored).
+- `scripts/graphify-bootstrap.sh` **and `.graphifyignore`** — the one-time structural pre-pass and the exclude list it writes. Delete the two together: `.graphifyignore` is read by the Graphify CLI, not by the script, so keeping it after the script is gone leaves an inert config file for a tool the repository no longer carries, and a later re-run bootstraps a fresh copy from the standards repository anyway. Keep both only if periodic re-graphing is planned.
+- `graphify-out/` — ephemeral. **Leave the `graphify-out/` line in `.gitignore`** either way: it is one line, and it is what stops a later re-graph committing a multi-megabyte `graph.json`.
+
+**Delete only what this migration created.** Before removing any of the three, run `git log --oneline -1 -- <path>` (or `git ls-files -- <path>`) against the base branch: anything that was already tracked there is project content and stays, however ephemeral the standard calls it. This is the case the cleanup got wrong on dtnl-keter-webshop#2124, where `graphify-out/` was a committed knowledge graph with its own `README.md`, `query_graph.py` and `/graphify` command — the migration ignored it, deleted ten tracked files, and none of that belonged to it. Where the repository owns the graph: keep `graphify-out/`, keep its `.graphifyignore`, and add no `graphify-out/` line to `.gitignore`.
 
 **A later version refresh does not undo this cleanup.** `bash scripts/install.sh . --update` treats the migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only and installs none of them in a project that has a `.ai/.meta.yml`, naming what it skipped in its summary. The runtime set above is refreshed as usual.
 
@@ -356,22 +390,43 @@ Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
 
 ### Graphify pre-pass
 - Install path: [already installed / uv / pipx / unavailable]
-- Graphify run: [succeeded / failed / skipped]
+- Graphify run: [succeeded / failed / skipped / skipped — repository tracks graphify-out/]
 - `graphify-out/` available to Discovery: [yes / no]
+- `graphify-out/` owned by the repository: [no / yes — left untouched, not ignored, not deleted]
 
 ### Phase 5: Cleanup
 - Confluence drafts removed: [yes / n/a — staged, kept]
 - Discovery agent removed: [yes / kept for re-bootstrap]
 - Phase prompts 01–04 removed: [yes / kept]
-- graphify-bootstrap.sh removed: [yes / kept]
+- graphify-bootstrap.sh + .graphifyignore removed: [yes / kept / kept — tracked before this branch]
 - Post-cleanup validate.sh: [COMPLIANT / unchanged]
 
 ### Next Steps
 1. Review .ai/ files and resolve Validation Questions
 2. Commit changes to a feature branch
-3. Open a pull request for team review
+3. Open a pull request for team review, carrying the two required links (below)
 4. After merging, run Maintainer Agent after each sprint
 ```
+
+### The pull request description
+
+The reviewers of this pull request did not ask for it, and most of them have not heard of the
+standard. A description that lists only what changed reads as an unexplained drop of a hundred
+files into their repository, so it opens with why, in two links, before anything else:
+
+```markdown
+Why this PR: https://dept-nl.atlassian.net/wiki/spaces/MS/pages/21504720935/Why+is+this+DEPT+standard+being+added+to+your+project
+
+More about the standard: https://github.com/dept/beno-dept-internal-agentic-ms
+```
+
+The Confluence page is the explanation written for the receiving team: what is added, what is not
+touched (no application code, no dependencies, no pipeline config), and what it costs them. The
+repository link is for whoever wants the mechanics. Put both in the description itself, not in a
+follow-up comment, because a comment is what a reviewer reads after already forming an opinion.
+
+The rest of the description then states what the migration added, the `scripts/validate.sh` result,
+what Phase 5 deleted, and the Validation Questions the team has to answer.
 
 ---
 

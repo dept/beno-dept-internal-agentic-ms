@@ -231,11 +231,25 @@ graphify-out/
 
 That keeps generated graph artifacts out of normal client commits while still allowing ad hoc local use.
 
+### When the repository already tracks `graphify-out/`
+
+Some teams do choose to version it. A `graphify-out/` that is tracked in Git is project content — a graph they built, committed and refer to, sometimes with a README, a query script and their own `/graphify` command beside it — and the migration owns none of it:
+
+- the pre-pass does not run and writes nothing (`scripts/graphify-bootstrap.sh` detects it and exits 0)
+- no `graphify-out/` line is added to `.gitignore`; the pattern matches at every depth, so one root line would also hide a nested committed graph
+- a tracked `.graphifyignore` is left as it stands
+- Phase 5 cleanup deletes none of it
+- Discovery reads the committed graph as it stands, checking its age first
+
+Refreshing it is the team's decision and its own commit: `GRAPHIFY_OVERWRITE_TRACKED_OUT=1 bash scripts/graphify-bootstrap.sh .` runs the pre-pass over a tracked graph and still leaves `.gitignore` alone.
+
+An untracked `graphify-out/` is a previous local run, and the default above applies.
+
 ## Graphify ignore hygiene
 
 Upstream supports a root `.graphifyignore` file using `.gitignore` syntax, layered on top of `.gitignore`.
 
-For DEPT migration, the bootstrap helper should ensure `.graphifyignore` exists when Graphify is used, with at least:
+For DEPT migration, the bootstrap helper should ensure `.graphifyignore` exists when Graphify is used and the repository does not track one itself, with at least:
 
 ```gitignore
 .history/
