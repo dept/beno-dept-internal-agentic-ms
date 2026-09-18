@@ -519,7 +519,7 @@ post_to_slack() {
       # Detail line: lead with what it needs (the action), then where it already is, owner, age.
       detail=""
       [[ -n "$missing_pills" ]] && detail="missing ${missing_pills}"
-      [[ -n "$merged_pills" ]] && detail="${detail:+${detail}  ·  }in ${merged_pills}"
+      [[ -n "$merged_pills" ]] && detail="${detail:+${detail}  ·  }merged ${merged_pills}"
       detail="${detail:+${detail}  ·  }${handle}  ·  \`${age}d\`"
       flag_lines="${flag_lines}${title}"$'\n'"${detail}"$'\n\n'
       shown=$((shown + 1))
