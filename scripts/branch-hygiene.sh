@@ -485,42 +485,48 @@ post_to_slack() {
   # Tier 3 is the only tier a developer has to act on: tiers 1, 2 and 4 already happened.
   # So the message leads with the counts and then lists tier 3 alone, capped, because a
   # Slack section block is rejected above 3000 characters and lucardi has 69 of them.
-  local flag_lines=""
+  # Rendered as an aligned monospace table inside a code block, so the columns line up. A code
+  # block is the only Slack layout with a fixed-width font, and the trade-off is it takes no
+  # links or colour: the branch is plain text, not a link to its PR, and the owner is a plain
+  # @login, not a link to a profile. Columns are Branch, Merged, Missing, Owner, Age; long
+  # values are truncated to a cap with an ellipsis so one outlier branch name cannot stretch
+  # the whole table.
+  local flag_lines="" table_header=""
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    local row branch sha age author envs action login num handle branch_disp shown=0
+    local row branch sha age author envs action login merged_part missing_part shown=0
+    local bcap=38 ocap=20 mcap=22 xcap=22
+    local -a b_col=() m_col=() x_col=() o_col=() a_col=()
     for row in "${ROWS_FLAG[@]}"; do
       [[ "$shown" -ge "$SLACK_MAX_LISTED" ]] && break
       IFS='|' read -r branch sha age author envs action <<<"$row"
-      # Link the branch to its PR and the owner to their GitHub profile, using Slack's
-      # `<url|text>` link syntax. The @handle links to the person, not a Slack ping: a real
-      # notification needs the person's Slack user id, which we cannot map a GitHub login to.
-      # Slack does not render backticks inside link text, so a linked branch loses its code
-      # font; an unlinked one (no PR found) keeps it.
       login=$(pr_author "$branch" || true)
-      num=$(pr_number "$branch" || true)
-      if [[ -n "$login" ]]; then handle="<https://github.com/${login}|@${login}>"; else handle="$author"; fi
-      if [[ -n "$num" ]]; then branch_disp="<https://github.com/${repo}/pull/${num}|${branch}>"; else branch_disp="\`${branch}\`"; fi
-      # Env column, no emoji: each env name is a `code` pill like the age, behind a plain label.
-      # merged = the envs it is already in, missing = the envs it still needs. The envs string
-      # keeps its plain "merged:.. missing:.." form in the issue tables; only the Slack line is
-      # rendered this way.
-      local merged_part missing_part e badges=""
-      local -a marr=() misarr=()
+      [[ -n "$login" ]] && author="@${login}"
       merged_part="${envs#merged:}"; merged_part="${merged_part%% missing:*}"
       missing_part="${envs#*missing:}"
-      if [[ "$merged_part" != "none" ]]; then
-        read -r -a marr <<<"$merged_part"
-        for e in "${marr[@]}"; do badges="${badges:+${badges} }\`${e}\`"; done
-        badges="merged ${badges}"
-      fi
-      if [[ "$missing_part" != "none" ]]; then
-        read -r -a misarr <<<"$missing_part"
-        local mis=""
-        for e in "${misarr[@]}"; do mis="${mis:+${mis} }\`${e}\`"; done
-        badges="${badges:+${badges}   }missing ${mis}"
-      fi
-      flag_lines="${flag_lines}${branch_disp}   ${badges}   ${handle}   \`${age}d\`"$'\n'
+      [[ "$merged_part" == "none" ]] && merged_part="-"
+      [[ "$missing_part" == "none" ]] && missing_part="-"
+      merged_part="${merged_part// /, }"
+      missing_part="${missing_part// /, }"
+      [[ ${#branch}       -gt $bcap ]] && branch="${branch:0:bcap-1}…"
+      [[ ${#author}       -gt $ocap ]] && author="${author:0:ocap-1}…"
+      [[ ${#merged_part}  -gt $mcap ]] && merged_part="${merged_part:0:mcap-1}…"
+      [[ ${#missing_part} -gt $xcap ]] && missing_part="${missing_part:0:xcap-1}…"
+      b_col+=("$branch"); m_col+=("$merged_part"); x_col+=("$missing_part")
+      o_col+=("$author"); a_col+=("${age}d")
       shown=$((shown + 1))
+    done
+    # Column widths: the longest value in each, floored at the header label's own width.
+    local bw=6 mw=6 xw=7 ow=5 i
+    for i in "${!b_col[@]}"; do
+      [[ ${#b_col[$i]} -gt $bw ]] && bw=${#b_col[$i]}
+      [[ ${#m_col[$i]} -gt $mw ]] && mw=${#m_col[$i]}
+      [[ ${#x_col[$i]} -gt $xw ]] && xw=${#x_col[$i]}
+      [[ ${#o_col[$i]} -gt $ow ]] && ow=${#o_col[$i]}
+    done
+    table_header=$(printf '%-*s  %-*s  %-*s  %-*s  %s' "$bw" "Branch" "$mw" "Merged" "$xw" "Missing" "$ow" "Owner" "Age")
+    flag_lines="${table_header}"$'\n'
+    for i in "${!b_col[@]}"; do
+      flag_lines="${flag_lines}$(printf '%-*s  %-*s  %-*s  %-*s  %s' "$bw" "${b_col[$i]}" "$mw" "${m_col[$i]}" "$xw" "${x_col[$i]}" "$ow" "${o_col[$i]}" "${a_col[$i]}")"$'\n'
     done
   fi
 
@@ -565,23 +571,17 @@ post_to_slack() {
             + (if ($flag_lines | length) > 0 then
                  [ { type: "section",
                      text: { type: "mrkdwn",
-                             text: ("*Promote or revert*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
+                             text: ("*Promote or revert*\n```\n" + ($flag_lines | rtrimstr("\n")) + "\n```") } } ]
                  + (if $flagged > $max then
                       [ { type: "context", elements: [ { type: "mrkdwn",
                           text: "\($flagged - $max) more not shown" } ] } ]
                     else [] end)
                else [] end)
-            + (if ($issue_url | length) > 0 or ($run_url | length) > 0 then
+            + (if ($run_url | length) > 0 then
                  [ { type: "actions",
                      elements: [
-                       (if ($issue_url | length) > 0 then
-                          { type: "button", action_id: "report_issue",
-                            text: { type: "plain_text", text: "Report issue" }, url: $issue_url }
-                        else empty end),
-                       (if ($run_url | length) > 0 then
-                          { type: "button", action_id: "full_report",
-                            text: { type: "plain_text", text: "Full report" }, url: $run_url }
-                        else empty end)
+                       { type: "button", action_id: "full_report",
+                         text: { type: "plain_text", text: "Full report" }, url: $run_url }
                      ] } ]
                else [] end)
           )
