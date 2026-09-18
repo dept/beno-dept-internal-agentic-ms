@@ -168,6 +168,10 @@ branch_author() {
   git log -1 --format='%an' "${REMOTE}/$1"
 }
 
+branch_sha() {
+  git rev-parse --short "${REMOTE}/$1"
+}
+
 age_days() {
   echo $(( (NOW_EPOCH - $1) / 86400 ))
 }
@@ -185,7 +189,11 @@ while IFS= read -r ref; do
   ALL_BRANCHES+=("${ref#refs/remotes/${REMOTE}/}")
 done < <(git for-each-ref --format='%(refname)' "refs/remotes/${REMOTE}")
 
-# Report rows: "tier|branch|age|author|envs|action"
+# Report rows: "tier|branch|sha|age|author|envs|action". The sha is what makes a tier 1
+# deletion recoverable: those commits are already on the env branches, but finding the tip
+# again after the branch ref is gone means digging through GitHub's reflog, which expires.
+# Recorded here, the report (and the report issue) is the recovery record:
+# `git branch <branch> <sha>`. Tier 4 does not need it, it tags before it deletes.
 declare -a ROWS_DELETE=()
 declare -a ROWS_PROMOTE=()
 declare -a ROWS_FLAG=()
@@ -207,6 +215,7 @@ for b in "${ALL_BRANCHES[@]}"; do
   tip_epoch=$(branch_tip_epoch "$b")
   age=$(age_days "$tip_epoch")
   author=$(branch_author "$b")
+  sha=$(branch_sha "$b")
 
   declare -a merged_envs=()
   declare -a missing_envs=()
@@ -227,10 +236,10 @@ for b in "${ALL_BRANCHES[@]}"; do
   if [[ ${#missing_envs[@]} -eq 0 ]]; then
     # Tier 1: delete, merged into every existing env branch.
     if [[ "$DRY_RUN" == "true" ]]; then
-      ROWS_DELETE+=("$b|$age|$author|$envs_str|would delete")
+      ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|would delete")
     else
       git push "$REMOTE" --delete "$b" 2>&1 || true
-      ROWS_DELETE+=("$b|$age|$author|$envs_str|deleted")
+      ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|deleted")
     fi
     continue
   fi
@@ -239,7 +248,7 @@ for b in "${ALL_BRANCHES[@]}"; do
     # Tier 2: promote, merged into production but missing from a lower env.
     actions=""
     if [[ "$PROMOTED_COUNT" -ge "$PROMOTE_MAX" ]]; then
-      ROWS_PROMOTE+=("$b|$age|$author|$envs_str|over PROMOTE_MAX (${PROMOTE_MAX}), not opened this run")
+      ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|over PROMOTE_MAX (${PROMOTE_MAX}), not opened this run")
       continue
     fi
     PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
@@ -260,26 +269,26 @@ for b in "${ALL_BRANCHES[@]}"; do
           || actions="${actions}${e}:failed "
       fi
     done
-    ROWS_PROMOTE+=("$b|$age|$author|$envs_str|${actions}")
+    ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|${actions}")
     continue
   fi
 
   if [[ ${#merged_envs[@]} -gt 0 && "$age" -gt "$STALE_DAYS" ]]; then
     # Tier 3: flag, merged into a lower env, missing from a higher one, stale.
-    ROWS_FLAG+=("$b|$age|$author|$envs_str|listed for promote-or-revert")
+    ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|listed for promote-or-revert")
     continue
   fi
 
   if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$ARCHIVE_DAYS" ]]; then
     # Tier 4: archive, merged nowhere, stale beyond ARCHIVE_DAYS.
     if [[ "$DRY_RUN" == "true" ]]; then
-      ROWS_ARCHIVE+=("$b|$age|$author|$envs_str|would tag archive/${b} and delete")
+      ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|would tag archive/${b} and delete")
     else
       if git push "$REMOTE" "${REMOTE}/${b}:refs/tags/archive/${b}" 2>&1; then
         git push "$REMOTE" --delete "$b" 2>&1 || true
-        ROWS_ARCHIVE+=("$b|$age|$author|$envs_str|tagged archive/${b}, deleted")
+        ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
       else
-        ROWS_ARCHIVE+=("$b|$age|$author|$envs_str|tag failed, branch kept")
+        ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tag failed, branch kept")
       fi
     fi
     continue
@@ -304,12 +313,12 @@ render_table() {
     echo ""
     return 0
   fi
-  echo "| Branch | Age (days) | Last author | Envs | Action |"
-  echo "|---|---|---|---|---|"
-  local row branch age author envs action
+  echo "| Branch | Tip | Age (days) | Last author | Envs | Action |"
+  echo "|---|---|---|---|---|---|"
+  local row branch sha age author envs action
   for row in "$@"; do
-    IFS='|' read -r branch age author envs action <<<"$row"
-    echo "| ${branch} | ${age} | ${author} | ${envs} | ${action} |"
+    IFS='|' read -r branch sha age author envs action <<<"$row"
+    echo "| ${branch} | \`${sha}\` | ${age} | ${author} | ${envs} | ${action} |"
   done
   echo ""
 }
@@ -342,6 +351,9 @@ REPORT=$(
   echo "untouched: ${UNTOUCHED_COUNT} branches"
   echo ""
   echo "To restore an archived branch: \`git checkout -b <branch> archive/<branch>\`"
+  echo ""
+  echo "To restore any other deleted branch, from the Tip column above:"
+  echo "\`git branch <branch> <tip>\` then \`git push ${REMOTE} <branch>\`"
 )
 
 echo ""
@@ -349,6 +361,36 @@ echo "$REPORT"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   echo "$REPORT" >>"$GITHUB_STEP_SUMMARY"
+fi
+
+# The issue carries tiers 3 and 4 only, never the full report. Tiers 1 and 2 are already
+# acted on and need no human, and on a repository that has never been cleaned tier 1 alone
+# runs to hundreds of rows: dtnl-lucardi produces 816, which at roughly 120 bytes a row is
+# some 98 KB, and GitHub rejects an issue body over 65536 characters. The full report stays
+# in the job summary, which allows 1 MB.
+ISSUE_BODY=$(
+  echo "Branches needing a human decision. The full report, including what was deleted and"
+  echo "promoted automatically, is in the job summary of the run that wrote this."
+  echo ""
+  if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
+    render_table "Tier 3: promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
+  else
+    render_table "Tier 3: promote or revert (stale, partially merged)"
+  fi
+  if [[ ${#ROWS_ARCHIVE[@]} -gt 0 ]]; then
+    render_table "Tier 4: archived (merged nowhere, very stale)" "${ROWS_ARCHIVE[@]}"
+  else
+    render_table "Tier 4: archived (merged nowhere, very stale)"
+  fi
+  echo "Restore an archived branch: \`git checkout -b <branch> archive/<branch>\`"
+)
+
+# Belt and braces: a repository with thousands of stale branches can overrun the limit on
+# tiers 3 and 4 alone. Truncate rather than let the API reject the whole thing.
+if [[ ${#ISSUE_BODY} -gt 60000 ]]; then
+  ISSUE_BODY="${ISSUE_BODY:0:60000}
+
+_Truncated at 60000 characters. The complete report is in the job summary._"
 fi
 
 # ---------------------------------------------------------------------------
@@ -360,14 +402,14 @@ if [[ "$DRY_RUN" != "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -g
   existing=$(gh issue list --label "$LABEL" --state open --search "Branch hygiene report in:title" \
     --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)
   if [[ -n "$existing" && "$existing" != "null" ]]; then
-    gh issue edit "$existing" --body "$REPORT" >/dev/null
+    gh issue edit "$existing" --body "$ISSUE_BODY" >/dev/null
     echo "Updated issue #${existing}"
   else
-    gh issue create --title "Branch hygiene report" --label "$LABEL" --body "$REPORT" >/dev/null
+    gh issue create --title "Branch hygiene report" --label "$LABEL" --body "$ISSUE_BODY" >/dev/null
     echo "Created branch hygiene report issue"
   fi
 elif [[ "$DRY_RUN" == "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 ) ]]; then
-  echo "(dry run: would upsert the 'Branch hygiene report' issue with the body above)"
+  echo "(dry run: would upsert the 'Branch hygiene report' issue, ${#ISSUE_BODY} characters, tiers 3 and 4 only)"
 fi
 
 exit 0
