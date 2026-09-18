@@ -406,14 +406,23 @@ if [[ "$DRY_RUN" != "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -g
   ensure_label
   existing=$(gh issue list --label "$LABEL" --state open --search "Branch hygiene report in:title" \
     --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)
+  # Neither gh call may kill the run under set -e: by this point tier 1 has already deleted
+  # branches, so a repository with issues disabled, or a token without issues:write, must
+  # degrade to "no issue" rather than abort with the deletions half-reported. The Slack digest
+  # (ISSUE_NUMBER stays empty, so it just omits the issue link) and the job summary still carry
+  # the full report.
   if [[ -n "$existing" && "$existing" != "null" ]]; then
-    gh issue edit "$existing" --body "$ISSUE_BODY" >/dev/null
-    ISSUE_NUMBER="$existing"
-    echo "Updated issue #${existing}"
-  else
-    ISSUE_URL=$(gh issue create --title "Branch hygiene report" --label "$LABEL" --body "$ISSUE_BODY")
+    if gh issue edit "$existing" --body "$ISSUE_BODY" >/dev/null 2>&1; then
+      ISSUE_NUMBER="$existing"
+      echo "Updated issue #${existing}"
+    else
+      echo "Could not update issue #${existing} (issues disabled or missing permission); the full report is in the job summary." >&2
+    fi
+  elif ISSUE_URL=$(gh issue create --title "Branch hygiene report" --label "$LABEL" --body "$ISSUE_BODY" 2>/dev/null); then
     ISSUE_NUMBER="${ISSUE_URL##*/}"
     echo "Created branch hygiene report issue #${ISSUE_NUMBER}"
+  else
+    echo "Could not create the report issue (issues disabled or missing permission); the full report is in the job summary." >&2
   fi
 elif [[ "$DRY_RUN" == "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 ) ]]; then
   echo "(dry run: would upsert the 'Branch hygiene report' issue, ${#ISSUE_BODY} characters, tiers 3 and 4 only)"
