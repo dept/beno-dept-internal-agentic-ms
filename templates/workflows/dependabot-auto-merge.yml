@@ -1,17 +1,21 @@
 # Merges Dependabot's patch-level pull requests once every check on them is green.
 #
-# Not installed by the standard's installer. Copy it into a repository only after the
-# team agrees that a patch bump may reach the base branch without a human reading it,
-# and check what merging that branch triggers first: on a repository where a merge to
-# the default branch starts a production release, point Dependabot at an integration
-# branch (`target-branch` in .github/dependabot.yml) before enabling this.
+# Installed everywhere but dormant by default. The per-repository switch is the native
+# GitHub setting Settings > General > Pull Requests > "Allow auto-merge": while it is off
+# this workflow skips every run and merges nothing, so a team turns patch auto-merge on or
+# off from the UI with no code change and no new pull request. Flip the setting on and the
+# next Dependabot patch pull request merges itself; flip it off and they wait for a human.
+#
+# Before turning the setting on, check what merging the base branch triggers: on a
+# repository where a merge to the default branch starts a production release, point
+# Dependabot at an integration branch (`target-branch` in .github/dependabot.yml) first.
 #
 # Why it watches the checks itself instead of `gh pr merge --auto`:
-# `--auto` needs "Allow auto-merge" enabled on the repository, and it merges as soon as
-# the branch rules are satisfied. A ruleset with no *required status checks* is satisfied
-# the moment the pull request exists, so `--auto` would merge before CI had run at all.
-# Watching the checks here holds the same guarantee without depending on repository
-# settings or on someone having marked the right check as required.
+# `--auto` merges as soon as the branch rules are satisfied, and a ruleset with no
+# *required status checks* is satisfied the moment the pull request exists, so `--auto`
+# would merge before CI had run at all. Watching the checks here holds "green first" without
+# depending on someone having marked the right check as required. The "Allow auto-merge"
+# setting is used only as the on/off switch, not to perform the merge.
 name: Dependabot patch auto-merge
 
 on:
@@ -37,8 +41,24 @@ jobs:
     # runner all day. A timeout here leaves the pull request open for a human.
     timeout-minutes: 60
     steps:
+      # The on/off switch. When "Allow auto-merge" is off the job stops here and merges
+      # nothing, so the file can ship to every repository and stay dormant until a team
+      # opts in from Settings. No code change is needed to enable or disable it.
+      - name: Check the repository opted in
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$(gh api "repos/${{ github.repository }}" --jq '.allow_auto_merge')" = "true" ]; then
+            echo "on=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::'Allow auto-merge' is off for this repository; skipping. Enable it in Settings > General to let Dependabot patch PRs merge themselves."
+            echo "on=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Read Dependabot metadata
         id: meta
+        if: steps.gate.outputs.on == 'true'
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
 
       # A grouped pull request reports the highest update type it contains, which is why
@@ -46,7 +66,7 @@ jobs:
       # major, falls through to a human.
       - name: Wait for every check to pass
         id: checks
-        if: steps.meta.outputs.update-type == 'version-update:semver-patch'
+        if: steps.gate.outputs.on == 'true' && steps.meta.outputs.update-type == 'version-update:semver-patch'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
