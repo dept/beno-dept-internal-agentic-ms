@@ -1,6 +1,6 @@
 ---
 name: context-ownership
-description: Use before writing or editing any `.ai/` context file, `AGENTS.md`, `CLAUDE.md`, or a skill body in this repository. Decides which single file owns the fact being written, and turns every other mention of it into a one-line pointer instead of a second copy. Apply it per section, not per file: it is what stops the same environment table, container image, version floor or command list from being written out in four places and drifting apart.
+description: Use before writing or editing any `.ai/` context file, `AGENTS.md`, `CLAUDE.md`, or a skill body in this repository. Decides which single file owns the fact being written, and turns every other mention of it into a one-line pointer instead of a second copy. Apply it per section, not per file, since that is what stops the same environment table, container image, version floor or command list from being written out in four places and drifting apart.
 ---
 
 # Context ownership (one fact, one home)

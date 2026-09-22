@@ -12,10 +12,10 @@ Drive Confluence Cloud from the terminal with the **`confluence-axi`** npm CLI, 
 ## Preflight (always run first)
 
 ```bash
-npx -y confluence-axi space list   # lists spaces if auth is good, errors otherwise
+npx -y confluence-axi@1.0.4 space list   # lists spaces if auth is good, errors otherwise
 ```
 
-Errors → **ask the user to log in.** The preferred path is browser OAuth (`npx -y confluence-axi auth login`), which the user runs in their own terminal; it needs their own registered 3LO app, set up once per [references/setup.md](references/setup.md). The API-token path is the fallback for CI and headless runs. Never mint, type, echo, or store the token yourself — it is the user's secret.
+Errors → **ask the user to log in.** The preferred path is browser OAuth (`npx -y confluence-axi@1.0.4 auth login`), which the user runs in their own terminal; it needs their own registered 3LO app, set up once per [references/setup.md](references/setup.md). The API-token path is the fallback for CI and headless runs. Never mint, type, echo, or store the token yourself — it is the user's secret.
 
 **If the user cannot or will not log in right now and the remote Atlassian MCP *is* reachable, proceed on the MCP alone** rather than blocking the run — but say so up front, once, in these terms:
 
@@ -29,8 +29,8 @@ Use `confluence-axi` for **every** Confluence operation by default — search, p
 
 Reach for the MCP only when this CLI genuinely cannot complete the operation. In practice that is two cases:
 
-1. **A page-body update the CLI refuses** because a full-body replace would drop an embedded macro you cannot faithfully reconstruct in storage format. Do that single write through the MCP, verify with `npx -y confluence-axi page get <id> --format storage --full`, and note which page went through the MCP and why.
-2. **Any Mermaid-diagram write** (the architecture page's viewer extension) — `create`/`update` are storage-format only in this CLI and have no path to ADF-only content at all; see *Mermaid diagrams* below for the exact procedure and why raw storage-format `ac:adf-extension` XML doesn't work either. Verify with `npx -y confluence-axi page get <id> --format adf --full` (ADF, not storage — see below for why storage-format verification is actively misleading here), and note the page went through the MCP for this reason.
+1. **A page-body update the CLI refuses** because a full-body replace would drop an embedded macro you cannot faithfully reconstruct in storage format. Do that single write through the MCP, verify with `npx -y confluence-axi@1.0.4 page get <id> --format storage --full`, and note which page went through the MCP and why.
+2. **Any Mermaid-diagram write** (the architecture page's viewer extension) — `create`/`update` are storage-format only in this CLI and have no path to ADF-only content at all; see *Mermaid diagrams* below for the exact procedure and why raw storage-format `ac:adf-extension` XML doesn't work either. Verify with `npx -y confluence-axi@1.0.4 page get <id> --format adf --full` (ADF, not storage — see below for why storage-format verification is actively misleading here), and note the page went through the MCP for this reason.
 
 Either way, note which page went through the MCP and why, so the exception stays visible.
 
@@ -40,7 +40,7 @@ The one other time the MCP takes over is the unauthenticated fallback in Preflig
 
 1. **Resolve handover pages by walking the landing page's children — never a bare title search.** The `MS` space is shared across many client projects, so `search "title = 'Overview'"` resolves the wrong project's page. Get the landing page id from `.ai/.meta.yml` (`confluence.pages.landing.id`) and list its subtree:
    ```bash
-   npx -y confluence-axi page children <landingId>
+   npx -y confluence-axi@1.0.4 page children <landingId>
    ```
    Match the subpage by its full prefixed title (`<landing title> - <subpage>`). Act by the id you find.
 2. **Updates bump the version automatically and idempotently.** `page update <id> --body-file f` handles the version increment — no `409 Conflict`, no manual version math. A no-op mutation reports "Already ..." and re-fetches the post-state, so re-running a failed mutation is safe.
@@ -51,13 +51,13 @@ Flags come **after** the command.
 
 | Task | Command |
 |---|---|
-| Verify auth | `npx -y confluence-axi space list` |
-| List a page's children (resolve subpages) | `npx -y confluence-axi page children <id>` |
-| Read a page body (storage) | `npx -y confluence-axi page get <id> --full` |
-| Create a child page | `npx -y confluence-axi page create --space MS --title "<full title>" --body-file body.html --parent <parentId>` |
-| Update title and/or body | `npx -y confluence-axi page update <id> --title "<t>" --body-file body.html` |
-| Delete | `npx -y confluence-axi page delete <id>` |
-| Search (CQL) | `npx -y confluence-axi search "space = MS AND type = page"` |
+| Verify auth | `npx -y confluence-axi@1.0.4 space list` |
+| List a page's children (resolve subpages) | `npx -y confluence-axi@1.0.4 page children <id>` |
+| Read a page body (storage) | `npx -y confluence-axi@1.0.4 page get <id> --full` |
+| Create a child page | `npx -y confluence-axi@1.0.4 page create --space MS --title "<full title>" --body-file body.html --parent <parentId>` |
+| Update title and/or body | `npx -y confluence-axi@1.0.4 page update <id> --title "<t>" --body-file body.html` |
+| Delete | `npx -y confluence-axi@1.0.4 page delete <id>` |
+| Search (CQL) | `npx -y confluence-axi@1.0.4 search "space = MS AND type = page"` |
 
 `page get` supports both **storage format** (Confluence XHTML, default) and `--format adf`. **`create`/`update` are storage-format only** — as of `confluence-axi` 1.0.4 (the latest published version) neither has a `--format` flag at all, so the CLI cannot write ADF-only content. `page update` takes `--title`, `--body`/`--body-file`, or both (at least one required). Bodies truncate on `page get` by default — pass `--full` to get the whole body.
 
@@ -85,7 +85,7 @@ Flags come **after** the command.
 
   **HTML-escape the source before placing it inside `<code>`.** This block is parsed as HTML, so a literal `&`, `<` or `>` in the Mermaid source (a `<br/>` in a node label, a class-diagram `<<Interface>>` marker, a bare `&`) is read as markup or a named entity, not text — the stored `codeBlock` then silently differs from the `.ai/architecture.md` source it must be a verbatim copy of. Replace `&` → `&amp;` first, then `<` → `&lt;` and `>` → `&gt;`. The example above already does this: `-->` is written as `--&gt;`.
 
-  **Verify by reading true ADF back, never the storage-format echo.** `npx -y confluence-axi page get <id> --format adf --full` (or the MCP's own ADF read) reflects what actually renders and must show `"type":"extension"` with camelCase `guestParams`/`forgeEnvironment`/`extensionId`/`extensionTitle` intact and `guestParams.index` as a **number**. `npx -y confluence-axi page get <id> --full` (storage format, the default) is **not a valid check here** — Confluence's storage-format serialization of an `ac:adf-extension` kebab-cases or flattens the same keys for display even when the underlying stored ADF is correct, so it will look broken when it isn't (and vice versa, cannot prove correctness). The rendered diagram itself takes 10 to 20 seconds to appear after page load — wait that long before calling it broken.
+  **Verify by reading true ADF back, never the storage-format echo.** `npx -y confluence-axi@1.0.4 page get <id> --format adf --full` (or the MCP's own ADF read) reflects what actually renders and must show `"type":"extension"` with camelCase `guestParams`/`forgeEnvironment`/`extensionId`/`extensionTitle` intact and `guestParams.index` as a **number**. `npx -y confluence-axi@1.0.4 page get <id> --full` (storage format, the default) is **not a valid check here** — Confluence's storage-format serialization of an `ac:adf-extension` kebab-cases or flattens the same keys for display even when the underlying stored ADF is correct, so it will look broken when it isn't (and vice versa, cannot prove correctness). The rendered diagram itself takes 10 to 20 seconds to appear after page load — wait that long before calling it broken.
 - **Output is TOON-encoded** (token-efficient) — there is no plain-text or JSON mode.
 - **Page structure and layout are governed by two files, both vendored into the repo.** `docs/confluence-page-standard.md` owns which pages exist and which sections they carry; `docs/confluence-layout.md` owns how each section is rendered (table versus bullets versus code block, heading depth, the column set for every recurring table). Read both before writing a body, and keep an existing page in the standard shape rather than appending to a drifted one.
 - **DEPT handover sync:** page ids + full titles live in `.ai/.meta.yml` `confluence:`. Resolve by walking `landing.id`'s children (rule 1), act by id, write resolved ids back.
