@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.0"
-  release_date: "2026-09-18"
+  version: "2.8.1"
+  release_date: "2026-09-22"
   changelog:
+    - version: "2.8.1"
+      date: "2026-09-22"
+      changes:
+        - "templates/workflows/dependabot-auto-merge.yml now gates itself on the repository's own `allow_auto_merge` setting (Settings > General > Pull Requests > \"Allow auto-merge\"), read via `gh api repos/<repo> --jq .allow_auto_merge` in a new first step. While the setting is off, the workflow logs a `::notice::` and skips every remaining step, so it is safe to install everywhere and stays dormant until a repository owner flips the native toggle: no new PR or code change is needed to turn patch auto-merge on or off for a given repository. Rolled out to the 24 MS repositories that carry a standard-managed .github/dependabot.yml, each installed on the branch Dependabot actually targets (`pull_request_target` runs from the PR's base branch, not the default branch), since 23 of 24 had no copy of this workflow on their real target branch at all."
+        - "prompts/migrate.prompt.md: Dependabot config generation, patch auto-merge, and branch hygiene are now always an explicit ask during migration, not an implicit default or a silent skip. New Phase 1a (\"Dependabot configuration\") asks before scripts/gen-dependabot.sh runs, since it previously ran unconditionally with no way to decline in-session. Phase 4c (\"Dependabot patch auto-merge\") and Phase 4d (\"Branch hygiene\") are reworded from \"optional, ask first\" to \"ask first, default yes\": all three now state the default answer is yes and give an explicit opt-out (\"If no: skip it\"), so a migration installs all three unless the delivery lead says otherwise, and the choice is always visible rather than assumed. The Completion Summary template gained status lines for Phase 4c and Phase 4d to match the existing Phase 4b line, so a migration report always states what was decided for all three."
     - version: "2.8.0"
       date: "2026-09-18"
       changes:
