@@ -247,15 +247,27 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 **Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` and `.agents/skills/context-ownership/` exist and resolve through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
 
 ### Phase 1a: Dependabot configuration (ask first, default yes)
-**Does:** Generates `.github/dependabot.yml` from the lockfiles actually present (`scripts/gen-dependabot.sh`, install-if-absent: it never overwrites a hand-tuned config). Inline (no separate prompt file). **Always ask**, defaulting to yes — most repos want it, but some already run a different update tool or have a delivery lead who wants to decide update cadence separately.
+**Does:** Generates `.github/dependabot.yml` from the lockfiles actually present (`scripts/gen-dependabot.sh`, install-if-absent: it never overwrites a hand-tuned config). Inline (no separate prompt file). **Always ask**, defaulting to yes: most repos want it, but some already run a different update tool or have a delivery lead who wants to decide update cadence separately.
 
 Ask, verbatim in spirit:
 
 > Generate `.github/dependabot.yml` for the ecosystems detected (patch/minor groups split so a patch bump is auto-mergeable in Phase 4c)? Default yes. [yes / no]
 
-If **yes**: proceed as normal — the bootstrap one-liner (`scripts/install.sh`) already runs `scripts/gen-dependabot.sh` unconditionally at the end of the install; nothing else to do. In-session (Option B, no installer run), run `scripts/gen-dependabot.sh .` yourself.
+If **yes**: proceed as normal: the bootstrap one-liner (`scripts/install.sh`) already runs `scripts/gen-dependabot.sh` unconditionally at the end of the install; nothing else to do. In-session (Option B, no installer run), run `scripts/gen-dependabot.sh .` yourself.
 
 If **no**: if the bootstrap one-liner already generated `.github/dependabot.yml` before this question could be asked, delete it and note in the summary that Dependabot is not configured for this repository (it can be regenerated later with `bash scripts/gen-dependabot.sh .`). In-session, just skip the step.
+
+**Which branch Dependabot targets (`target-branch`).** Decide by data, not by branch name. Set `target-branch` to a work branch (develop, support, acceptance, test) only when that branch is merged into the default branch as a whole, so everything on it reaches production with the next promotion. Measure it:
+
+```bash
+gh pr list --state merged --base <default> --limit 30 --json headRefName \
+  --jq '[.[]|select(.headRefName=="<work-branch>")]|length'   # whole-branch promotion PRs
+gh api repos/<owner>/<repo>/compare/<default>...<work-branch> --jq .ahead_by
+```
+
+Promotion PRs present and a small `ahead_by` means the work branch drains: target it. Zero promotion PRs (the team ships through `release/*` branches, cherry-picks, or feature branches merged straight into the default branch) means it does not: leave `target-branch` off. A patch merged into a branch that never drains never reaches production, and Dependabot deletes its branch on merge, so the only way to ship it is a cherry-pick. Targeting the default branch instead keeps the `dependabot/*` branch alive until it ships: to test a bump first, merge that branch into the test environment branch, then merge the pull request into the default branch or fold it into the release branch, exactly like a feature branch. The next back-merge of the default branch brings it onto the work branch too. Do not configure both targets for the same ecosystem: it doubles the pull requests, lets the two environments drift to different versions, and conflicts in the lockfile on the next back-merge.
+
+Majors are not part of this decision: the generated config ignores `semver-major`, so upgrading a major stays normal feature work. Security updates ignore `target-branch` and always open against the default branch.
 
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
@@ -297,22 +309,22 @@ If **yes**:
 If **no**: skip it and note in the summary that the Maintainer runs on demand only (`@agent maintainer` / run the agent manually after each sprint).
 
 ### Phase 4c: Dependabot patch auto-merge (ask first, default yes)
-**Does:** Installs a workflow that merges Dependabot's patch-level pull requests once every check on them is green. Minor and major bumps stay a human decision. Inline (no separate prompt file). **Always ask**, defaulting to yes, and ask the delivery lead, not only the developer running the migration: this hands a bot the right to move code into the base branch. The workflow ships dormant either way — it reads the repository's native `Allow auto-merge` setting (Settings > General > Pull Requests) on every run and skips, merging nothing, while that setting is off — so the ask here decides whether the file exists at all, and the repository setting is the day-to-day on/off switch a team flips later without a new PR.
+**Does:** Installs a workflow that merges Dependabot's patch-level pull requests once every check on them is green. Minor and major bumps stay a human decision. Inline (no separate prompt file). **Always ask**, defaulting to yes, and ask the delivery lead, not only the developer running the migration: this hands a bot the right to move code into the base branch. The workflow ships dormant either way: its job only runs when the Actions variable `DEPENDABOT_AUTO_MERGE` is `true` (Settings > Secrets and variables > Actions > Variables), so the ask here decides whether the file exists at all, and the variable is the day-to-day on/off switch a team flips later without a new PR. Do not use the native `Allow auto-merge` setting for this: developers use it for their own pull requests, so it is already on in most repositories.
 
 Ask, verbatim in spirit:
 
-> Install Dependabot patch auto-merge (merges once checks pass, dormant until "Allow auto-merge" is turned on in Settings)? Minors and majors stay manual either way. Default yes. [yes / no]
+> Install Dependabot patch auto-merge (merges once checks pass, dormant until the `DEPENDABOT_AUTO_MERGE` variable is set to `true`)? Minors and majors stay manual either way. Default yes. [yes / no]
 
-Before installing, check what a merge into the base branch actually triggers. If merging the default branch starts a production release, either answer no, or first point Dependabot at an integration branch (`target-branch:` in `.github/dependabot.yml`) so auto-merged patches land there and reach production through the team's normal promotion.
+Auto-merge only makes sense where Dependabot targets a work branch that drains into the default branch (the Phase 1a measurement). Where Dependabot targets the default branch, an auto-merged patch goes straight to whatever a merge there triggers, usually production: answer no, or install it and leave the variable unset. Where it targets a work branch that does not drain, the Phase 1a rule already says not to target it; do not install auto-merge to paper over that.
 
 When you set `target-branch`, set it on the package ecosystems only. Leave it off the `github-actions` entry unless the target branch actually carries a `.github/workflows` directory: Dependabot reads workflow files from the target branch, and on a branch without them the job aborts with `/action.yml or /.github/workflows/<anything>.yml not found`. Workflow files normally live on the default branch, so the `github-actions` entry belongs there too. Same rule for every package ecosystem: verify each configured directory exists on the target branch before pointing Dependabot at it.
 
 If **yes**:
 1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/dependabot-auto-merge.yml` → write to `.github/workflows/dependabot-auto-merge.yml`. If that file already exists, show the diff and ask before overwriting.
 2. Confirm this repo reports its pipeline back to the pull request (a check run or a commit status, e.g. an Azure DevOps build validation policy). The workflow refuses to merge when no checks report, so on a repo without pull request CI it is inert by design, not silently permissive.
-3. Tell the delivery lead the workflow is installed but inert: nothing merges until Settings > General > Pull Requests > "Allow auto-merge" is turned on for this repository. It needs no secret, `GITHUB_TOKEN` is enough.
+3. Tell the delivery lead the workflow is installed but inert: nothing merges until the repository variable is set (`gh variable set DEPENDABOT_AUTO_MERGE --body true`), and deleting it turns auto-merge off again. It needs no secret, `GITHUB_TOKEN` is enough. The workflow file must live on the branch Dependabot targets, because `pull_request_target` runs the copy on the pull request's base branch.
 
-If **no**: skip it entirely — do not install the file. Dependabot's patch pull requests stay in the normal review queue with no auto-merge path.
+If **no**: skip it entirely, do not install the file. Dependabot's patch pull requests stay in the normal review queue with no auto-merge path.
 
 ### Phase 4d: Branch hygiene (ask first, default yes)
 **Does:** Installs a monthly workflow that classifies every branch into one of five tiers (delete,
@@ -322,14 +334,14 @@ promotion pull requests for what reached production but not every lower environm
 **Always ask**, defaulting to yes, and ask the delivery lead, not only the developer running the
 migration: this hands a bot the right to delete branches and open pull requests unattended. Only
 a manual `workflow_dispatch` defaults to a dry run (`dry_run: true`); the monthly `schedule` trigger
-always acts for real, with no separate opt-in step — so accepting this question is accepting that
+always acts for real, with no separate opt-in step, so accepting this question is accepting that
 the first scheduled run (the 1st of next month by default) deletes, tags and opens pull requests,
 not just reports. Run it once by hand via `workflow_dispatch` and read the report before the
 schedule fires, per step 6 below.
 
 Ask, verbatim in spirit:
 
-> Install the monthly branch hygiene workflow? The schedule acts for real from its first run — run it once manually (dry run) and read the report before trusting it. Default yes. [yes / no]
+> Install the monthly branch hygiene workflow? The schedule acts for real from its first run: run it once manually (dry run) and read the report before trusting it. Default yes. [yes / no]
 
 If **yes**:
 1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/branch-hygiene.yml` → write to `.github/workflows/branch-hygiene.yml`. If that file already exists, show the diff and ask before overwriting.
@@ -439,7 +451,8 @@ After all phases complete, output:
 - Secrets still needed: [ANTHROPIC_API_KEY, CONFLUENCE_* / none]
 
 ### Phase 4c: Dependabot patch auto-merge
-- .github/workflows/dependabot-auto-merge.yml: [installed, dormant until "Allow auto-merge" is turned on / declined]
+- .github/workflows/dependabot-auto-merge.yml: [installed, dormant until DEPENDABOT_AUTO_MERGE=true / declined]
+- Dependabot target: [default branch / <work-branch>, drains: N promotion PRs in last 30]
 
 ### Phase 4d: Branch hygiene
 - .github/workflows/branch-hygiene.yml + scripts/branch-hygiene.sh: [installed, dry run only until schedule is trusted / declined]
