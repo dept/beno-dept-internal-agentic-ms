@@ -325,10 +325,6 @@ for b in "${ALL_BRANCHES[@]}"; do
       ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|within grace (${PROMOTE_DELAY_DAYS}d), author to promote")
       continue
     fi
-    if [[ "$PROMOTED_COUNT" -ge "$PROMOTE_MAX" ]]; then
-      ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|over PROMOTE_MAX (${PROMOTE_MAX}), not opened this run")
-      continue
-    fi
     # Only a branch that gets a PR (or would, in dry run) counts toward PROMOTE_MAX and the
     # Slack total: one held for drift or with an existing PR must not use up the quota.
     attempted=false
@@ -345,6 +341,12 @@ for b in "${ALL_BRANCHES[@]}"; do
       if carries_production_drift "$b" "$e"; then
         record_drift "$e" "$behind"
         actions="${actions}${e}:env-behind-production "
+        continue
+      fi
+      # The quota applies only here, to an otherwise-safe PR, after the local drift checks (so every env behind production is
+      # still classified and reported however many branches came before it) and before the GitHub lookup.
+      if [[ "$PROMOTED_COUNT" -ge "$PROMOTE_MAX" ]]; then
+        actions="${actions}${e}:over PROMOTE_MAX (${PROMOTE_MAX}), not opened this run "
         continue
       fi
       if pr_exists "" "$b" "$e"; then
