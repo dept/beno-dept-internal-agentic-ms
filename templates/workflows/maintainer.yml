@@ -122,7 +122,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Forwarded into the MCP docker container via the `-e` flags above.
-          CONFLUENCE_URL: https://dept-nl.atlassian.net/wiki
+          # The Atlassian API gateway for the dept-nl site, not https://dept-nl.atlassian.net/wiki:
+          # a service-account token is scoped and the site URL rejects it with 401. The cloudId
+          # is fixed for the site, so this value is the same in every repository.
+          CONFLUENCE_URL: https://api.atlassian.com/ex/confluence/8f3b02d8-c59e-4884-93f2-8e680906833d/wiki
           CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
           CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
         with:
@@ -148,6 +151,12 @@ jobs:
             - Confluence sync (space MS, base https://dept-nl.atlassian.net/wiki/spaces/MS/Projects):
               UPDATE existing pages in place. Never remove a page unless its underlying subject no longer exists
               in the repo. Add a "Last synced from .ai/" timestamp. Push critical/moderate updates only, skip minor.
+              Page URLs returned by the MCP point at api.atlassian.com; write any page link for humans as
+              https://dept-nl.atlassian.net/wiki/spaces/MS/pages/<id> instead.
+              Never write confidence scores or markers to Confluence; they belong in .ai/ only.
+              Never update a page that holds a macro or extension (the architecture page's Mermaid
+              diagram viewer, for one): this MCP's update round-trips through markdown and deletes it.
+              Skip that page and list it in the PR body as needing a manual sync.
 
             NO-OP RULE (hard requirement): a maintenance PR must carry real documentation content.
             After applying updates, run `git status --porcelain -- .ai/` and inspect the diff:
@@ -184,9 +193,13 @@ jobs:
           # rejected server-side. Confirm it is on before enabling this workflow somewhere that
           # does not inherit that default — and do not try to close the gap by narrowing the
           # allowlist further, because no prefix rule can express it.
+          # --disallowedTools: --allowedTools does not remove the built-in Agent tool, and a run
+          # that handed the pass to a background subagent ended the job and killed it before any
+          # PR or Confluence write. No subagents or deferred work: the pass runs in this session.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
+            --disallowedTools "Agent,Task,Workflow,ScheduleWakeup,CronCreate"
             --model claude-sonnet-5
             --max-turns 60
 
