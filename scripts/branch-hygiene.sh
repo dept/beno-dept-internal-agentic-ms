@@ -236,6 +236,33 @@ declare -a ROWS_ARCHIVE=()
 UNTOUCHED_COUNT=0
 PROMOTED_COUNT=0
 
+# A promote PR from <branch> into <env> carries every commit in env..branch. When the branch
+# was cut from production and the env is behind production, that range includes production
+# commits the env never got (other merged PRs, releases), so the PR would smuggle a whole
+# environment sync into what reads as a one-branch promotion (dtnl-florensis-foot-2022 #224:
+# 1 commit of its own, 43 in the diff). Such a range is detected by any commit on production's
+# first-parent history, and the env is reported as behind production instead. A branch
+# fast-forwarded onto production also lands on that history and is reported, not promoted:
+# the safe side of the check.
+PROD_MAINLINE=$(git rev-list --first-parent "${REMOTE}/${PRODUCTION}" 2>/dev/null || true)
+DRIFT_ENVS=" "
+declare -a ROWS_DRIFT=()
+
+carries_production_drift() {
+  local b="$1" e="$2" hits
+  hits=$(git rev-list "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null \
+    | grep -cxF -f <(printf '%s\n' "$PROD_MAINLINE") || true)
+  [[ "${hits:-0}" -gt 0 ]]
+}
+
+record_drift() {
+  local e="$1" behind
+  [[ "$DRIFT_ENVS" == *" ${e} "* ]] && return 0
+  DRIFT_ENVS="${DRIFT_ENVS}${e} "
+  behind=$(git rev-list --count "${REMOTE}/${e}..${REMOTE}/${PRODUCTION}" 2>/dev/null || echo "?")
+  ROWS_DRIFT+=("- \`${e}\` is ${behind} commits behind \`${PRODUCTION}\`: sync ${PRODUCTION} into ${e} in one reviewed PR; promote PRs into ${e} are held until then.")
+}
+
 LABEL_ENSURED=false
 ensure_label() {
   [[ "$LABEL_ENSURED" == "true" ]] && return 0
@@ -295,6 +322,11 @@ for b in "${ALL_BRANCHES[@]}"; do
     for e in "${missing_envs[@]}"; do
       [[ "$e" == "$PRODUCTION" ]] && continue
       title="chore(promote): ${b} into ${e}"
+      if carries_production_drift "$b" "$e"; then
+        record_drift "$e"
+        actions="${actions}${e}:env-behind-production "
+        continue
+      fi
       if pr_exists "" "$b" "$e"; then
         actions="${actions}${e}:exists "
         continue
@@ -378,6 +410,12 @@ REPORT=$(
   else
     render_table "Tier 2: promote (merged to production, missing from a lower env)"
   fi
+  if [[ ${#ROWS_DRIFT[@]} -gt 0 ]]; then
+    echo "### Environments behind production"
+    echo ""
+    printf '%s\n' "${ROWS_DRIFT[@]}"
+    echo ""
+  fi
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
     render_table "Tier 3: flag, promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
   else
@@ -403,7 +441,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   echo "$REPORT" >>"$GITHUB_STEP_SUMMARY"
 fi
 
-# The issue carries tiers 3 and 4 only, never the full report. Tiers 1 and 2 are already
+# The issue carries tiers 3 and 4 and any environment behind production, never the full report. Tiers 1 and 2 are already
 # acted on and need no human, and on a repository that has never been cleaned tier 1 alone
 # runs to hundreds of rows: dtnl-lucardi produces 816, which at roughly 120 bytes a row is
 # some 98 KB, and GitHub rejects an issue body over 65536 characters. The full report stays
@@ -412,6 +450,12 @@ ISSUE_BODY=$(
   echo "Branches needing a human decision. The full report, including what was deleted and"
   echo "promoted automatically, is in the job summary of the run that wrote this."
   echo ""
+  if [[ ${#ROWS_DRIFT[@]} -gt 0 ]]; then
+    echo "### Environments behind production"
+    echo ""
+    printf '%s\n' "${ROWS_DRIFT[@]}"
+    echo ""
+  fi
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
     render_table "Tier 3: promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
   else
@@ -436,10 +480,10 @@ fi
 ISSUE_NUMBER=""
 
 # ---------------------------------------------------------------------------
-# Upsert the report issue (only outside dry run, and only when tier 3 or 4 has entries)
+# Upsert the report issue (only outside dry run, and only when tier 3, tier 4 or env drift has entries)
 # ---------------------------------------------------------------------------
 
-if [[ "$DRY_RUN" != "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 ) ]]; then
+if [[ "$DRY_RUN" != "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 || ${#ROWS_DRIFT[@]} -gt 0 ) ]]; then
   ensure_label
   existing=$(gh issue list --label "$LABEL" --state open --search "Branch hygiene report in:title" \
     --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)
@@ -461,8 +505,8 @@ if [[ "$DRY_RUN" != "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -g
   else
     echo "Could not create the report issue (issues disabled or missing permission); the full report is in the job summary." >&2
   fi
-elif [[ "$DRY_RUN" == "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 ) ]]; then
-  echo "(dry run: would upsert the 'Branch hygiene report' issue, ${#ISSUE_BODY} characters, tiers 3 and 4 only)"
+elif [[ "$DRY_RUN" == "true" && ( ${#ROWS_FLAG[@]} -gt 0 || ${#ROWS_ARCHIVE[@]} -gt 0 || ${#ROWS_DRIFT[@]} -gt 0 ) ]]; then
+  echo "(dry run: would upsert the 'Branch hygiene report' issue, ${#ISSUE_BODY} characters, tiers 3 and 4 and env drift only)"
 fi
 
 # ---------------------------------------------------------------------------
