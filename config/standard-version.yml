@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.2"
-  release_date: "2026-09-29"
+  version: "2.8.3"
+  release_date: "2026-10-01"
   changelog:
+    - version: "2.8.3"
+      date: "2026-10-01"
+      changes:
+        - "scripts/confluence-adf.py is new and vendored by scripts/install.sh. It reads a Confluence page as ADF (`get`) and writes it back (`put`), refusing a write that drops or changes a macro/extension node, contains a confidence score, or points the Mermaid viewer's `guestParams.index` at a missing code block, and re-reads the page to confirm the extensions survived. The community MCP's `update_page` round-trips through Markdown and deleted the Mermaid Diagrams Viewer on the UNICEF architecture page; 2.8.2 made the maintainer skip such pages, which turned every architecture change into a manual sync across 23 repositories. The maintainer now writes those pages through the script and only skips when it cannot run. `python3 scripts/confluence-adf.py selftest` checks the guard."
+        - "templates/workflows/maintainer.yml allows `Bash(python3 scripts/confluence-adf.py:*)` and `Bash(bash scripts/validate.sh:*)`. The via-outlets run could not run validate.sh and left it to the reviewer."
     - version: "2.8.2"
       date: "2026-09-29"
       changes:

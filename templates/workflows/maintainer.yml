@@ -155,8 +155,11 @@ jobs:
               https://dept-nl.atlassian.net/wiki/spaces/MS/pages/<id> instead.
               Never write confidence scores or markers to Confluence; they belong in .ai/ only.
               Never update a page that holds a macro or extension (the architecture page's Mermaid
-              diagram viewer, for one): this MCP's update round-trips through markdown and deletes it.
-              Skip that page and list it in the PR body as needing a manual sync.
+              diagram viewer, for one) through this MCP: its update round-trips through markdown and
+              deletes it. Write such a page with `python3 scripts/confluence-adf.py get <id> /tmp/<id>.json`,
+              edit the JSON, then `python3 scripts/confluence-adf.py put <id> /tmp/<id>.json "<message>"`.
+              The script refuses a write that drops an extension; if it refuses, fix the JSON, never
+              fall back to the MCP. Run `bash scripts/validate.sh .` before committing.
 
             NO-OP RULE (hard requirement): a maintenance PR must carry real documentation content.
             After applying updates, run `git status --porcelain -- .ai/` and inspect the diff:
@@ -193,12 +196,13 @@ jobs:
           # rejected server-side. Confirm it is on before enabling this workflow somewhere that
           # does not inherit that default — and do not try to close the gap by narrowing the
           # allowlist further, because no prefix rule can express it.
+          # scripts/confluence-adf.py reads CONFLUENCE_URL/USERNAME/API_TOKEN from this step's env.
           # --disallowedTools: --allowedTools does not remove the built-in Agent tool, and a run
           # that handed the pass to a background subagent ended the job and killed it before any
           # PR or Confluence write. No subagents or deferred work: the pass runs in this session.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),mcp__atlassian__*"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),Bash(python3 scripts/confluence-adf.py:*),Bash(bash scripts/validate.sh:*),mcp__atlassian__*"
             --disallowedTools "Agent,Task,Workflow,ScheduleWakeup,CronCreate"
             --model claude-sonnet-5
             --max-turns 60
