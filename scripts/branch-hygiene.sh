@@ -241,15 +241,20 @@ PROMOTED_COUNT=0
 # commits the env never got (other merged PRs, releases), so the PR would smuggle a whole
 # environment sync into what reads as a one-branch promotion (dtnl-florensis-foot-2022 #224:
 # 1 commit of its own, 43 in the diff). Such a range is detected by any commit on production's
-# first-parent history, and the env is reported as behind production instead. A branch
-# fast-forwarded onto production also lands on that history and is reported, not promoted:
-# the safe side of the check.
+# first-parent history, or by any merge commit (other work merged into the branch, e.g. via an
+# intermediate feature branch: dtnl-we-fashion, 1 fix carrying 244 commits), and the env is
+# reported as behind production instead. Since the branch is already in production, a
+# non-empty env..branch always means the env is behind it. A branch fast-forwarded onto
+# production also lands on the first-parent history and is reported, not promoted: the safe
+# side of the check.
 PROD_MAINLINE=$(git rev-list --first-parent "${REMOTE}/${PRODUCTION}" 2>/dev/null || true)
 DRIFT_ENVS=" "
 declare -a ROWS_DRIFT=()
 
 carries_production_drift() {
-  local b="$1" e="$2" hits
+  local b="$1" e="$2" hits merges
+  merges=$(git rev-list --merges --count "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null || echo 0)
+  [[ "$merges" -gt 0 ]] && return 0
   hits=$(git rev-list "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null \
     | grep -cxF -f <(printf '%s\n' "$PROD_MAINLINE") || true)
   [[ "${hits:-0}" -gt 0 ]]
