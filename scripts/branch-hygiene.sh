@@ -325,9 +325,9 @@ for b in "${ALL_BRANCHES[@]}"; do
       ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|within grace (${PROMOTE_DELAY_DAYS}d), author to promote")
       continue
     fi
-    # Only a branch that gets a PR (or would, in dry run) counts toward PROMOTE_MAX and the
-    # Slack total: one held for drift or with an existing PR must not use up the quota.
-    attempted=false
+    # PROMOTE_MAX and the Slack total count pull requests, each as it is opened (or would be, in
+    # dry run), so the next environment of the same branch already sees the new count. A held
+    # environment, an existing PR or a failed create uses up nothing.
     for e in "${missing_envs[@]}"; do
       [[ "$e" == "$PRODUCTION" ]] && continue
       title="chore(promote): ${b} into ${e}"
@@ -355,19 +355,18 @@ for b in "${ALL_BRANCHES[@]}"; do
       fi
       if [[ "$DRY_RUN" == "true" ]]; then
         actions="${actions}${e}:would-open-pr "
-        attempted=true
+        PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
       else
-        attempted=true
         ensure_label
         body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."
-        gh pr create --head "$b" --base "$e" --title "$title" --body "$body" --label "$LABEL" >/dev/null 2>&1 \
-          && actions="${actions}${e}:opened " \
-          || actions="${actions}${e}:failed "
+        if gh pr create --head "$b" --base "$e" --title "$title" --body "$body" --label "$LABEL" >/dev/null 2>&1; then
+          actions="${actions}${e}:opened "
+          PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
+        else
+          actions="${actions}${e}:failed "
+        fi
       fi
     done
-    if [[ "$attempted" == "true" ]]; then
-      PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
-    fi
     ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|${actions}")
     continue
   fi
