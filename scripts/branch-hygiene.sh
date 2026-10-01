@@ -263,11 +263,14 @@ carries_production_drift() {
   [[ "${hits:-0}" -gt 0 ]]
 }
 
+env_behind_production() {
+  git rev-list --count "${REMOTE}/$1..${REMOTE}/${PRODUCTION}" 2>/dev/null || echo "?"
+}
+
 record_drift() {
-  local e="$1" behind
+  local e="$1" behind="$2"
   [[ "$DRIFT_ENVS" == *" ${e} "* ]] && return 0
   DRIFT_ENVS="${DRIFT_ENVS}${e} "
-  behind=$(git rev-list --count "${REMOTE}/${e}..${REMOTE}/${PRODUCTION}" 2>/dev/null || echo "?")
   ROWS_DRIFT+=("- \`${e}\` is ${behind} commits behind \`${PRODUCTION}\`: sync ${PRODUCTION} into ${e} in one reviewed PR; promote PRs into ${e} are held until then.")
 }
 
@@ -332,8 +335,15 @@ for b in "${ALL_BRANCHES[@]}"; do
     for e in "${missing_envs[@]}"; do
       [[ "$e" == "$PRODUCTION" ]] && continue
       title="chore(promote): ${b} into ${e}"
+      # An env holding all of production already has this branch's change, including when the
+      # branch was squash-merged and its own commits never reached production: nothing to promote.
+      behind=$(env_behind_production "$e")
+      if [[ "$behind" == "0" ]]; then
+        actions="${actions}${e}:has-production "
+        continue
+      fi
       if carries_production_drift "$b" "$e"; then
-        record_drift "$e"
+        record_drift "$e" "$behind"
         actions="${actions}${e}:env-behind-production "
         continue
       fi
