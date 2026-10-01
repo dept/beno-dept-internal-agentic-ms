@@ -247,16 +247,19 @@ PROMOTED_COUNT=0
 # non-empty env..branch always means the env is behind it. A branch fast-forwarded onto
 # production also lands on the first-parent history and is reported, not promoted: the safe
 # side of the check.
-PROD_MAINLINE=$(git rev-list --first-parent "${REMOTE}/${PRODUCTION}" 2>/dev/null || true)
+# No `|| true`: an unreadable production history must stop the run (nothing has been deleted
+# yet at this point), not leave the check empty and let every range through.
+PROD_MAINLINE=$(git rev-list --first-parent "${REMOTE}/${PRODUCTION}")
 DRIFT_ENVS=" "
 declare -a ROWS_DRIFT=()
 
 carries_production_drift() {
-  local b="$1" e="$2" hits merges
-  merges=$(git rev-list --merges --count "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null || echo 0)
+  local b="$1" e="$2" range hits merges
+  # A range that cannot be read is held, never promoted.
+  merges=$(git rev-list --merges --count "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null) || return 0
   [[ "$merges" -gt 0 ]] && return 0
-  hits=$(git rev-list "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null \
-    | grep -cxF -f <(printf '%s\n' "$PROD_MAINLINE") || true)
+  range=$(git rev-list "${REMOTE}/${e}..${REMOTE}/${b}" 2>/dev/null) || return 0
+  hits=$(grep -cxF -f <(printf '%s\n' "$PROD_MAINLINE") <<<"$range" || true)
   [[ "${hits:-0}" -gt 0 ]]
 }
 
@@ -323,7 +326,9 @@ for b in "${ALL_BRANCHES[@]}"; do
       ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|over PROMOTE_MAX (${PROMOTE_MAX}), not opened this run")
       continue
     fi
-    PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
+    # Only a branch that gets a PR (or would, in dry run) counts toward PROMOTE_MAX and the
+    # Slack total: one held for drift or with an existing PR must not use up the quota.
+    attempted=false
     for e in "${missing_envs[@]}"; do
       [[ "$e" == "$PRODUCTION" ]] && continue
       title="chore(promote): ${b} into ${e}"
@@ -338,7 +343,9 @@ for b in "${ALL_BRANCHES[@]}"; do
       fi
       if [[ "$DRY_RUN" == "true" ]]; then
         actions="${actions}${e}:would-open-pr "
+        attempted=true
       else
+        attempted=true
         ensure_label
         body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."
         gh pr create --head "$b" --base "$e" --title "$title" --body "$body" --label "$LABEL" >/dev/null 2>&1 \
@@ -346,6 +353,9 @@ for b in "${ALL_BRANCHES[@]}"; do
           || actions="${actions}${e}:failed "
       fi
     done
+    if [[ "$attempted" == "true" ]]; then
+      PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
+    fi
     ROWS_PROMOTE+=("$b|$sha|$age|$author|$envs_str|${actions}")
     continue
   fi
