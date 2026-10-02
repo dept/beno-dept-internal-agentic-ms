@@ -119,6 +119,8 @@ else
 fi
 ```
 
+**In CI** the workflow computes the baseline (`last_maintained`, or the last commit that changed .ai/ content while that is unset) and the changed-file list, and puts both in the prompt. Use those values literally in `git log` and `git diff`, one command per call, instead of running the block above: the runner's allowlist denies `$(...)`.
+
 **Diff-first rule:** inspect changes via `git diff`. Only open a full file when the diff alone
 can't tell you whether/how docs must change. Never read the whole tree.
 

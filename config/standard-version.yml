@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.5"
+  version: "2.8.6"
   release_date: "2026-10-02"
   changelog:
+    - version: "2.8.6"
+      date: "2026-10-02"
+      changes:
+        - "templates/workflows/maintainer.yml cuts the cost of a run. The cost gate fell through to a full run whenever `last_maintained` was unset, and the no-op rule only writes it together with a real PR, so 13 of 23 repositories ran in full every two weeks. The gate now falls back to the last commit that changed .ai/ content (.meta.yml excluded, install.sh stamps it on every update), and leaves files the standard and its migration install, and lock files, out of the drift count, so a standard rollout or dependency bump no longer triggers a run. It passes the baseline and the changed-file list into the prompt, and the prompt tells the agent the Confluence credentials are already in its environment and to run one allowed command per call: runs spent turns probing env, trying npx confluence-axi and chaining `$(...)` commands the allowlist denies. The model moves from claude-sonnet-5 to claude-sonnet-5-5, at the same price."
     - version: "2.8.5"
       date: "2026-10-02"
       changes:
