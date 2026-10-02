@@ -156,8 +156,8 @@ jobs:
               Never write confidence scores or markers to Confluence; they belong in .ai/ only.
               Never update a page that holds a macro or extension (the architecture page's Mermaid
               diagram viewer, for one) through this MCP: its update round-trips through markdown and
-              deletes it. Write such a page with `python3 scripts/confluence-adf.py get <id> /tmp/<id>.json`,
-              edit the JSON, then `python3 scripts/confluence-adf.py put <id> /tmp/<id>.json "<message>"`.
+              deletes it. Write such a page with `python3 scripts/confluence-adf.py get <id>`, edit the JSON
+              it writes to /tmp/confluence-adf-<id>.json, then `python3 scripts/confluence-adf.py put <id> "<message>"`.
               The script refuses a write that drops an extension; if it refuses, fix the JSON, never
               fall back to the MCP. Run `bash scripts/validate.sh .` before committing.
 
