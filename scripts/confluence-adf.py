@@ -10,8 +10,9 @@ Usage:
   python3 scripts/confluence-adf.py put <page-id> "<version message>"
   python3 scripts/confluence-adf.py selftest
 
-`get` writes the page's ADF to /tmp/confluence-adf-<page-id>.json; edit that file, then `put`.
-The path is derived from the numeric page id, never taken from the command line. `get` records
+`get` writes the page's ADF to .confluence-adf/<page-id>.json in the working directory; edit
+that file, then `put`. The path is derived from the numeric page id, never taken from the
+command line, and the directory ignores itself in git, so the file is never committed. `get` records
 the page version next to the file (.version); `put` refuses if the page changed since, so a
 human edit is never overwritten. Credentials come from CONFLUENCE_URL
 (the api.atlassian.com gateway URL ending in /wiki), CONFLUENCE_USERNAME and
@@ -113,8 +114,15 @@ def page_number(arg):
     return int(arg)
 
 
+WORK_DIR = ".confluence-adf"
+
+
 def adf_path(page_id):
-    return f"/tmp/confluence-adf-{page_id}.json"
+    # ponytail: inside the workspace, not /tmp, so no world-writable directory is involved.
+    os.makedirs(WORK_DIR, exist_ok=True)
+    with open(os.path.join(WORK_DIR, ".gitignore"), "w", encoding="utf-8") as fh:
+        fh.write("*\n")
+    return os.path.join(WORK_DIR, f"{page_id}.json")
 
 
 def fetch(page_id):
