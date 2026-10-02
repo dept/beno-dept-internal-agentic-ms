@@ -6,13 +6,14 @@ Mermaid Diagrams Viewer extension; storage format mangles its guestParams. This 
 round-trips the page's own ADF instead, and refuses a write that would drop an extension.
 
 Usage:
-  python3 scripts/confluence-adf.py get <page-id> <file.json>
-  python3 scripts/confluence-adf.py put <page-id> <file.json> "<version message>"
+  python3 scripts/confluence-adf.py get <page-id>
+  python3 scripts/confluence-adf.py put <page-id> "<version message>"
   python3 scripts/confluence-adf.py selftest
 
-Edit the ADF in <file.json> between get and put. `get` records the page version next to the
-file (<file.json>.version); `put` refuses if the page changed since, so a human edit is never
-overwritten. Credentials come from CONFLUENCE_URL
+`get` writes the page's ADF to /tmp/confluence-adf-<page-id>.json; edit that file, then `put`.
+The path is derived from the numeric page id, never taken from the command line. `get` records
+the page version next to the file (.version); `put` refuses if the page changed since, so a
+human edit is never overwritten. Credentials come from CONFLUENCE_URL
 (the api.atlassian.com gateway URL ending in /wiki), CONFLUENCE_USERNAME and
 CONFLUENCE_API_TOKEN, the same variables the maintainer workflow passes to the MCP.
 """
@@ -24,9 +25,10 @@ import sys
 import urllib.error
 import urllib.request
 
-CONFIDENCE = re.compile(r"confidence\W{0,3}\d+\s*%|\d+\s*%\s*confidence", re.IGNORECASE)
+# Bounded quantifiers only, so the pattern cannot backtrack on long text.
+CONFIDENCE = re.compile(r"confidence\W{0,3}\d{1,3} ?%|\d{1,3} ?% ?confidence", re.IGNORECASE)
 # Nodes a Markdown round-trip loses. Compared by type plus attrs (localId ignored).
-PROTECTED = {"extension", "bodiedExtension", "inlineExtension", "status", "mention", "date", "media", "mediaSingle", "mediaGroup"}
+PROTECTED = {"extension", "bodiedExtension", "inlineExtension", "status", "mention", "date", "media", "mediaSingle", "mediaGroup", "mediaInline"}
 MERMAID = re.compile(r"\s*(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|journey|mindmap|timeline|C4\w*)\b")
 
 
@@ -105,14 +107,23 @@ def request(method, path, body=None):
         sys.exit(f"{method} {path}: HTTP {err.code} {err.read()[:500]!r}")
 
 
+def page_number(arg):
+    if not arg.isdigit():
+        sys.exit(f"Page id must be numeric, got {arg!r}")
+    return int(arg)
+
+
+def adf_path(page_id):
+    return f"/tmp/confluence-adf-{page_id}.json"
+
+
 def fetch(page_id):
-    if not page_id.isdigit():
-        sys.exit(f"Page id must be numeric, got {page_id!r}")
     page = request("GET", f"/api/v2/pages/{page_id}?body-format=atlas_doc_format")
     return page, json.loads(page["body"]["atlas_doc_format"]["value"])
 
 
-def get(page_id, path):
+def get(page_id):
+    path = adf_path(page_id)
     page, adf = fetch(page_id)
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(adf, fh, indent=1, ensure_ascii=False)
@@ -121,7 +132,8 @@ def get(page_id, path):
     print(f'{page["title"]} | version {page["version"]["number"]} | {len(extensions(adf))} extension(s) -> {path}')
 
 
-def put(page_id, path, message):
+def put(page_id, message):
+    path = adf_path(page_id)
     with open(path, encoding="utf-8") as fh:
         new = json.load(fh)
     with open(path + ".version", encoding="utf-8") as fh:
@@ -134,7 +146,7 @@ def put(page_id, path, message):
         sys.exit("Refusing to write:\n- " + "\n- ".join(found))
     version = page["version"]["number"] + 1
     request("PUT", f"/api/v2/pages/{page_id}", {
-        "id": page_id,
+        "id": str(page_id),
         "status": "current",
         "title": page["title"],
         "body": {"representation": "atlas_doc_format", "value": json.dumps(new)},
@@ -166,15 +178,18 @@ def selftest():
     relabelled = json.loads(json.dumps(with_status))
     relabelled["content"][2]["content"][0]["attrs"]["localId"] = "b"
     assert problems(with_status, relabelled) == [], "a new localId alone is not a change"
+    inline = {"type": "paragraph", "content": [{"type": "mediaInline", "attrs": {"id": "m"}}]}
+    assert problems({"type": "doc", "content": [code, viewer, inline]}, old), "dropped inline media must be refused"
+    assert problems(old, {"type": "doc", "content": [code, viewer, {"type": "paragraph", "content": [{"type": "text", "text": "90 % confidence"}]}]})
     print("selftest ok")
 
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if args[:1] == ["get"] and len(args) == 3:
-        get(args[1], args[2])
-    elif args[:1] == ["put"] and len(args) == 4:
-        put(args[1], args[2], args[3])
+    if args[:1] == ["get"] and len(args) == 2:
+        get(page_number(args[1]))
+    elif args[:1] == ["put"] and len(args) == 3:
+        put(page_number(args[1]), args[2])
     elif args == ["selftest"]:
         selftest()
     else:

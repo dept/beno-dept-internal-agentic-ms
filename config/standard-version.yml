@@ -3,9 +3,14 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.3"
-  release_date: "2026-10-01"
+  version: "2.8.4"
+  release_date: "2026-10-02"
   changelog:
+    - version: "2.8.4"
+      date: "2026-10-02"
+      changes:
+        - "scripts/confluence-adf.py takes only the page id: `get <id>` writes /tmp/confluence-adf-<id>.json and `put <id> \"<message>\"` reads it. The file path used to come from the command line, which SonarCloud rated a path-injection vulnerability and failed the quality gate on every rollout PR. The confidence pattern now uses bounded quantifiers, and `mediaInline` joins the protected nodes. The maintainer prompt, agent doc and confluence-axi skill use the new form."
+        - "templates/skills/confluence-axi/SKILL.md sends an update to a page that already holds a macro or the Mermaid viewer through scripts/confluence-adf.py, never the MCP; the MCP stays only for creating a viewer that does not exist yet. The skill still told the agent to write macro pages through the MCP, the path that deleted the diagram."
     - version: "2.8.3"
       date: "2026-10-01"
       changes:
