@@ -118,7 +118,7 @@ WORK_DIR = ".confluence-adf"
 
 
 def adf_path(page_id):
-    # ponytail: inside the workspace, not /tmp, so no world-writable directory is involved.
+    # Inside the workspace, not /tmp, so no world-writable directory is involved.
     os.makedirs(WORK_DIR, exist_ok=True)
     with open(os.path.join(WORK_DIR, ".gitignore"), "w", encoding="utf-8") as fh:
         fh.write("*\n")
