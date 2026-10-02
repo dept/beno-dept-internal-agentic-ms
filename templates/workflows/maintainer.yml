@@ -32,25 +32,43 @@ jobs:
 
       # Cost gate: skip the (expensive) agent run when nothing changed since the last
       # maintenance. Most runs have no relevant drift, so this keeps cost ~$0.
-      # Manual dispatch always runs. First run (no last_maintained yet) always runs.
+      # Manual dispatch always runs. A repository with no .ai/ history at all always runs.
+      # The baseline is last_maintained, or, while that is unset (the no-op rule only writes it
+      # with a real PR, so many repositories never get one), the last commit that changed .ai/
+      # content. .meta.yml is left out of that fallback because install.sh stamps it on every
+      # standard update, which would move the baseline past drift nobody has documented yet.
+      # Files the standard and its migration install (agent config, MCP config), and lock files, are excluded from the count: a standard
+      # rollout or a dependency bump is not documentation drift. The baseline and the changed
+      # list are passed to the prompt, so the agent does not spend turns re-deriving them.
       - name: Check for drift since last maintenance
         id: gate
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual dispatch — running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          # `|| true`: on first run last_maintained is unquoted `null`, so this regex has no
-          # match. Under GitHub Actions' default `-e -o pipefail` bash, an unmatched `grep -o`
-          # inside `$(...)` would fail the assignment itself and exit the whole step *before*
-          # the `-z "$last"` first-run check below ever runs — killing the exact case this was
-          # written to handle.
+          # `|| true`: an unset last_maintained is unquoted `null`, so this regex has no match.
+          # Under GitHub Actions' default `-e -o pipefail` bash, an unmatched `grep -o` inside
+          # `$(...)` would fail the assignment and exit the step before the fallback below runs.
           last=$(grep -oE 'last_maintained:[[:space:]]*"[^"]*"' .ai/.meta.yml | head -1 | sed -E 's/.*"(.*)"/\1/' || true)
+          [ -n "$last" ] || last=$(git log -1 --format=%cI -- .ai/ ':(exclude).ai/.meta.yml' || true)
           if [ -z "$last" ]; then
-            echo "No last_maintained — first run, running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+            echo "No .ai/ history: first run, running."; echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          changed=$(git log --since="$last" --name-only --pretty=format: -- . ':(exclude).ai/**' | sort -u | grep -c . || true)
-          echo "Non-doc files changed since $last: $changed"
-          if [ "$changed" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+          files=$(git log --since="$last" --name-only --pretty=format: -- . \
+            ':(exclude).ai/**' ':(exclude).agents/**' ':(exclude).claude/**' ':(exclude).github/agents/**' \
+            ':(exclude).github/workflows/maintainer.yml' ':(exclude).github/workflows/branch-hygiene.yml' \
+            ':(exclude).github/workflows/dependabot-auto-merge.yml' ':(exclude).github/dependabot.yml' \
+            ':(exclude).github/copilot-instructions.md' ':(exclude).cursor/**' ':(exclude).mcp.json' ':(exclude).vscode/mcp.json' \
+            ':(exclude)scripts/confluence-adf.py' ':(exclude)scripts/validate.sh' ':(exclude)scripts/mirror-claude.sh' \
+            ':(exclude)scripts/gen-dependabot.sh' ':(exclude)scripts/branch-hygiene.sh' \
+            ':(exclude)config/**' ':(exclude)standards/**' ':(exclude,glob)docs/confluence-*' \
+            ':(exclude)AGENTS.md' ':(exclude)CLAUDE.md' \
+            ':(exclude,glob)**/*.lock' ':(exclude,glob)**/package-lock.json' ':(exclude,glob)**/pnpm-lock.yaml' \
+            ':(exclude,glob)**/packages.lock.json' | sort -u | grep . || true)
+          changed=$(printf '%s\n' "$files" | grep -c . || true)
+          echo "Application files changed since $last: $changed"
+          echo "baseline=$last" >> "$GITHUB_OUTPUT"
+          { echo "files<<EOF_CHANGED_FILES"; printf '%s\n' "$files" | head -200; echo "EOF_CHANGED_FILES"; } >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch: running."; echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$changed" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
 
       # Secrets preflight: ANTHROPIC_API_KEY is required for every run past this point. Without
       # this, the cost gate passing (real drift) still walks into the Claude action with an empty
@@ -133,13 +151,25 @@ jobs:
           prompt: |
             Follow the instructions in .github/agents/maintainer.agent.md exactly. Run a biweekly maintenance pass.
 
-            EARLY EXIT (do this first, it saves cost): run the Phase 2 git-history check.
-            If no changes since `last_maintained` actually affect a documented area in .ai/,
+            DRIFT BASELINE (computed by the workflow, use it instead of re-deriving it):
+            ${{ steps.gate.outputs.baseline || 'none, this is a first run: treat it as full drift' }}
+            Application files changed since then (standard-owned files and lock files excluded,
+            first 200 shown):
+            ${{ steps.gate.outputs.files }}
+
+            EARLY EXIT (do this first, it saves cost): start Phase 2 from the list above.
+            If none of those changes actually affect a documented area in .ai/,
             do NOT read every file, do NOT touch Confluence, do NOT open a PR. Just report
             "no drift" and stop. Only continue the full pass when real drift exists.
 
+            Commands: CONFLUENCE_URL, CONFLUENCE_USERNAME and CONFLUENCE_API_TOKEN are already in this
+            step's environment for scripts/confluence-adf.py and the MCP. Do not check them (no env,
+            printenv or echo) and do not run npx confluence-axi. Run one allowed command per call with
+            literal values: no `$(...)`, no `&&` or `;` chains, no pipes. Anything else is denied and
+            wastes a turn.
+
             Scope and rules (these mirror the agent doc — do not override them):
-            - Detect drift using `git diff` since `last_maintained` — read diffs, not full files.
+            - Detect drift using `git diff` since the baseline above: read diffs, not full files.
               Open a full source file only when the diff can't tell you how docs must change.
             - Read only the .ai/ files impacted by the changed areas — not all of them.
             - Apply surgical, evidence-cited updates only. Delete existing content only in the three cases
@@ -204,7 +234,7 @@ jobs:
             --mcp-config /tmp/mcp-atlassian.json
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),Bash(python3 scripts/confluence-adf.py:*),Bash(bash scripts/validate.sh:*),mcp__atlassian__*"
             --disallowedTools "Agent,Task,Workflow,ScheduleWakeup,CronCreate"
-            --model claude-sonnet-5
+            --model claude-sonnet-5-5
             --max-turns 60
 
       # Persist the agent's execution log so it's downloadable from the run page.
