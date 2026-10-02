@@ -72,8 +72,8 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   `.github/workflows/no-plugin-jargon.yml` fails a PR whose added lines outside `.github/` carry
   either word; the changelog is exempt so it can describe the removal.
 - **A vendored script is scanned by the client's linters, not just ours.** `scripts/validate.sh`,
-  `scripts/mirror-claude.sh`, `scripts/gen-dependabot.sh`, `scripts/graphify-bootstrap.sh` and
-  `scripts/branch-hygiene.sh` land inside the target repository, so a client pipeline running
+  `scripts/mirror-claude.sh`, `scripts/gen-dependabot.sh`, `scripts/graphify-bootstrap.sh`,
+  `scripts/confluence-adf.py` and `scripts/branch-hygiene.sh` land inside the target repository, so a client pipeline running
   SonarQube treats them as first-party
   source and raises its shell rules on them: single-bracket `[ ]` tests produced a finding per line
   across the 2.7.3 refresh pull requests. Use `[[ ]]`, and prefer the form a generic shell linter

@@ -107,6 +107,7 @@ ARTIFACTS=(
   "scripts/validate.sh|scripts/validate.sh"
   "scripts/mirror-claude.sh|scripts/mirror-claude.sh"
   "scripts/gen-dependabot.sh|scripts/gen-dependabot.sh"
+  "scripts/confluence-adf.py|scripts/confluence-adf.py"
   "config/standard-version.yml|config/standard-version.yml"
   "config/change-impact-matrix.yml|config/change-impact-matrix.yml"
   "standards/writing-rules.md|standards/writing-rules.md"

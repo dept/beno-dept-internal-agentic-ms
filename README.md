@@ -165,6 +165,7 @@ The migration installs **runtime** artifacts (used forever) and **install-time**
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
 | `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
 | `scripts/mirror-claude.sh` | **Keep** | Creates and repairs the Claude Code mirror symlinks when an agent or skill is added or removed |
+| `scripts/confluence-adf.py` | **Keep** | Maintainer writes pages holding the Mermaid viewer (or any macro) as ADF, without losing it |
 | `scripts/gen-dependabot.sh` | **Keep** | Seeds `.github/dependabot.yml` from the tracked lockfiles when a project has none; re-run after a new ecosystem is added |
 | `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
 | Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
