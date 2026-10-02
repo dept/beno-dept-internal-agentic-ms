@@ -64,7 +64,12 @@ jobs:
             ':(exclude,glob)**/packages.lock.json' | sort -u | grep . || true)
           changed=$(printf '%s\n' "$files" | grep -c . || true)
           echo "Application files changed since $last: $changed"
+          # git diff needs a commit, not a date: resolve the last commit before the baseline here,
+          # because the prompt forbids the `$(...)` the agent would otherwise need for it.
+          base_sha=$(git rev-list -1 --before="$last" HEAD || true)
           echo "baseline=$last" >> "$GITHUB_OUTPUT"
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
           { echo "files<<EOF_CHANGED_FILES"; printf '%s\n' "$files" | head -200; echo "EOF_CHANGED_FILES"; } >> "$GITHUB_OUTPUT"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "Manual dispatch: running."; echo "run=true" >> "$GITHUB_OUTPUT"
@@ -153,8 +158,11 @@ jobs:
 
             DRIFT BASELINE (computed by the workflow, use it instead of re-deriving it):
             ${{ steps.gate.outputs.baseline || 'none, this is a first run: treat it as full drift' }}
-            Application files changed since then (standard-owned files and lock files excluded,
-            first 200 shown):
+            Baseline commit for `git diff <commit> HEAD -- <path>` (git diff takes a commit, not a date):
+            ${{ steps.gate.outputs.base_sha || 'none, every commit is newer than the baseline: read the changed files directly' }}
+            Application files changed since then: ${{ steps.gate.outputs.changed || '0' }} (standard-owned
+            files and lock files excluded). The first 200 are listed below; when the count is higher, run
+            `git diff --name-only <commit> HEAD` for the rest before deciding there is no drift.
             ${{ steps.gate.outputs.files }}
 
             EARLY EXIT (do this first, it saves cost): start Phase 2 from the list above.
