@@ -27,7 +27,8 @@ import urllib.error
 import urllib.request
 
 # Bounded quantifiers only, so the pattern cannot backtrack on long text.
-CONFIDENCE = re.compile(r"confidence\W{0,3}\d{1,3} ?%|\d{1,3} ?% ?confidence", re.IGNORECASE)
+# Up to three words may sit between "confidence" and the score ("Confidence score: 90%").
+CONFIDENCE = re.compile(r"confidence(?:\W{1,3}[a-z]{1,20}){0,3}\W{0,3}\d{1,3} ?%|\d{1,3} ?%(?:\W{1,3}[a-z]{1,20}){0,3}\W{0,3}confidence", re.IGNORECASE)
 # Nodes a Markdown round-trip loses. Compared by type plus attrs (localId ignored).
 PROTECTED = {"extension", "bodiedExtension", "inlineExtension", "status", "mention", "date", "media", "mediaSingle", "mediaGroup", "mediaInline"}
 MERMAID = re.compile(r"\s*(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|journey|mindmap|timeline|C4\w*)\b")
@@ -189,6 +190,11 @@ def selftest():
     inline = {"type": "paragraph", "content": [{"type": "mediaInline", "attrs": {"id": "m"}}]}
     assert problems({"type": "doc", "content": [code, viewer, inline]}, old), "dropped inline media must be refused"
     assert problems(old, {"type": "doc", "content": [code, viewer, {"type": "paragraph", "content": [{"type": "text", "text": "90 % confidence"}]}]})
+    for text in ["Confidence score: 90%", "confidence level is 85 %", "90% overall confidence"]:
+        worded = {"type": "paragraph", "content": [{"type": "text", "text": text}]}
+        assert problems(old, {"type": "doc", "content": [code, viewer, worded]}), f"{text!r} must be refused"
+    plain = {"type": "paragraph", "content": [{"type": "text", "text": "We have confidence in the 2026 plan and 90% test coverage"}]}
+    assert problems(old, {"type": "doc", "content": [code, viewer, plain]}) == [], "unrelated percentages are allowed"
     print("selftest ok")
 
 
