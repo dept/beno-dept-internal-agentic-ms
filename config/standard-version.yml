@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.4"
+  version: "2.8.5"
   release_date: "2026-10-02"
   changelog:
+    - version: "2.8.5"
+      date: "2026-10-02"
+      changes:
+        - "scripts/confluence-adf.py writes the page's ADF to .confluence-adf/<id>.json in the working directory instead of /tmp. SonarCloud flagged the /tmp path as a publicly writable directory and failed the quality gate in every repository that vendors the script. The directory carries its own `*` .gitignore, so the file is never committed. templates/workflows/maintainer.yml drops `--add-dir /tmp` and names the new path in the prompt; agents/maintainer.agent.md follows."
     - version: "2.8.4"
       date: "2026-10-02"
       changes:

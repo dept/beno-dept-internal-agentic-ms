@@ -157,7 +157,7 @@ jobs:
               Never update a page that holds a macro or extension (the architecture page's Mermaid
               diagram viewer, for one) through this MCP: its update round-trips through markdown and
               deletes it. Write such a page with `python3 scripts/confluence-adf.py get <id>`, edit the JSON
-              it writes to /tmp/confluence-adf-<id>.json, then `python3 scripts/confluence-adf.py put <id> "<message>"`.
+              it writes to .confluence-adf/<id>.json, then `python3 scripts/confluence-adf.py put <id> "<message>"`.
               The script refuses a write that drops an extension; if it refuses, fix the JSON, never
               fall back to the MCP. Run `bash scripts/validate.sh .` before committing.
 
@@ -197,13 +197,11 @@ jobs:
           # does not inherit that default — and do not try to close the gap by narrowing the
           # allowlist further, because no prefix rule can express it.
           # scripts/confluence-adf.py reads CONFLUENCE_URL/USERNAME/API_TOKEN from this step's env.
-          # --add-dir /tmp lets Edit change the ADF file the script writes there.
           # --disallowedTools: --allowedTools does not remove the built-in Agent tool, and a run
           # that handed the pass to a background subagent ended the job and killed it before any
           # PR or Confluence write. No subagents or deferred work: the pass runs in this session.
           claude_args: |
             --mcp-config /tmp/mcp-atlassian.json
-            --add-dir /tmp
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),Bash(python3 scripts/confluence-adf.py:*),Bash(bash scripts/validate.sh:*),mcp__atlassian__*"
             --disallowedTools "Agent,Task,Workflow,ScheduleWakeup,CronCreate"
             --model claude-sonnet-5
