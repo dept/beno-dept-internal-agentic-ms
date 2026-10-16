@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.7"
-  release_date: "2026-10-02"
+  version: "2.8.8"
+  release_date: "2026-10-16"
   changelog:
+    - version: "2.8.8"
+      date: "2026-10-16"
+      changes:
+        - "templates/workflows/maintainer.yml raises `--max-turns` from 60 to 100 and adds a \"Turns\" paragraph to the prompt. The 2026-10-15 runs were the first real drift since the rollout: five repositories (centrica, hyva, pggm-website, fastned, d66) took 61 to 82 turns and each still opened its PR, but the limit marked the finished jobs failed, and d66 was cut off right after `gh pr create`. Their logs show one tool call per turn and 30 to 40 small Edits to .ai/ files per run, so the prompt now tells the agent to send independent reads and fetches together in one message, make all changes to one file in one Edit or Write, and commit once after validation."
     - version: "2.8.7"
       date: "2026-10-02"
       changes:

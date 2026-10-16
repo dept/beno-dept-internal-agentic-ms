@@ -176,6 +176,12 @@ jobs:
             literal values: no `$(...)`, no `&&` or `;` chains, no pipes. Anything else is denied and
             wastes a turn.
 
+            Turns: every message you send is one turn, however many tool calls it holds, and the run
+            stops at a fixed limit. Send independent calls together in one message: the diffs and the
+            .ai/ files you need to read, the Confluence pages you need to fetch. Make all changes to
+            one file in one Edit (or one Write for a large rewrite) instead of a string of small edits.
+            Commit once, after validation, not per file.
+
             Scope and rules (these mirror the agent doc — do not override them):
             - Detect drift using `git diff` since the baseline above: read diffs, not full files.
               Open a full source file only when the diff can't tell you how docs must change.
@@ -214,10 +220,12 @@ jobs:
             enforced). If the repo requires an issue key, use its no-op placeholder. Example title:
             "chore(docs): biweekly .ai/ maintenance".
           # --max-turns is a hard limit, unlike the cost-gate/no-op-rule instructions above, which
-          # the agent can only be asked to follow. 60 is generous for a real drift-fixing run
-          # (read .meta.yml + git log/diff, up to 9 .ai/ files, Confluence resolve/write per
-          # touched page, commit/push/PR) without leaving unattended, twice-monthly, write-access
-          # runs as open-ended as 100. Raise it only with evidence a real run hit the ceiling.
+          # the agent can only be asked to follow. It was 60 until the 2026-10-15 runs: the first
+          # real drift since the rollout took 61 to 82 turns in five repositories (one tool call
+          # per turn, 30 to 40 small .ai/ edits), each finishing its PR at about $1.50 to $3.40,
+          # and the limit only turned finished jobs red or cut d66 off after `gh pr create`.
+          # 100 covers that with room; the prompt's "Turns" paragraph brings the count down.
+          # Lower it again only with evidence that runs stay well under it.
           # Not `Bash(git:*)`: that wildcard also hands an unattended agent `git config`,
           # `git remote set-url` and history rewriting. The list below is what Phases 2/4/6/8 of
           # the agent doc actually run — history/diff analysis, staging the .ai/ commit,
@@ -243,7 +251,7 @@ jobs:
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git rev-list:*),Bash(git status:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git branch:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(sed:*),Bash(python3 scripts/confluence-adf.py:*),Bash(bash scripts/validate.sh:*),mcp__atlassian__*"
             --disallowedTools "Agent,Task,Workflow,ScheduleWakeup,CronCreate"
             --model claude-sonnet-5-5
-            --max-turns 60
+            --max-turns 100
 
       # Persist the agent's execution log so it's downloadable from the run page.
       # `if: always()` = upload even when the agent step fails/hits max-turns.
