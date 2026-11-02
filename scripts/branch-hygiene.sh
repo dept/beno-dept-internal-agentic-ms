@@ -210,6 +210,14 @@ merged_into() {
   merge_commit_in "$b" "$target"
 }
 
+# True when the remote ref still holds the commit this run fetched for the branch. `gh pr create
+# --head` resolves the live tip, so a promotion PR is opened only after this check passes.
+remote_ref_is_tip() {
+  local b="$1" ref="$2" live
+  live=$(git ls-remote "$REMOTE" "$ref" 2>/dev/null | cut -f1) || return 1
+  [[ -n "$live" && "$live" == "$(git rev-parse "${REMOTE}/${b}")" ]]
+}
+
 # Delete a remote branch only if it still points at the tip this run fetched. A push between
 # the fetch and the delete makes the lease fail and keeps the branch, new commits included.
 delete_branch() {
@@ -392,6 +400,8 @@ for b in "${ALL_BRANCHES[@]}"; do
       if [[ "$DRY_RUN" == "true" ]]; then
         actions="${actions}${e}:would-open-pr "
         PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
+      elif ! remote_ref_is_tip "$b" "refs/heads/${b}"; then
+        actions="${actions}${e}:branch moved during the run, not opened "
       else
         ensure_label
         body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."
@@ -425,14 +435,17 @@ for b in "${ALL_BRANCHES[@]}"; do
     if [[ "$DRY_RUN" == "true" ]]; then
       ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|would tag archive/${b} and delete")
     else
-      if git push "$REMOTE" "${REMOTE}/${b}:refs/tags/archive/${b}" 2>&1; then
+      # An archive tag left by an earlier run whose delete failed is reused when it still points at
+      # this tip, so a retry is not blocked by its own tag.
+      if git push "$REMOTE" "${REMOTE}/${b}:refs/tags/archive/${b}" 2>&1 \
+        || remote_ref_is_tip "$b" "refs/tags/archive/${b}"; then
         if delete_branch "$b"; then
           ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
         else
           ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete failed (moved during the run, protected, or network: see job log), branch kept: review")
         fi
       else
-        ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tag failed, branch kept")
+        ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|archive tag failed (see job log), branch kept: review")
       fi
     fi
     continue
