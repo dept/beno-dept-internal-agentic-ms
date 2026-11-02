@@ -426,7 +426,7 @@ for b in "${ALL_BRANCHES[@]}"; do
   # A branch with a merged PR that no env holds (new commits after the merge, or an env branch
   # rewritten since) is flagged, never archived: tier 4 is for branches nobody ever merged.
   if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$STALE_DAYS" ]] && pr_exists MERGED "$b" ""; then
-    ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|merged PR, change in no env: review")
+    ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|merged PR, but no env holds the branch tip (commits after the merge, or env rewritten): review")
     continue
   fi
 
