@@ -77,6 +77,15 @@ emit() {
     echo "    ignore:"
     echo "      - dependency-name: \"*\""
     echo "        update-types: [\"version-update:semver-major\"]"
+    if [[ "$eco" == "nuget" ]]; then
+      # A CMS package owns database state: Episerver/Optimizely can update the
+      # schema on startup, and a migrated database cannot be rolled back. A patch
+      # bump of one is not safe to merge into an environment branch, so Dependabot
+      # skips them and the team upgrades the CMS on purpose, in a ticket.
+      for pkg in 'EPiServer.*' 'Optimizely.*' 'Advanced.CMS.*'; do
+        echo "      - dependency-name: \"$pkg\""
+      done
+    fi
     # A grouped pull request reports the highest update type it contains, so a
     # mixed minor+patch group can never be recognised as patch-only downstream.
     # Separate groups keep the patch pull request mergeable without a human.

@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.9"
+  version: "2.8.10"
   release_date: "2026-11-02"
   changelog:
+    - version: "2.8.10"
+      date: "2026-11-02"
+      changes:
+        - "scripts/gen-dependabot.sh ignores EPiServer.*, Optimizely.* and Advanced.CMS.* in the nuget entry. A patch group bump of EPiServer.CMS 12.34.1 to 12.34.6 was merged into the acceptance branch of hogeschool-rotterdam-website and a developer's local environment stopped working because the Episerver database could not be rolled back (ONVZ reported the same). The release notes of the bumped packages name no schema change, so the exact trigger is unconfirmed. A CMS package owns database state, so a semver patch is not safe to merge unseen; the team upgrades the CMS on purpose, in a ticket. Existing dependabot.yml files are never overwritten, so repositories that already have one need the same three `dependency-name` entries added by hand.",
     - version: "2.8.9"
       date: "2026-11-02"
       changes:
