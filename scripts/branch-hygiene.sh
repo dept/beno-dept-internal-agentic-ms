@@ -12,6 +12,8 @@
 #                tip older than PROMOTE_DELAY_DAYS (default 7)         -> open a promotion PR
 #   3. flag      merged into a lower env, missing from a higher one,
 #                tip older than STALE_DAYS (default 60)                -> list in the report
+#                also: a merged PR whose change is in no env, older
+#                than STALE_DAYS, and a failed delete                  -> list for review
 #   4. archive   merged nowhere, no open PR, tip older than ARCHIVE_DAYS -> tag then delete
 #   5. untouched everything else                                       -> counted only
 #
@@ -49,6 +51,7 @@ cd "$PROJECT_DIR"
 ENV_BRANCHES_RAW="${ENV_BRANCHES:-develop,test,acceptance,main}"
 STALE_DAYS="${STALE_DAYS:-60}"
 ARCHIVE_DAYS="${ARCHIVE_DAYS:-180}"
+PR_LIMIT="${PR_LIMIT:-5000}"
 KEEP_PATTERNS_RAW="${KEEP_PATTERNS:-release/*,hotfix/*,keep/*,dependabot/*,renovate/*}"
 # Tier 2 opens one pull request per branch per missing env, and the first run of a repository
 # that has never been cleaned finds years of them at once. The cap bounds that first run to
@@ -144,9 +147,19 @@ matches_keep_pattern() {
 # repository, and a per-branch `gh pr list` on a 300-branch repo would spend that budget before
 # the run finished. Lines are "STATE|head|base|author|number|head_oid|merge_oid" (STATE is OPEN,
 # MERGED or CLOSED; merge_oid is empty unless merged).
-PR_INDEX=$(gh pr list --state all --limit 5000 \
+# No `|| true`: an unreadable list (rate limit, auth) must stop the run before any branch is
+# touched. Read as empty, every merged branch would look merged nowhere and fall to tier 4.
+if ! PR_INDEX=$(gh pr list --state all --limit "$PR_LIMIT" \
   --json state,headRefName,baseRefName,author,number,headRefOid,mergeCommit \
-  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)|\(.headRefOid // "")|\(.mergeCommit.oid // "")"' 2>/dev/null || true)
+  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)|\(.headRefOid // "")|\(.mergeCommit.oid // "")"'); then
+  echo "Could not read the pull request list; stopping before any branch is touched." >&2
+  exit 1
+fi
+# A full page means the list may be cut off, and a missing merged PR reads as "merged nowhere".
+if [[ $(grep -c . <<<"$PR_INDEX" || true) -ge "$PR_LIMIT" ]]; then
+  echo "The pull request list hit PR_LIMIT (${PR_LIMIT}) and may be incomplete; raise PR_LIMIT. Stopping before any branch is touched." >&2
+  exit 1
+fi
 
 # $1 = state (or "" for any), $2 = head, $3 = base (or "" for any). The trailing \|* tolerates
 # the author field appended to each line: without it an exact base match would fail because the
@@ -201,6 +214,14 @@ merged_into() {
   local b="$1" target="$2"
   git merge-base --is-ancestor "${REMOTE}/${b}" "${REMOTE}/${target}" 2>/dev/null && return 0
   merge_commit_in "$b" "$target"
+}
+
+# True when the remote ref still holds the commit this run fetched for the branch. `gh pr create
+# --head` resolves the live tip, so a promotion PR is opened only after this check passes.
+remote_ref_is_tip() {
+  local b="$1" ref="$2" live
+  live=$(git ls-remote "$REMOTE" "$ref" 2>/dev/null | cut -f1) || return 1
+  [[ -n "$live" && "$live" == "$(git rev-parse "${REMOTE}/${b}")" ]]
 }
 
 # Delete a remote branch only if it still points at the tip this run fetched. A push between
@@ -340,7 +361,7 @@ for b in "${ALL_BRANCHES[@]}"; do
       if delete_branch "$b"; then
         ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|deleted")
       else
-        ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|delete refused, branch kept")
+        ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|delete failed (moved during the run, protected, or network: see job log), branch kept: review")
       fi
     fi
     continue
@@ -385,6 +406,8 @@ for b in "${ALL_BRANCHES[@]}"; do
       if [[ "$DRY_RUN" == "true" ]]; then
         actions="${actions}${e}:would-open-pr "
         PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
+      elif ! remote_ref_is_tip "$b" "refs/heads/${b}"; then
+        actions="${actions}${e}:branch moved during the run, not opened "
       else
         ensure_label
         body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."
@@ -408,8 +431,8 @@ for b in "${ALL_BRANCHES[@]}"; do
 
   # A branch with a merged PR that no env holds (new commits after the merge, or an env branch
   # rewritten since) is flagged, never archived: tier 4 is for branches nobody ever merged.
-  if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$ARCHIVE_DAYS" ]] && pr_exists MERGED "$b" ""; then
-    ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|merged PR, change in no env: review")
+  if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$STALE_DAYS" ]] && pr_exists MERGED "$b" ""; then
+    ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|merged PR, but no env holds the branch tip (commits after the merge, or env rewritten): review")
     continue
   fi
 
@@ -418,14 +441,17 @@ for b in "${ALL_BRANCHES[@]}"; do
     if [[ "$DRY_RUN" == "true" ]]; then
       ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|would tag archive/${b} and delete")
     else
-      if git push "$REMOTE" "${REMOTE}/${b}:refs/tags/archive/${b}" 2>&1; then
+      # An archive tag left by an earlier run whose delete failed is reused when it still points at
+      # this tip, so a retry is not blocked by its own tag.
+      if git push "$REMOTE" "${REMOTE}/${b}:refs/tags/archive/${b}" 2>&1 \
+        || remote_ref_is_tip "$b" "refs/tags/archive/${b}"; then
         if delete_branch "$b"; then
           ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
         else
-          ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete refused, branch kept")
+          ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete failed (moved during the run, protected, or network: see job log), branch kept: review")
         fi
       else
-        ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tag failed, branch kept")
+        ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|archive tag failed (see job log), branch kept: review")
       fi
     fi
     continue
@@ -482,9 +508,9 @@ REPORT=$(
     echo ""
   fi
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    render_table "Tier 3: flag, promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
+    render_table "Tier 3: flag, promote, revert or review (stale)" "${ROWS_FLAG[@]}"
   else
-    render_table "Tier 3: flag, promote or revert (stale, partially merged)"
+    render_table "Tier 3: flag, promote, revert or review (stale)"
   fi
   if [[ ${#ROWS_ARCHIVE[@]} -gt 0 ]]; then
     render_table "Tier 4: archive (merged nowhere, very stale)" "${ROWS_ARCHIVE[@]}"
@@ -522,9 +548,9 @@ ISSUE_BODY=$(
     echo ""
   fi
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    render_table "Tier 3: promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
+    render_table "Tier 3: promote, revert or review (stale)" "${ROWS_FLAG[@]}"
   else
-    render_table "Tier 3: promote or revert (stale, partially merged)"
+    render_table "Tier 3: promote, revert or review (stale)"
   fi
   if [[ ${#ROWS_ARCHIVE[@]} -gt 0 ]]; then
     render_table "Tier 4: archived (merged nowhere, very stale)" "${ROWS_ARCHIVE[@]}"
@@ -688,7 +714,7 @@ post_to_slack() {
             + (if ($flag_lines | length) > 0 then
                  [ { type: "section",
                      text: { type: "mrkdwn",
-                             text: ("*Promote or revert*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
+                             text: ("*Promote, revert or review*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
                  + (if $flagged > $max then
                       [ { type: "context", elements: [ { type: "mrkdwn",
                           text: "\($flagged - $max) more not shown" } ] } ]
