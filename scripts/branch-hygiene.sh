@@ -142,9 +142,11 @@ matches_keep_pattern() {
 
 # One PR fetch for the whole run. GITHUB_TOKEN is limited to 1000 API requests per hour per
 # repository, and a per-branch `gh pr list` on a 300-branch repo would spend that budget before
-# the run finished. Lines are "STATE|head|base|author|number" (STATE is OPEN, MERGED or CLOSED).
-PR_INDEX=$(gh pr list --state all --limit 5000 --json state,headRefName,baseRefName,author,number \
-  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)"' 2>/dev/null || true)
+# the run finished. Lines are "STATE|head|base|author|number|head_oid|merge_oid" (STATE is OPEN,
+# MERGED or CLOSED; merge_oid is empty unless merged).
+PR_INDEX=$(gh pr list --state all --limit 5000 \
+  --json state,headRefName,baseRefName,author,number,headRefOid,mergeCommit \
+  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)|\(.headRefOid // "")|\(.mergeCommit.oid // "")"' 2>/dev/null || true)
 
 # $1 = state (or "" for any), $2 = head, $3 = base (or "" for any). The trailing \|* tolerates
 # the author field appended to each line: without it an exact base match would fail because the
@@ -163,8 +165,8 @@ pr_exists() {
 # only to label the Slack digest; a tier 3 branch was merged into a lower env, so it almost
 # always has a PR in the index.
 pr_author() {
-  local head="$1" s h b a n
-  while IFS='|' read -r s h b a n; do
+  local head="$1" s h b a n rest
+  while IFS='|' read -r s h b a n rest; do
     [[ "$h" == "$head" ]] || continue
     [[ -n "$a" ]] && { echo "$a"; return 0; }
   done <<<"$PR_INDEX"
@@ -174,8 +176,8 @@ pr_author() {
 # PR number of the first PR whose head is this branch, empty if none. Used to link the branch in
 # the Slack digest; a tier 3 branch's PR is merged (closed), so the link points at a closed PR.
 pr_number() {
-  local head="$1" s h b a n
-  while IFS='|' read -r s h b a n; do
+  local head="$1" s h b a n rest
+  while IFS='|' read -r s h b a n rest; do
     [[ "$h" == "$head" ]] || continue
     [[ -n "$n" ]] && { echo "$n"; return 0; }
   done <<<"$PR_INDEX"
@@ -186,13 +188,30 @@ has_open_pr() {
   pr_exists OPEN "$1" ""
 }
 
-# "Merged into X": either the ancestor test passes, or a merged PR head=B base=X exists.
-# The PR check exists because a squash or rebase merge rewrites commits, so the ancestor test
-# alone misses every branch merged that way even though GitHub shows it merged.
+# "Merged into X": the ancestor test passes, a merged PR head=B base=X exists, or a merged PR
+# from B (into any base) left a merge commit that X already contains. The PR checks exist
+# because a squash or rebase merge rewrites commits, so the ancestor test alone misses every
+# branch merged that way even though GitHub shows it merged. The last one covers a branch
+# squash-merged into production whose change then reached a lower env through a production
+# sync: no PR from B into that env exists, yet the env holds the squash commit
+# (dtnl-mauritshuis-website #166, #167). It counts only while the branch tip is still the
+# commit that PR merged, so a branch that got new commits after its merge is never taken as
+# merged and deleted.
 merged_into() {
   local b="$1" target="$2"
   git merge-base --is-ancestor "${REMOTE}/${b}" "${REMOTE}/${target}" 2>/dev/null && return 0
-  pr_exists MERGED "$b" "$target"
+  pr_exists MERGED "$b" "$target" && return 0
+  merge_commit_in "$b" "$target"
+}
+
+merge_commit_in() {
+  local b="$1" target="$2" tip s h base a n head_oid merge_oid
+  tip=$(git rev-parse "${REMOTE}/${b}" 2>/dev/null) || return 1
+  while IFS='|' read -r s h base a n head_oid merge_oid; do
+    [[ "$s" == "MERGED" && "$h" == "$b" && "$head_oid" == "$tip" && -n "$merge_oid" ]] || continue
+    git merge-base --is-ancestor "$merge_oid" "${REMOTE}/${target}" 2>/dev/null && return 0
+  done <<<"$PR_INDEX"
+  return 1
 }
 
 branch_tip_epoch() {

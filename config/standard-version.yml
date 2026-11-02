@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.8"
-  release_date: "2026-10-16"
+  version: "2.8.9"
+  release_date: "2026-11-02"
   changelog:
+    - version: "2.8.9"
+      date: "2026-11-02"
+      changes:
+        - "scripts/branch-hygiene.sh no longer opens promote PRs for a branch that was squash-merged into production and reached the lower envs through a production sync. The merged check knew only the ancestor test and a merged PR into that exact env, and a squash rewrites the commits, so the 2026-11-01 run opened 9 redundant PRs for old agentic-standard branches (mauritshuis, fastned, d66, asm, verbeteruwhuis). The PR index now carries each PR's head and merge commit, and a branch also counts as merged into an env when a merged PR from it left a merge commit that env already contains, but only while the branch tip is still the commit that PR merged, so a branch with newer commits is never deleted. Such a branch now lands in tier 1 and is deleted with its sha in the report."
     - version: "2.8.8"
       date: "2026-10-16"
       changes:
