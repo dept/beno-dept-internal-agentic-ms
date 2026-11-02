@@ -13,7 +13,7 @@
 #   3. flag      merged into a lower env, missing from a higher one,
 #                tip older than STALE_DAYS (default 60)                -> list in the report
 #                also: a merged PR whose change is in no env, older
-#                than ARCHIVE_DAYS, and a delete refused by the lease  -> list for review
+#                than STALE_DAYS, and a failed delete                  -> list for review
 #   4. archive   merged nowhere, no open PR, tip older than ARCHIVE_DAYS -> tag then delete
 #   5. untouched everything else                                       -> counted only
 #
@@ -347,7 +347,7 @@ for b in "${ALL_BRANCHES[@]}"; do
       if delete_branch "$b"; then
         ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|deleted")
       else
-        ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|delete refused (pushed during the run), branch kept: review")
+        ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|delete failed (moved during the run, protected, or network: see job log), branch kept: review")
       fi
     fi
     continue
@@ -415,7 +415,7 @@ for b in "${ALL_BRANCHES[@]}"; do
 
   # A branch with a merged PR that no env holds (new commits after the merge, or an env branch
   # rewritten since) is flagged, never archived: tier 4 is for branches nobody ever merged.
-  if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$ARCHIVE_DAYS" ]] && pr_exists MERGED "$b" ""; then
+  if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$STALE_DAYS" ]] && pr_exists MERGED "$b" ""; then
     ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|merged PR, change in no env: review")
     continue
   fi
@@ -429,7 +429,7 @@ for b in "${ALL_BRANCHES[@]}"; do
         if delete_branch "$b"; then
           ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
         else
-          ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete refused (pushed during the run), branch kept: review")
+          ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete failed (moved during the run, protected, or network: see job log), branch kept: review")
         fi
       else
         ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tag failed, branch kept")
