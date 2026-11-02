@@ -188,20 +188,27 @@ has_open_pr() {
   pr_exists OPEN "$1" ""
 }
 
-# "Merged into X": the ancestor test passes, a merged PR head=B base=X exists, or a merged PR
-# from B (into any base) left a merge commit that X already contains. The PR checks exist
-# because a squash or rebase merge rewrites commits, so the ancestor test alone misses every
-# branch merged that way even though GitHub shows it merged. The last one covers a branch
-# squash-merged into production whose change then reached a lower env through a production
-# sync: no PR from B into that env exists, yet the env holds the squash commit
-# (dtnl-mauritshuis-website #166, #167). It counts only while the branch tip is still the
-# commit that PR merged, so a branch that got new commits after its merge is never taken as
-# merged and deleted.
+# "Merged into X": the ancestor test passes, or a merged PR from B (into any base) left a merge
+# commit that X already contains. The PR check exists because a squash or rebase merge rewrites
+# commits, so the ancestor test alone misses every branch merged that way even though GitHub
+# shows it merged. It also covers a branch squash-merged into production whose change then
+# reached a lower env through a production sync: no PR from B into that env exists, yet the env
+# holds the squash commit (dtnl-mauritshuis-website #166, #167). It counts only while the
+# branch tip is still the commit that PR merged (headRefOid stays at the merged head), so a
+# branch that got new commits after its merge is never taken as merged, deleted or promoted.
+# A merged PR B->X is not enough on its own for the same reason.
 merged_into() {
   local b="$1" target="$2"
   git merge-base --is-ancestor "${REMOTE}/${b}" "${REMOTE}/${target}" 2>/dev/null && return 0
-  pr_exists MERGED "$b" "$target" && return 0
   merge_commit_in "$b" "$target"
+}
+
+# Delete a remote branch only if it still points at the tip this run fetched. A push between
+# the fetch and the delete makes the lease fail and keeps the branch, new commits included.
+delete_branch() {
+  local b="$1" tip
+  tip=$(git rev-parse "${REMOTE}/${b}" 2>/dev/null) || return 1
+  git push --force-with-lease="refs/heads/${b}:${tip}" "$REMOTE" --delete "$b" 2>&1
 }
 
 merge_commit_in() {
@@ -330,8 +337,11 @@ for b in "${ALL_BRANCHES[@]}"; do
     if [[ "$DRY_RUN" == "true" ]]; then
       ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|would delete")
     else
-      git push "$REMOTE" --delete "$b" 2>&1 || true
-      ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|deleted")
+      if delete_branch "$b"; then
+        ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|deleted")
+      else
+        ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|delete refused, branch kept")
+      fi
     fi
     continue
   fi
@@ -396,14 +406,24 @@ for b in "${ALL_BRANCHES[@]}"; do
     continue
   fi
 
+  # A branch with a merged PR that no env holds (new commits after the merge, or an env branch
+  # rewritten since) is flagged, never archived: tier 4 is for branches nobody ever merged.
+  if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$ARCHIVE_DAYS" ]] && pr_exists MERGED "$b" ""; then
+    ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|merged PR, change in no env: review")
+    continue
+  fi
+
   if [[ ${#merged_envs[@]} -eq 0 && "$age" -gt "$ARCHIVE_DAYS" ]]; then
     # Tier 4: archive, merged nowhere, stale beyond ARCHIVE_DAYS.
     if [[ "$DRY_RUN" == "true" ]]; then
       ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|would tag archive/${b} and delete")
     else
       if git push "$REMOTE" "${REMOTE}/${b}:refs/tags/archive/${b}" 2>&1; then
-        git push "$REMOTE" --delete "$b" 2>&1 || true
-        ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
+        if delete_branch "$b"; then
+          ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
+        else
+          ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete refused, branch kept")
+        fi
       else
         ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tag failed, branch kept")
       fi
