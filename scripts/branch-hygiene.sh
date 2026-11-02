@@ -12,6 +12,8 @@
 #                tip older than PROMOTE_DELAY_DAYS (default 7)         -> open a promotion PR
 #   3. flag      merged into a lower env, missing from a higher one,
 #                tip older than STALE_DAYS (default 60)                -> list in the report
+#                also: a merged PR whose change is in no env, older
+#                than ARCHIVE_DAYS, and a delete refused by the lease  -> list for review
 #   4. archive   merged nowhere, no open PR, tip older than ARCHIVE_DAYS -> tag then delete
 #   5. untouched everything else                                       -> counted only
 #
@@ -144,9 +146,14 @@ matches_keep_pattern() {
 # repository, and a per-branch `gh pr list` on a 300-branch repo would spend that budget before
 # the run finished. Lines are "STATE|head|base|author|number|head_oid|merge_oid" (STATE is OPEN,
 # MERGED or CLOSED; merge_oid is empty unless merged).
-PR_INDEX=$(gh pr list --state all --limit 5000 \
+# No `|| true`: an unreadable list (rate limit, auth) must stop the run before any branch is
+# touched. Read as empty, every merged branch would look merged nowhere and fall to tier 4.
+if ! PR_INDEX=$(gh pr list --state all --limit 5000 \
   --json state,headRefName,baseRefName,author,number,headRefOid,mergeCommit \
-  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)|\(.headRefOid // "")|\(.mergeCommit.oid // "")"' 2>/dev/null || true)
+  --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)|\(.headRefOid // "")|\(.mergeCommit.oid // "")"'); then
+  echo "Could not read the pull request list; stopping before any branch is touched." >&2
+  exit 1
+fi
 
 # $1 = state (or "" for any), $2 = head, $3 = base (or "" for any). The trailing \|* tolerates
 # the author field appended to each line: without it an exact base match would fail because the
@@ -340,7 +347,7 @@ for b in "${ALL_BRANCHES[@]}"; do
       if delete_branch "$b"; then
         ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|deleted")
       else
-        ROWS_DELETE+=("$b|$sha|$age|$author|$envs_str|delete refused, branch kept")
+        ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|delete refused (pushed during the run), branch kept: review")
       fi
     fi
     continue
@@ -422,7 +429,7 @@ for b in "${ALL_BRANCHES[@]}"; do
         if delete_branch "$b"; then
           ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, deleted")
         else
-          ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete refused, branch kept")
+          ROWS_FLAG+=("$b|$sha|$age|$author|$envs_str|tagged archive/${b}, delete refused (pushed during the run), branch kept: review")
         fi
       else
         ROWS_ARCHIVE+=("$b|$sha|$age|$author|$envs_str|tag failed, branch kept")
@@ -482,9 +489,9 @@ REPORT=$(
     echo ""
   fi
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    render_table "Tier 3: flag, promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
+    render_table "Tier 3: flag, promote, revert or review (stale)" "${ROWS_FLAG[@]}"
   else
-    render_table "Tier 3: flag, promote or revert (stale, partially merged)"
+    render_table "Tier 3: flag, promote, revert or review (stale)"
   fi
   if [[ ${#ROWS_ARCHIVE[@]} -gt 0 ]]; then
     render_table "Tier 4: archive (merged nowhere, very stale)" "${ROWS_ARCHIVE[@]}"
@@ -522,9 +529,9 @@ ISSUE_BODY=$(
     echo ""
   fi
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    render_table "Tier 3: promote or revert (stale, partially merged)" "${ROWS_FLAG[@]}"
+    render_table "Tier 3: promote, revert or review (stale)" "${ROWS_FLAG[@]}"
   else
-    render_table "Tier 3: promote or revert (stale, partially merged)"
+    render_table "Tier 3: promote, revert or review (stale)"
   fi
   if [[ ${#ROWS_ARCHIVE[@]} -gt 0 ]]; then
     render_table "Tier 4: archived (merged nowhere, very stale)" "${ROWS_ARCHIVE[@]}"
@@ -688,7 +695,7 @@ post_to_slack() {
             + (if ($flag_lines | length) > 0 then
                  [ { type: "section",
                      text: { type: "mrkdwn",
-                             text: ("*Promote or revert*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
+                             text: ("*Promote, revert or review*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
                  + (if $flagged > $max then
                       [ { type: "context", elements: [ { type: "mrkdwn",
                           text: "\($flagged - $max) more not shown" } ] } ]
