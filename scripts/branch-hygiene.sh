@@ -51,6 +51,7 @@ cd "$PROJECT_DIR"
 ENV_BRANCHES_RAW="${ENV_BRANCHES:-develop,test,acceptance,main}"
 STALE_DAYS="${STALE_DAYS:-60}"
 ARCHIVE_DAYS="${ARCHIVE_DAYS:-180}"
+PR_LIMIT="${PR_LIMIT:-5000}"
 KEEP_PATTERNS_RAW="${KEEP_PATTERNS:-release/*,hotfix/*,keep/*,dependabot/*,renovate/*}"
 # Tier 2 opens one pull request per branch per missing env, and the first run of a repository
 # that has never been cleaned finds years of them at once. The cap bounds that first run to
@@ -148,10 +149,15 @@ matches_keep_pattern() {
 # MERGED or CLOSED; merge_oid is empty unless merged).
 # No `|| true`: an unreadable list (rate limit, auth) must stop the run before any branch is
 # touched. Read as empty, every merged branch would look merged nowhere and fall to tier 4.
-if ! PR_INDEX=$(gh pr list --state all --limit 5000 \
+if ! PR_INDEX=$(gh pr list --state all --limit "$PR_LIMIT" \
   --json state,headRefName,baseRefName,author,number,headRefOid,mergeCommit \
   --jq '.[] | "\(.state)|\(.headRefName)|\(.baseRefName)|\(.author.login // "")|\(.number)|\(.headRefOid // "")|\(.mergeCommit.oid // "")"'); then
   echo "Could not read the pull request list; stopping before any branch is touched." >&2
+  exit 1
+fi
+# A full page means the list may be cut off, and a missing merged PR reads as "merged nowhere".
+if [[ $(grep -c . <<<"$PR_INDEX" || true) -ge "$PR_LIMIT" ]]; then
+  echo "The pull request list hit PR_LIMIT (${PR_LIMIT}) and may be incomplete; raise PR_LIMIT. Stopping before any branch is touched." >&2
   exit 1
 fi
 
