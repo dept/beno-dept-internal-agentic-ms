@@ -255,7 +255,7 @@ Ask, verbatim in spirit:
 
 If **yes**: proceed as normal: the bootstrap one-liner (`scripts/install.sh`) already runs `scripts/gen-dependabot.sh` unconditionally at the end of the install; nothing else to do. In-session (Option B, no installer run), run `scripts/gen-dependabot.sh .` yourself.
 
-If **no**: if the bootstrap one-liner already generated `.github/dependabot.yml` before this question could be asked, delete it and note in the summary that Dependabot is not configured for this repository (it can be regenerated later with `bash scripts/gen-dependabot.sh .`). In-session, just skip the step.
+If **no**: if the bootstrap one-liner already generated `.github/dependabot.yml` before this question could be asked, delete it and note in the summary that Dependabot is not configured for this repository (it can be regenerated later with `bash scripts/gen-dependabot.sh .`). Once `.ai/.meta.yml` exists, `scripts/install.sh --update` leaves an absent `.github/dependabot.yml` absent, so the deletion holds. In-session, just skip the step.
 
 **Which branch Dependabot targets (`target-branch`).** Decide by data, not by branch name. Set `target-branch` to a work branch (develop, support, acceptance, test) only when that branch is merged into the default branch as a whole, so everything on it reaches production with the next promotion. Measure it:
 
@@ -383,7 +383,7 @@ The migration installs both **runtime** artifacts (used forever) and **install-t
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
 - `scripts/validate.sh` — Maintainer/CI compliance check
 - `scripts/mirror-claude.sh` — creates and repairs the Claude Code mirror symlinks after an agent or skill is added or removed
-- `scripts/gen-dependabot.sh` — regenerates `.github/dependabot.yml` from the lockfiles actually present, and `scripts/install.sh` runs it on every `--update`. It is a runtime artifact, not a bootstrap one: deleting it leaves the repository with no way to refresh its update targets when a package or solution moves
+- `scripts/gen-dependabot.sh` — regenerates `.github/dependabot.yml` from the lockfiles actually present, and `scripts/install.sh` runs it on every `--update` when the repository has one (an absent file means Dependabot was declined, and stays absent). It is a runtime artifact, not a bootstrap one: deleting it leaves the repository with no way to refresh its update targets when a package or solution moves
 - `.github/workflows/maintainer.yml` — if installed in Phase 4b
 
 **Safe to remove after a successful migration (ask, then delete):**
