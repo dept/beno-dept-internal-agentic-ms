@@ -84,7 +84,15 @@ Read project manifest files and config to identify all technologies:
 
 ## Step 9: Install Skills from Public Registry
 
-For each detected technology, use the GitHub CLI skill workflow:
+**A skill earns its place only by telling an agent something it would otherwise get wrong.** Sort each detected technology before searching:
+
+- **No skill** for a general-purpose language, framework or tool the model already knows: React, Next.js, Vue, TypeScript, Node, GraphQL clients, Docker and Compose, Turborepo, Tailwind and their peers. A vendor skill for these is the framework's documentation restated, which a developer reads as common sense and every agent session pays for. Name the technology as skipped in the completion summary.
+- **A vendor skill** only when it carries version- or tool-specific procedure the model gets wrong without it: a major version whose API changed (XState v5), an upgrade path through an official tool (Strapi upgrades), or a skill that drives an MCP server or CLI the project wires.
+- **A generated skill** (Fallback below) only when this project has its own conventions for the technology that an agent cannot infer from the framework, such as how stories are wired into a package. A generated skill that would hold only framework convention is skipped like a vendor one.
+
+When in doubt, skip: a missing skill costs one lookup, a common-sense one costs reader trust (Scandlines #1280, where the reviewer had `react-best-practices`, `graphql-operations`, `docker-docs` and `turborepo` removed).
+
+For each technology that passes this filter, use the GitHub CLI skill workflow:
 
 ```bash
 # Search for matching skills on GitHub
@@ -102,7 +110,7 @@ gh skill install <owner>/<repo> <skill-name> --dir .agents/skills --force
 - Only accept results from vendor orgs (e.g. `vercel/`, `shopify/`, `prisma/`), not individual accounts
 - Skip if a skill with that name already exists in `.agents/skills/`
 - If no suitable match is found on GitHub, generate a minimal skill from `.ai/` evidence (see Fallback section below)
-- There must be a resulting `.agents/skills/<technology-name>/SKILL.md` for every detected core technology unless the technology was skipped
+- There must be a resulting `.agents/skills/<technology-name>/SKILL.md` for every technology that passes the filter above; every other one is named as skipped in the completion summary
 - Record each result (installed / skipped / generated fallback) in the completion summary for this run, not in `.ai/`
 
 **Fallback — generate skill from project evidence:**
@@ -136,7 +144,7 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 - **A skill body carries no command cheatsheet, no toolchain version floor, and no deploy, environment or container-image detail.** `onboarding.md` owns the cheatsheet, `dependencies.md` the version floors, `operational-context.md` the deploy and image facts. A skill that lists the project's commands is the third drifted copy of that list; point at the owner instead. The one exception is the generated block in `codebase-overview`, which a script rewrites from `.ai/architecture.md`.
 - **State scope precisely.** A skill's frontmatter scope and body must match — don't add off-topic sections (e.g. Docker build steps inside a framework skill) unless the skill's stated scope covers them.
 
-**Important expectation:** for common stacks such as React, Next.js, Contentful, Prisma, Shopify, and Vercel, the phase should usually end with installed skill files in `.agents/skills/`, either vendor-fetched or evidence-generated fallback.
+**Expectation:** a common stack such as React plus Next.js usually ends with few skills: `codebase-overview`, the two the standard installs, and one per technology that passed the filter at the top of Step 9. A skill count that tracks the dependency list means the filter was not applied.
 
 ## Step 9.3: The `codebase-overview` Skill
 
@@ -280,7 +288,7 @@ It creates `.claude/agents/support.md` as a relative symlink to `../../.github/a
 
 ## Verification
 
-- [ ] A skill file exists for every detected core technology, and any skipped technology is named with its reason in this run's completion summary
+- [ ] No skill for a general-purpose framework or tool the model already knows (filter at the top of Step 9); a skill file exists for every technology that passed it, and every skipped technology is named with its reason in this run's completion summary
 - [ ] Every code sample in a generated skill uses only symbols/imports verified to exist (grep/exports), and every path was confirmed with `ls`/glob: no invented APIs or route segments
 - [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/` or `AGENTS.md` (pointer only)
 - [ ] Testing skill installed only if test files exist AND framework is detected, not otherwise
