@@ -10,7 +10,6 @@ Provide a concise operational and business overview of the project so AI agents 
 - Major apps / packages / features / campaigns, one plain-language line each on what it is *for* when the project has multiple areas
 - Service ownership and contacts
 - Critical constraints
-- Discovery inputs used (for example docs/ or Graphify artifacts) when they materially shaped the understanding
 
 ## Writing rules
 

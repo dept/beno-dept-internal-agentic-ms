@@ -337,7 +337,11 @@ stamp_meta_version
 # with or without --update (there is nothing to refresh, only to seed once).
 echo ""
 echo -e "${BLUE}── Dependabot config ──${NC}"
-if [[ -f "${REPO_DIR}/scripts/gen-dependabot.sh" ]]; then
+# A migrated project without a dependabot.yml declined it in the migration (or removed it on
+# purpose), so a refresh must not seed one back.
+if [[ $MIGRATED -eq 1 && ! -f "${TARGET_DIR}/.github/dependabot.yml" ]]; then
+  echo -e "  ${YELLOW}⊘${NC} no .github/dependabot.yml in a migrated project, not generating one"
+elif [[ -f "${REPO_DIR}/scripts/gen-dependabot.sh" ]]; then
   bash "${REPO_DIR}/scripts/gen-dependabot.sh" "$TARGET_DIR"
 else
   bash "${TARGET_DIR}/scripts/gen-dependabot.sh" "$TARGET_DIR"

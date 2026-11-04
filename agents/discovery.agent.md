@@ -269,7 +269,7 @@ Use `config/stack-detection.yml` from this standards repository as detection hin
 
 #### Step B — Add a skill per technology (vendor-fetch first, else generate code-verified)
 
-For each detected technology, produce `.agents/skills/<technology-name>/SKILL.md`.
+First apply the skill filter at the top of Step 9 of `prompts/04-stack-tooling.prompt.md`: a general-purpose framework or tool the model already knows gets no skill. For each technology that passes it, produce `.agents/skills/<technology-name>/SKILL.md`.
 
 **Step B1 — try a vendor skill via `gh skill`.** `gh skill` is a real, built-in (preview) GitHub CLI feature — use it when available:
 
@@ -322,7 +322,7 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 
 **Rules:**
 1. Skip if a skill with that name already exists in `.agents/skills/` (unless regenerating).
-2. There must be a `.agents/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
+2. There must be a `.agents/skills/<technology-name>/SKILL.md` for every technology that passed the skill filter, and every other one is recorded as skipped with its reason.
 3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary, which is where skipped technologies are reported. Nothing about a skip goes into `.ai/`.
 4. **Self-check before finishing each skill:** re-grep every symbol and re-`ls` every path you wrote. A skill that references anything you could not locate fails the phase — fix or remove it.
 5. **Do not write a Claude Code copy of the skill.** `.claude/skills` is a single relative symlink to `.agents/skills`, so a skill written to the source is already visible to Claude Code. `scripts/install.sh` creates the symlink and `scripts/mirror-claude.sh` recreates it; run the latter if `.claude/skills` is missing or is still a copied directory from an older standard. The rule and the Windows fallback are stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.
