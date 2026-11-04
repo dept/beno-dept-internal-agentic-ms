@@ -21,9 +21,6 @@ The following skills are available for this project. Use them when working in th
 
 [SKILL_LIST]
 <!-- Example:
-- `superpowers:writing-skills` — evidence-first, claims traceable to source
-- `superpowers:systematic-debugging` — ROOT CAUSE FIRST, then fix
-- `superpowers:test-driven-development` — RED-GREEN-REFACTOR discipline
 - `nextjs` — Next.js App Router patterns, server components, API routes
 - `contentful` — Content modeling, SDK queries, webhooks
 - `prisma` — Schema, migrations, queries
@@ -46,15 +43,9 @@ The following MCP servers are wired and available for this project:
 | `postgres-mcp` | stdio | `pg/query`, `pg/schema` | PostgreSQL database queries |
 -->
 
-**Rule:** If an MCP server is listed here, you have full access to its tools. Use them freely for:
-- API queries (product data, issue tracking, CRM data)
-- Database operations (read/schema inspection, NOT writes without explicit approval)
-- Version control operations
-- Infrastructure management
+**Rule:** use a listed server's tools for the task at hand. Read before you write, and never write through one without explicit approval.
 
 ## Behaviour Rules
-
-**REQUIRED BACKGROUND:** These rules follow superpowers:writing-skills (evidence-first) and superpowers:systematic-debugging (when unknowns arise) principles.
 
 - **Evidence first**: base all changes on code you have read, not assumptions.
 - **Stay in scope**: only modify files relevant to the task. Do not touch unrelated modules.
@@ -93,8 +84,4 @@ Examples:
 
 ## When to Escalate
 
-Contact these people (from `.ai/project-context.md`):
-- **Architecture changes**: Lead Architect
-- **Production incidents**: On-call (see `.ai/runbooks.md`)
-- **Dependency security**: Security contact
-- **Major refactoring**: Tech lead approval required
+Escalation contacts are in `.ai/project-context.md`, on-call in `.ai/runbooks.md`. Name the person listed there; when a role has no one, say so instead of naming a role.
