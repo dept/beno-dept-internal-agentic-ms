@@ -320,6 +320,7 @@ dept-agentic-standards/
     ├── architecture.template.md
     ├── ... (9 context templates)
     ├── AGENTS.template.md
+    ├── AGENTS.central.template.md  # Wiring file of a project cut over to the central context repository
     ├── CLAUDE.template.md
     ├── skills/
     │   ├── codebase-overview/SKILL.md

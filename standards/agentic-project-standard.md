@@ -93,6 +93,12 @@ materialises the link as a plain text file containing the path `AGENTS.md`, so t
 one-line file and the project silently loses its instructions. (The `.claude/skills/` mirror is the
 separate case where a symlink is the rule, see Claude Code mirrors below.)
 
+A project whose context has moved to the central context repository keeps `AGENTS.md` and
+`CLAUDE.md` and nothing else of the standard. Its `AGENTS.md` comes from
+`templates/AGENTS.central.template.md`: it names the central repository and the project's folder
+there, carries the commands that clone it and holds nothing else, so an agent on a developer machine reaches the
+context under that developer's own GitHub login with no skill installed.
+
 What may go into a wiring file, and what belongs in `.ai/` instead, is in
 `standards/writing-rules.md` §3 and §4.
 
