@@ -124,11 +124,14 @@ of its own. `standards/agentic-project-standard.md` is the formal definition.
   first bump from zero returns 1, and when that bump is the last statement of a function the
   function returns 1 and `set -e` kills the caller. Write `COUNT=$((COUNT + 1))`, which is always
   status zero. This hid every check after the first warning in `validate.sh` until 2.7.6.
-- **`scripts/validate.sh` has two modes.** Against a target repository it runs every section.
+- **`scripts/validate.sh` has three modes.** Against a target repository it runs every section.
   Against this repository (no `.ai/`, but `standards/` and `config/standard-version.yml` present)
   it runs the reference-integrity section alone, over this repo's own layout, and fails on a path
-  that does not resolve. Check it with `bash -n scripts/validate.sh`, run `bash scripts/validate.sh .`
-  here, and run it against a locally migrated clone for the rest.
+  that does not resolve. Against the central context repository (`projects.yml` plus
+  `projects/<slug>/.ai/`) it runs itself once per project folder and skips Multi-Client Wiring and
+  Reference Integrity, which read files only the project's own checkout has. Check it with
+  `bash -n scripts/validate.sh`, run `bash scripts/validate.sh .` here, and run it against a
+  locally migrated clone and a clone of the central repository for the rest.
 
 ## Maintaining this file
 

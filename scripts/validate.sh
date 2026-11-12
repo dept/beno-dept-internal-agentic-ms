@@ -2,6 +2,12 @@
 # DEPT Agentic Standard — .ai/ Folder Validator
 # Usage: ./scripts/validate.sh [path-to-project]
 # Validates that a project's .ai/ folder meets the standard.
+#
+# Three modes, picked from what the path holds:
+#   - a project repository (has .ai/): every section
+#   - the standards repository (standards/ and config/standard-version.yml): reference integrity
+#   - the central context repository (projects.yml and projects/<slug>/.ai/): every project folder
+#     in turn, with the sections that need the project's own checkout left out
 
 set -euo pipefail
 
@@ -18,6 +24,17 @@ AI_DIR="${PROJECT_DIR}/.ai"
 PASSED=0
 WARNED=0
 FAILED=0
+
+# A project folder in the central context repository is projects/<slug>/ next to projects.yml. It
+# holds .ai/ and skills and nothing else: the code, the wiring files and the workflows stay in the
+# project's own repository, so the sections that read those are skipped for it.
+CENTRAL=false
+if [[ -d "$PROJECT_DIR" ]]; then
+  PROJECT_ABS="$(cd "$PROJECT_DIR" && pwd)"
+  if [[ "$(basename "$(dirname "$PROJECT_ABS")")" = "projects" ]] && [[ -f "${PROJECT_ABS}/../../projects.yml" ]]; then
+    CENTRAL=true
+  fi
+fi
 
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo -e "${BLUE}  DEPT Agentic Standard — .ai/ Folder Validator${NC}"
@@ -119,6 +136,33 @@ check_references() {
 
 # Check .ai/ directory exists
 if [[ ! -d "$AI_DIR" ]]; then
+  # The central context repository holds one .ai/ per project and none of its own. Validate each
+  # project folder with this same script and fail when any of them fails.
+  if [[ -f "${PROJECT_DIR}/projects.yml" ]] && [[ -d "${PROJECT_DIR}/projects" ]]; then
+    echo -e "Validating the central context repository: ${BLUE}${PROJECT_DIR}${NC}"
+    echo ""
+    CENTRAL_TOTAL=0
+    CENTRAL_BAD=()
+    for dir in "${PROJECT_DIR}"/projects/*/; do
+      [[ -d "$dir" ]] || continue
+      CENTRAL_TOTAL=$((CENTRAL_TOTAL + 1))
+      if ! bash "$0" "${dir%/}"; then
+        CENTRAL_BAD+=("$(basename "$dir")")
+      fi
+      echo ""
+    done
+    if [[ "$CENTRAL_TOTAL" -eq 0 ]]; then
+      echo -e "${RED}FAIL:${NC} no project folders under ${PROJECT_DIR}/projects"
+      exit 1
+    fi
+    if [[ "${#CENTRAL_BAD[@]}" -gt 0 ]]; then
+      echo -e "  Status: ${RED}${#CENTRAL_BAD[@]} of ${CENTRAL_TOTAL} project(s) NOT COMPLIANT${NC}"
+      printf '    %s\n' "${CENTRAL_BAD[@]}"
+      exit 1
+    fi
+    echo -e "  Status: ${GREEN}all ${CENTRAL_TOTAL} project(s) compliant${NC}"
+    exit 0
+  fi
   # The standards repository itself has no .ai/: it produces one for other repositories. The
   # reference check is the only section that applies to it, and it applies to its own layout.
   # docs/ and examples/ are left out of the prefix list on purpose: a `docs/...` path in these
@@ -312,7 +356,13 @@ version_lt() {
 }
 
 RECORDED_VERSION=$(read_version_field "${AI_DIR}/.meta.yml" "standard_version")
-CURRENT_VERSION=$(read_version_field "${PROJECT_DIR}/config/standard-version.yml" "version")
+# A project repository carries a vendored copy of the version file. A central project folder does
+# not, so there the standard this script ships with is the reference.
+VERSION_FILE="${PROJECT_DIR}/config/standard-version.yml"
+if [[ "$CENTRAL" = true ]]; then
+  VERSION_FILE="$(cd "$(dirname "$0")" && pwd)/../config/standard-version.yml"
+fi
+CURRENT_VERSION=$(read_version_field "$VERSION_FILE" "version")
 
 if [[ -z "$RECORDED_VERSION" ]] || [[ "$RECORDED_VERSION" = "null" ]]; then
   echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records no standard_version, cannot check for drift"
@@ -325,7 +375,9 @@ elif [[ "$RECORDED_VERSION" = "$CURRENT_VERSION" ]]; then
   PASSED=$((PASSED + 1))
 elif version_lt "$RECORDED_VERSION" "$CURRENT_VERSION"; then
   echo -e "  ${YELLOW}△${NC} project is on standard ${RECORDED_VERSION}, current is ${CURRENT_VERSION}"
-  echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
+  if [[ "$CENTRAL" != true ]]; then
+    echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
+  fi
   WARNED=$((WARNED + 1))
 else
   echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records standard ${RECORDED_VERSION}, ahead of the vendored ${CURRENT_VERSION}"
@@ -362,7 +414,8 @@ if command -v git &>/dev/null && git -C "$PROJECT_DIR" rev-parse --git-dir &>/de
         PASSED=$((PASSED + 1))
       fi
 
-      if [[ "$drift_days" -gt 14 ]]; then
+      # In the central repository the newest commit usually belongs to another project.
+      if [[ "$CENTRAL" != true ]] && [[ "$drift_days" -gt 14 ]]; then
         echo -e "  ${YELLOW}△${NC} Repo has ${drift_days} days of commits since last .ai/ update"
         WARNED=$((WARNED + 1))
       fi
@@ -378,128 +431,134 @@ fi
 
 echo ""
 
-# ── 5. Multi-Client Wiring ─────────────────────────────────
-# .ai/ is the shared source; each IDE needs its own pointer + mirror.
-# All warning-level (△): a project may legitimately target a subset of IDEs.
-echo -e "${BLUE}── Multi-Client Wiring ──${NC}"
+if [[ "$CENTRAL" = true ]]; then
+  echo -e "${BLUE}── Multi-Client Wiring ──${NC}"
+  echo "  skipped: needs the project checkout, which the central repository does not hold"
+  echo ""
+else
+  # ── 5. Multi-Client Wiring ─────────────────────────────────
+  # .ai/ is the shared source; each IDE needs its own pointer + mirror.
+  # All warning-level (△): a project may legitimately target a subset of IDEs.
+  echo -e "${BLUE}── Multi-Client Wiring ──${NC}"
 
-# Context pointers. AGENTS.md is the one authored file, read by Copilot (GitHub and VS Code),
-# Codex and Cursor. CLAUDE.md imports it for Claude Code.
-declare -a WIRING=(
-  "AGENTS.md|Copilot, Codex, Cursor"
-  "CLAUDE.md|Claude Code"
-)
-for entry in "${WIRING[@]}"; do
-  path="${entry%%|*}"; label="${entry##*|}"
-  if [[ -f "${PROJECT_DIR}/${path}" ]]; then
-    echo -e "  ${GREEN}✓${NC} ${path} (${label})"
-    PASSED=$((PASSED + 1))
-  else
-    echo -e "  ${YELLOW}△${NC} ${path} — missing (${label} won't auto-load .ai/)"
-    WARNED=$((WARNED + 1))
-  fi
-done
-
-# CLAUDE.md imports AGENTS.md rather than repeating it.
-if [[ -f "${PROJECT_DIR}/CLAUDE.md" ]]; then
-  if grep -q '@AGENTS.md' "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null; then
-    echo -e "  ${GREEN}✓${NC} CLAUDE.md imports AGENTS.md"
-    PASSED=$((PASSED + 1))
-  else
-    echo -e "  ${YELLOW}△${NC} CLAUDE.md has no @AGENTS.md import (instructions will drift)"
-    WARNED=$((WARNED + 1))
-  fi
-fi
-
-# Skills moved to .agents/skills in standard 2.0.0. Flag the 1.x location if it survives.
-if [[ -d "${PROJECT_DIR}/.github/skills" ]]; then
-  echo -e "  ${YELLOW}△${NC} .github/skills exists (standard 1.x): move its skills to .agents/skills and delete it"
-  WARNED=$((WARNED + 1))
-fi
-
-# Mirror parity: .agents/skills is the skill source, .github/* the agent and prompt source;
-# .claude/* and .cursor/* must mirror them.
-# fn: warn if source dir has entries but a mirror is empty/absent.
-# kind = "md" (count *.md files) or "dir" (count subdirs). Predicate is hardcoded
-# per-kind so no glob pattern passes through word-splitting (which would expand vs cwd).
-# -L follows symlinks: both Claude mirrors are symlinks (see the Claude Code mirrors section
-# of standards/agentic-project-standard.md), and a symlinked directory is -type l, not -type d,
-# so without -L a perfectly in-sync mirror counts as 0.
-count_entries() {
-  local dir="$1" kind="$2"
-  # Missing dir → 0. Guard prevents find's exit-1 aborting the $(...) under set -e + pipefail.
-  if [[ ! -d "$dir" ]]; then echo 0; return; fi
-  case "$kind" in
-    md)  find -L "$dir" -maxdepth 1 -mindepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ' ;;
-    dir) find -L "$dir" -maxdepth 1 -mindepth 1 -type d      2>/dev/null | wc -l | tr -d ' ' ;;
-  esac
-}
-check_mirror() {
-  local src="$1" mirror="$2" kind="$3" what="$4"
-  local src_n mir_n
-  src_n=$(count_entries "${PROJECT_DIR}/${src}" "$kind")
-  if [[ "${src_n:-0}" -eq 0 ]]; then return; fi  # nothing to mirror (if-guard: safe under set -e)
-  mir_n=$(count_entries "${PROJECT_DIR}/${mirror}" "$kind")
-  if [[ "${mir_n:-0}" -ge "$src_n" ]]; then
-    echo -e "  ${GREEN}✓${NC} ${what}: ${src} (${src_n}) → ${mirror} (${mir_n})"
-    PASSED=$((PASSED + 1))
-  else
-    echo -e "  ${YELLOW}△${NC} ${what}: ${src} has ${src_n} but ${mirror} has ${mir_n:-0} — mirror out of sync"
-    WARNED=$((WARNED + 1))
-  fi
-}
-check_mirror ".github/agents"  ".claude/agents"   md   "Agents"
-check_mirror ".agents/skills"  ".claude/skills"   dir  "Skills (Claude)"
-check_mirror ".github/prompts" ".claude/commands" md   "Commands (Claude)"
-check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
-
-# check_mirror counts files; it cannot see a mirror whose *content* has gone stale. The command
-# mirrors are the ones that can: skills and agents are symlinks and cannot drift, but a command
-# mirror is generated (see the header of scripts/mirror-claude.sh for why it cannot be a link), so
-# a source edit that never reached it, or a copy made before the frontmatter transform existed,
-# both survive a count. Two assertions, neither of which re-implements the transform:
-#   - the body below the frontmatter is the source's body, verbatim
-#   - no frontmatter key outside the allow-list survived, which is what a plain `cp` leaves behind
-#     (`agent:` binds a Copilot agent, `model:` names a Copilot model no other harness resolves)
-# Both are repaired by running scripts/mirror-claude.sh.
-COMMAND_KEEP_KEYS=" name description argument-hint "
-body_of() { awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm {print}' "$1"; }
-frontmatter_keys_of() {
-  awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {exit} fm && /^[A-Za-z_][A-Za-z0-9_-]*:/ { sub(/:.*/,""); print }' "$1"
-}
-check_command_mirror_content() {
-  local mirror_dir="$1" what="$2"
-  local src mirror name stray drifted=0 foreign=0
-  [[ -d "${PROJECT_DIR}/.github/prompts" ]] || return 0
-  [[ -d "${PROJECT_DIR}/${mirror_dir}" ]] || return 0
-  for src in "${PROJECT_DIR}"/.github/prompts/*.prompt.md; do
-    [[ -f "$src" ]] || continue
-    name="$(basename "$src" .prompt.md)"
-    mirror="${PROJECT_DIR}/${mirror_dir}/${name}.md"
-    [[ -f "$mirror" ]] || continue
-    if [[ "$(body_of "$mirror")" != "$(body_of "$src")" ]]; then
-      echo -e "  ${YELLOW}△${NC} ${what}: ${mirror_dir}/${name}.md body has drifted from .github/prompts/${name}.prompt.md — run scripts/mirror-claude.sh"
-      drifted=$((drifted + 1))
-      continue
+  # Context pointers. AGENTS.md is the one authored file, read by Copilot (GitHub and VS Code),
+  # Codex and Cursor. CLAUDE.md imports it for Claude Code.
+  declare -a WIRING=(
+    "AGENTS.md|Copilot, Codex, Cursor"
+    "CLAUDE.md|Claude Code"
+  )
+  for entry in "${WIRING[@]}"; do
+    path="${entry%%|*}"; label="${entry##*|}"
+    if [[ -f "${PROJECT_DIR}/${path}" ]]; then
+      echo -e "  ${GREEN}✓${NC} ${path} (${label})"
+      PASSED=$((PASSED + 1))
+    else
+      echo -e "  ${YELLOW}△${NC} ${path} — missing (${label} won't auto-load .ai/)"
+      WARNED=$((WARNED + 1))
     fi
-    while read -r stray; do
-      [[ -n "$stray" ]] || continue
-      [[ "$COMMAND_KEEP_KEYS" == *" ${stray} "* ]] && continue
-      echo -e "  ${YELLOW}△${NC} ${what}: ${mirror_dir}/${name}.md keeps the Copilot-only key '${stray}:' — run scripts/mirror-claude.sh"
-      foreign=$((foreign + 1))
-    done < <(frontmatter_keys_of "$mirror")
   done
-  if [[ "$drifted" -eq 0 && "$foreign" -eq 0 ]]; then
-    echo -e "  ${GREEN}✓${NC} ${what}: every mirror matches its .github/prompts/ source"
-    PASSED=$((PASSED + 1))
-  else
-    WARNED=$((WARNED + drifted + foreign))
-  fi
-}
-check_command_mirror_content ".claude/commands" "Commands (Claude)"
-check_command_mirror_content ".cursor/commands" "Commands (Cursor)"
 
-echo ""
+  # CLAUDE.md imports AGENTS.md rather than repeating it.
+  if [[ -f "${PROJECT_DIR}/CLAUDE.md" ]]; then
+    if grep -q '@AGENTS.md' "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null; then
+      echo -e "  ${GREEN}✓${NC} CLAUDE.md imports AGENTS.md"
+      PASSED=$((PASSED + 1))
+    else
+      echo -e "  ${YELLOW}△${NC} CLAUDE.md has no @AGENTS.md import (instructions will drift)"
+      WARNED=$((WARNED + 1))
+    fi
+  fi
+
+  # Skills moved to .agents/skills in standard 2.0.0. Flag the 1.x location if it survives.
+  if [[ -d "${PROJECT_DIR}/.github/skills" ]]; then
+    echo -e "  ${YELLOW}△${NC} .github/skills exists (standard 1.x): move its skills to .agents/skills and delete it"
+    WARNED=$((WARNED + 1))
+  fi
+
+  # Mirror parity: .agents/skills is the skill source, .github/* the agent and prompt source;
+  # .claude/* and .cursor/* must mirror them.
+  # fn: warn if source dir has entries but a mirror is empty/absent.
+  # kind = "md" (count *.md files) or "dir" (count subdirs). Predicate is hardcoded
+  # per-kind so no glob pattern passes through word-splitting (which would expand vs cwd).
+  # -L follows symlinks: both Claude mirrors are symlinks (see the Claude Code mirrors section
+  # of standards/agentic-project-standard.md), and a symlinked directory is -type l, not -type d,
+  # so without -L a perfectly in-sync mirror counts as 0.
+  count_entries() {
+    local dir="$1" kind="$2"
+    # Missing dir → 0. Guard prevents find's exit-1 aborting the $(...) under set -e + pipefail.
+    if [[ ! -d "$dir" ]]; then echo 0; return; fi
+    case "$kind" in
+      md)  find -L "$dir" -maxdepth 1 -mindepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ' ;;
+      dir) find -L "$dir" -maxdepth 1 -mindepth 1 -type d      2>/dev/null | wc -l | tr -d ' ' ;;
+    esac
+  }
+  check_mirror() {
+    local src="$1" mirror="$2" kind="$3" what="$4"
+    local src_n mir_n
+    src_n=$(count_entries "${PROJECT_DIR}/${src}" "$kind")
+    if [[ "${src_n:-0}" -eq 0 ]]; then return; fi  # nothing to mirror (if-guard: safe under set -e)
+    mir_n=$(count_entries "${PROJECT_DIR}/${mirror}" "$kind")
+    if [[ "${mir_n:-0}" -ge "$src_n" ]]; then
+      echo -e "  ${GREEN}✓${NC} ${what}: ${src} (${src_n}) → ${mirror} (${mir_n})"
+      PASSED=$((PASSED + 1))
+    else
+      echo -e "  ${YELLOW}△${NC} ${what}: ${src} has ${src_n} but ${mirror} has ${mir_n:-0} — mirror out of sync"
+      WARNED=$((WARNED + 1))
+    fi
+  }
+  check_mirror ".github/agents"  ".claude/agents"   md   "Agents"
+  check_mirror ".agents/skills"  ".claude/skills"   dir  "Skills (Claude)"
+  check_mirror ".github/prompts" ".claude/commands" md   "Commands (Claude)"
+  check_mirror ".github/prompts" ".cursor/commands" md   "Commands (Cursor)"
+
+  # check_mirror counts files; it cannot see a mirror whose *content* has gone stale. The command
+  # mirrors are the ones that can: skills and agents are symlinks and cannot drift, but a command
+  # mirror is generated (see the header of scripts/mirror-claude.sh for why it cannot be a link), so
+  # a source edit that never reached it, or a copy made before the frontmatter transform existed,
+  # both survive a count. Two assertions, neither of which re-implements the transform:
+  #   - the body below the frontmatter is the source's body, verbatim
+  #   - no frontmatter key outside the allow-list survived, which is what a plain `cp` leaves behind
+  #     (`agent:` binds a Copilot agent, `model:` names a Copilot model no other harness resolves)
+  # Both are repaired by running scripts/mirror-claude.sh.
+  COMMAND_KEEP_KEYS=" name description argument-hint "
+  body_of() { awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {fm=0; next} !fm {print}' "$1"; }
+  frontmatter_keys_of() {
+    awk 'BEGIN{fm=0} NR==1 && $0=="---" {fm=1; next} fm && $0=="---" {exit} fm && /^[A-Za-z_][A-Za-z0-9_-]*:/ { sub(/:.*/,""); print }' "$1"
+  }
+  check_command_mirror_content() {
+    local mirror_dir="$1" what="$2"
+    local src mirror name stray drifted=0 foreign=0
+    [[ -d "${PROJECT_DIR}/.github/prompts" ]] || return 0
+    [[ -d "${PROJECT_DIR}/${mirror_dir}" ]] || return 0
+    for src in "${PROJECT_DIR}"/.github/prompts/*.prompt.md; do
+      [[ -f "$src" ]] || continue
+      name="$(basename "$src" .prompt.md)"
+      mirror="${PROJECT_DIR}/${mirror_dir}/${name}.md"
+      [[ -f "$mirror" ]] || continue
+      if [[ "$(body_of "$mirror")" != "$(body_of "$src")" ]]; then
+        echo -e "  ${YELLOW}△${NC} ${what}: ${mirror_dir}/${name}.md body has drifted from .github/prompts/${name}.prompt.md — run scripts/mirror-claude.sh"
+        drifted=$((drifted + 1))
+        continue
+      fi
+      while read -r stray; do
+        [[ -n "$stray" ]] || continue
+        [[ "$COMMAND_KEEP_KEYS" == *" ${stray} "* ]] && continue
+        echo -e "  ${YELLOW}△${NC} ${what}: ${mirror_dir}/${name}.md keeps the Copilot-only key '${stray}:' — run scripts/mirror-claude.sh"
+        foreign=$((foreign + 1))
+      done < <(frontmatter_keys_of "$mirror")
+    done
+    if [[ "$drifted" -eq 0 && "$foreign" -eq 0 ]]; then
+      echo -e "  ${GREEN}✓${NC} ${what}: every mirror matches its .github/prompts/ source"
+      PASSED=$((PASSED + 1))
+    else
+      WARNED=$((WARNED + drifted + foreign))
+    fi
+  }
+  check_command_mirror_content ".claude/commands" "Commands (Claude)"
+  check_command_mirror_content ".cursor/commands" "Commands (Cursor)"
+
+  echo ""
+fi
 
 # ── 5b. Maintainer Workflow Guard ──────────────────────────
 # The Maintainer Agent workflow (bootstrap-only, so not present in every repo) triggers on schedule
@@ -530,63 +589,69 @@ if [[ -f "$WF" ]]; then
   echo ""
 fi
 
-# ── 6. Reference Integrity ─────────────────────────────────
-# A path this standard names must exist. Broken references are how a layout change (a renamed
-# agent, a mirror that became a symlink) survives in prose long after the files moved, and they
-# are the one class of rot no other check here catches.
-#
-# Scope, deliberately narrow:
-#   - only backticked tokens, which is how every path in these files is written
-#   - only paths under directories the standard itself owns (PREFIXES below), so a project's own
-#     src/ layout, npm package names, URLs and bare filenames are never guessed at
-#   - only files the standard owns and that stay in the repo for good
-# Scanned: the .ai/ files, the two wiring files and the skills, which are the durable context a
-# human or an agent reads every day; and, in the narrow follow-on scan below, the durable
-# Maintainer Agent plus standards/writing-rules.md. Not scanned, on purpose:
-#   - .github/prompts/ and the Discovery Agent, which describe files a later phase creates and name
-#     paths in the standards repository itself (templates/, scripts/install.sh,
-#     standards/agentic-project-standard.md) that a target repo never has
-#   - .vscode/ and .cursor/ MCP config, which a project may legitimately not use
-# Those two classes cannot be told apart from a real reference mechanically. They are checked in
-# the standards repository instead, where every path they name is a path in that repository.
-echo -e "${BLUE}── Reference Integrity ──${NC}"
+if [[ "$CENTRAL" = true ]]; then
+  echo -e "${BLUE}── Reference Integrity ──${NC}"
+  echo "  skipped: needs the project checkout, which the central repository does not hold"
+  echo ""
+else
+  # ── 6. Reference Integrity ─────────────────────────────────
+  # A path this standard names must exist. Broken references are how a layout change (a renamed
+  # agent, a mirror that became a symlink) survives in prose long after the files moved, and they
+  # are the one class of rot no other check here catches.
+  #
+  # Scope, deliberately narrow:
+  #   - only backticked tokens, which is how every path in these files is written
+  #   - only paths under directories the standard itself owns (PREFIXES below), so a project's own
+  #     src/ layout, npm package names, URLs and bare filenames are never guessed at
+  #   - only files the standard owns and that stay in the repo for good
+  # Scanned: the .ai/ files, the two wiring files and the skills, which are the durable context a
+  # human or an agent reads every day; and, in the narrow follow-on scan below, the durable
+  # Maintainer Agent plus standards/writing-rules.md. Not scanned, on purpose:
+  #   - .github/prompts/ and the Discovery Agent, which describe files a later phase creates and name
+  #     paths in the standards repository itself (templates/, scripts/install.sh,
+  #     standards/agentic-project-standard.md) that a target repo never has
+  #   - .vscode/ and .cursor/ MCP config, which a project may legitimately not use
+  # Those two classes cannot be told apart from a real reference mechanically. They are checked in
+  # the standards repository instead, where every path they name is a path in that repository.
+  echo -e "${BLUE}── Reference Integrity ──${NC}"
 
-REF_FILES=()
-while IFS= read -r f; do REF_FILES+=("$f"); done < <(
-  find -L "${AI_DIR}" "${PROJECT_DIR}/.agents/skills" -name '*.md' -type f 2>/dev/null || true
-  ls "${PROJECT_DIR}/AGENTS.md" "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null || true
-)
-if [[ "${#REF_FILES[@]}" -gt 0 ]]; then
-check_references \
-  ".ai .agents .claude .github/agents .github/prompts scripts standards AGENTS.md CLAUDE.md" \
-  "${REF_FILES[@]}"
+  REF_FILES=()
+  while IFS= read -r f; do REF_FILES+=("$f"); done < <(
+    find -L "${AI_DIR}" "${PROJECT_DIR}/.agents/skills" -name '*.md' -type f 2>/dev/null || true
+    ls "${PROJECT_DIR}/AGENTS.md" "${PROJECT_DIR}/CLAUDE.md" 2>/dev/null || true
+  )
+  if [[ "${#REF_FILES[@]}" -gt 0 ]]; then
+  check_references \
+    ".ai .agents .claude .github/agents .github/prompts scripts standards AGENTS.md CLAUDE.md" \
+    "${REF_FILES[@]}"
+  fi
+
+  # The durable Maintainer Agent and the writing rules are the one part of .github/agents/ that CAN
+  # be reference-checked in a target repo, and the part that most needs it: the Maintainer is
+  # installed for good and reads its named files on every run, so a dead reference in it ships into
+  # every migrated repo and stays there. That is the class a Copilot reviewer caught on client PRs
+  # (config/change-impact-matrix.yml, docs/confluence-page-standard.md named but never vendored).
+  # Every path it names now lives under a standards-owned tree the installer vendors durably, so the
+  # prefix set is exactly those trees: config/ docs/ scripts/ standards/. Two things stay out of
+  # scope on purpose and are checked in the standards repository instead:
+  #   - the Discovery Agent, which is bootstrap-only and legitimately names standards-repo-only paths
+  #     (scripts/install.sh, standards/agentic-project-standard.md, config/stack-detection.yml fetched
+  #     at migration time) that a target repo never vendors, indistinguishable from a dead reference
+  #     mechanically, the reason the main scan above excludes agent files wholesale;
+  #   - templates/, which agent prose names only as URLs fetched at setup time (already skipped as URLs).
+  AGENT_REF_FILES=()
+  while IFS= read -r f; do AGENT_REF_FILES+=("$f"); done < <(
+    ls "${PROJECT_DIR}/.github/agents/maintainer.agent.md" \
+       "${PROJECT_DIR}/standards/writing-rules.md" 2>/dev/null || true
+  )
+  if [[ "${#AGENT_REF_FILES[@]}" -gt 0 ]]; then
+  check_references \
+    "config docs scripts standards" \
+    "${AGENT_REF_FILES[@]}"
+  fi
+
+  echo ""
 fi
-
-# The durable Maintainer Agent and the writing rules are the one part of .github/agents/ that CAN
-# be reference-checked in a target repo, and the part that most needs it: the Maintainer is
-# installed for good and reads its named files on every run, so a dead reference in it ships into
-# every migrated repo and stays there. That is the class a Copilot reviewer caught on client PRs
-# (config/change-impact-matrix.yml, docs/confluence-page-standard.md named but never vendored).
-# Every path it names now lives under a standards-owned tree the installer vendors durably, so the
-# prefix set is exactly those trees: config/ docs/ scripts/ standards/. Two things stay out of
-# scope on purpose and are checked in the standards repository instead:
-#   - the Discovery Agent, which is bootstrap-only and legitimately names standards-repo-only paths
-#     (scripts/install.sh, standards/agentic-project-standard.md, config/stack-detection.yml fetched
-#     at migration time) that a target repo never vendors, indistinguishable from a dead reference
-#     mechanically, the reason the main scan above excludes agent files wholesale;
-#   - templates/, which agent prose names only as URLs fetched at setup time (already skipped as URLs).
-AGENT_REF_FILES=()
-while IFS= read -r f; do AGENT_REF_FILES+=("$f"); done < <(
-  ls "${PROJECT_DIR}/.github/agents/maintainer.agent.md" \
-     "${PROJECT_DIR}/standards/writing-rules.md" 2>/dev/null || true
-)
-if [[ "${#AGENT_REF_FILES[@]}" -gt 0 ]]; then
-check_references \
-  "config docs scripts standards" \
-  "${AGENT_REF_FILES[@]}"
-fi
-
-echo ""
 
 # ── 6b. Confluence Metadata Schema ─────────────────────────
 # The confluence-axi skill and the Maintainer read the landing page id at the field path

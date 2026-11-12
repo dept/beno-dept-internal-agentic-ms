@@ -9,6 +9,9 @@
 # scripts/validate.sh compares a project against its own vendored copy of the version file, which
 # is a consistency check inside one project. This script is the one that knows what current means.
 #
+# A project folder of the central context repository counts as a project directory:
+#   ./scripts/version-report.sh <central-repo>/projects/*/
+#
 # Exit code is 1 when at least one project is behind, so it can gate a scheduled job.
 
 set -euo pipefail
