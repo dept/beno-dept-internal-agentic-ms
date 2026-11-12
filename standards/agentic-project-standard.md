@@ -96,7 +96,7 @@ separate case where a symlink is the rule, see Claude Code mirrors below.)
 A project whose context has moved to the central context repository keeps `AGENTS.md` and
 `CLAUDE.md` and nothing else of the standard. Its `AGENTS.md` comes from
 `templates/AGENTS.central.template.md`: it names the central repository and the project's folder
-there, and carries the commands that clone it, so an agent on a developer machine reaches the
+there, carries the commands that clone it and holds nothing else, so an agent on a developer machine reaches the
 context under that developer's own GitHub login with no skill installed.
 
 What may go into a wiring file, and what belongs in `.ai/` instead, is in
