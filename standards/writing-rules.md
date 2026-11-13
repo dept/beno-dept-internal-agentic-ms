@@ -346,3 +346,19 @@ In every other case, add or update, and do not delete. Content that is merely ol
 unfamiliar, or merely not something this agent would have written is not eligible. If a fact
 cannot be confirmed from repository evidence and does not break a rule above, leave it and note the
 uncertainty next to it rather than removing it.
+
+---
+
+## 6. No secret values
+
+No `.ai/` file, wiring file or skill holds a secret value: an API key, a token, a password, a
+private key, a connection string with its credentials, a webhook URL that carries its own
+credential. Write the name of the secret and the store it lives in, which `operational-context.md`
+owns (§4b), and never the value.
+
+This holds for a value that is already committed somewhere else in the project. Copying it widens
+who reads it: the context is loaded into every agent session and can be stored outside the
+project's own repository.
+
+A value found in existing content is removed under §5 case 1 and reported to a human, because a
+secret that reached git has to be rotated and deleting the line does not do that.
