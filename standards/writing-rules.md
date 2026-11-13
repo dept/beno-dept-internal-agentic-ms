@@ -311,7 +311,7 @@ migrated repository.
 
 Neither is a place where `.ai/` facts get a second home.
 
-**`AGENTS.md` is an index plus up to five constraint lines.** The index is the routing table saying
+**For a project that still tracks its own `.ai/`, `AGENTS.md` is an index plus up to five constraint lines.** A project on the central context repository has the pointer from `templates/AGENTS.central.template.md` and nothing else (§4c). The index is the routing table saying
 which `.ai/` file to read for which kind of task, and it carries no facts from those files. The
 constraint lines are the §2 allowance: one line each, naming the owning `.ai/` file inline, only
 for a rule that has to be seen before the agent writes rather than after it fails. Everything else
@@ -320,7 +320,7 @@ is, because it goes stale silently and every harness reads it first.
 
 **A skill body is how this project uses one technology**, with code copied from real call sites. It
 owns nothing from this table. A global constraint an agent would otherwise break gets one
-constraint line naming its `.ai/` owner, and nothing more: not the command list, not the version
+line stating the instruction, never naming a `.ai/` file (§4c), and nothing more: not the command list, not the version
 floors, not the deploy model. The single exception is `codebase-overview`, whose generated block
 is a script-maintained copy of four named sections of `architecture.md`; it cannot drift because
 nobody hand-edits it, and its scope is those four sections only.
