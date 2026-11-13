@@ -135,9 +135,9 @@ collision-safe rule (see `docs/confluence-page-standard.md` → *Page titles*): 
 
 ### Step 10: Stack-Aware Developer Setup
 
-For each detected technology:
+Apply the skill filter at the top of Step 9 of `prompts/04-stack-tooling.prompt.md` first: a general-purpose framework or tool the model already knows gets no skill. For each technology that passes it:
 1. Try a vendor skill first via `gh skill search <technology-name> --owner <vendor-org>` then `gh skill install <owner>/<repo> <skill-name> --dir .agents/skills --force`. `gh skill` is a real, built-in (preview) GitHub CLI feature. If `gh skill` is unavailable (older `gh`) or returns no authoritative vendor-org match, fall through to generation. Never fabricate a vendor source when the command didn't run.
-2. Generate a code-verified skill so each detected core technology ends with a `.agents/skills/<technology-name>/SKILL.md`. `.ai/` says which files to inspect; the skill's symbols/paths/code samples must be verified against actual source (`grep` symbols, `ls` paths, copy from real call sites), never from `.ai/` prose or framework convention. Mark anything unverifiable with `Assumption:`.
+2. Generate a code-verified skill so each technology that passed the filter ends with a `.agents/skills/<technology-name>/SKILL.md`. `.ai/` says which files to inspect; the skill's symbols/paths/code samples must be verified against actual source (`grep` symbols, `ls` paths, copy from real call sites), never from `.ai/` prose or framework convention. Mark anything unverifiable with `Assumption:`.
 3. Emit `.agents/skills/codebase-overview/SKILL.md` from `templates/skills/codebase-overview/SKILL.md` (substitute `[PROJECT_NAME]`). Its `description` carries the discovery trigger; its body carries the repository tree, stack table, placement conventions and high-fan-in symbols copied verbatim from `.ai/architecture.md` into the generated block. Nothing else from `.ai/` is copied in.
 4. Check DEPT MCP registry for servers
 5. Fallback to public MCP registry
@@ -151,7 +151,7 @@ Before declaring complete:
 - [ ] 9 `.ai/` files generated (no stubs)
 - [ ] `.meta.yml` created with standard version
 - [ ] AI wiring files created/updated
-- [ ] Skill file exists for every detected core technology (or the skip reason is recorded in the completion summary, never in `.ai/`)
+- [ ] Skill file exists for every technology that passed the skill filter (or the skip reason is recorded in the completion summary, never in `.ai/`)
 - [ ] `codebase-overview` skill emitted, its generated block matching the structural sections of `.ai/architecture.md`
 - [ ] Every `.ai/` file passes `standards/writing-rules.md` and opens with its ownership header
 - [ ] `bash scripts/validate.sh .` reports no Single-Source Integrity failure

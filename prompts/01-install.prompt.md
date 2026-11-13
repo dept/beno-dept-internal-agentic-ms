@@ -25,8 +25,8 @@ are fetched via the **Datadog MCP** (browser OAuth), which is configured in Phas
 there is no Datadog skill to install. Superpowers
 disciplines (evidence-first, systematic-debugging, verification) are referenced by
 the agents as *background guidance* and need no local files. **Stack-specific**
-skills (React, Next.js, CMS, etc.) are installed later in **Phase 4**
-(vendor-fetched via `gh skill` or generated from `.ai/` evidence).
+skills are decided later in **Phase 4**, which installs one only for a technology that
+passes its skill filter: a general-purpose framework such as React or Next.js gets none.
 
 ## Step 1: Fetch and Install DEPT Agents
 

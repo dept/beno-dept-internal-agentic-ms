@@ -1,6 +1,6 @@
 # Skill Templates
 
-The Discovery Agent installs skills into the target project at runtime using GitHub CLI skills:
+The Discovery Agent installs a stack skill only for a technology that passes the skill filter at the top of Step 9 of `prompts/04-stack-tooling.prompt.md`. A general-purpose framework or tool gets none. For one that passes, it uses GitHub CLI skills at runtime:
 
 ```bash
 # Search for a vendor-maintained skill on GitHub
@@ -10,7 +10,7 @@ gh skill search "<technology-name>" --owner <vendor-org> --limit 5 --json repo,s
 gh skill install <owner>/<repo> <skill-name> --dir .agents/skills --force
 ```
 
-If no authoritative vendor-owned `gh skill search` result is found, the agent generates a minimal project-specific fallback skill from the `.ai/` evidence collected during discovery so the detected technology still has a concrete `.agents/skills/<technology-name>/SKILL.md`. These generated skills live in the target project's `.agents/skills/` folder, not in this repo.
+If no authoritative vendor-owned `gh skill search` result is found and the project has its own conventions for the technology, the agent generates a minimal project-specific skill from the code as `.agents/skills/<technology-name>/SKILL.md`. These generated skills live in the target project's `.agents/skills/` folder, not in this repo.
 
 **Fallback skills must be evidence-accurate** (see accuracy rules in `prompts/04-stack-tooling.prompt.md`): no invented APIs/symbols (grep them first), only real paths (`ls`-confirmed), code samples copied from real call sites, no empty sections, and no restatement of global constraints already in `.ai/` or `AGENTS.md` (pointer only). `standards/writing-rules.md` applies to skill bodies as it does to `.ai/`.
 
@@ -22,7 +22,7 @@ If no authoritative vendor-owned `gh skill search` result is found, the agent ge
 
 Datadog "key features" have **no skill**: they are fetched via the **Datadog MCP** (browser OAuth), configured in Phase 4.
 
-Only **stack-specific** skills are left to Phase 4 (vendor-fetched via `gh skill` or generated from `.ai/` evidence) and are NOT stored here: they live in the target project's `.agents/skills/`.
+Only **stack-specific** skills that pass the Step 9 filter are left to Phase 4 (vendor-fetched via `gh skill` or generated from code evidence) and are NOT stored here: they live in the target project's `.agents/skills/`.
 
 **Multi-client mirroring:** `.agents/skills/` is the source of truth. Copilot, VS Code, Codex and Cursor read it directly; Claude Code does not, so `.claude/skills` is a relative symlink to it, created by `scripts/install.sh` and recreated by `scripts/mirror-claude.sh`. A skill written to the source is mirrored the moment it exists, and nothing under `.claude/` is ever hand-edited. The rule, including the fallback for a checkout without symlink support, is stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.
 

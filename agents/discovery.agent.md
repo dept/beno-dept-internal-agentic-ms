@@ -267,9 +267,9 @@ Read `package.json` (all workspaces if monorepo) and config files at repository 
 
 Use `config/stack-detection.yml` from this standards repository as detection hints — it maps package names to human-readable technology names. If a package is not listed there, derive the technology name from the package itself (e.g. `@prisma/client` → `prisma`, `@shopify/shopify-api` → `shopify`).
 
-#### Step B — Add a skill per technology (vendor-fetch first, else generate code-verified)
+#### Step B: add a skill per technology that passes the filter (vendor-fetch first, else generate code-verified)
 
-For each detected technology, produce `.agents/skills/<technology-name>/SKILL.md`.
+First apply the skill filter at the top of Step 9 of `prompts/04-stack-tooling.prompt.md`: a general-purpose framework or tool the model already knows gets no skill. For each technology that passes it, produce `.agents/skills/<technology-name>/SKILL.md`.
 
 **Step B1 — try a vendor skill via `gh skill`.** `gh skill` is a real, built-in (preview) GitHub CLI feature — use it when available:
 
@@ -322,7 +322,7 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 
 **Rules:**
 1. Skip if a skill with that name already exists in `.agents/skills/` (unless regenerating).
-2. There must be a `.agents/skills/<technology-name>/SKILL.md` for every detected core technology unless you explicitly record why it was skipped.
+2. There must be a `.agents/skills/<technology-name>/SKILL.md` for every technology that passed the skill filter, and every other one is recorded as skipped with its reason.
 3. Record each result (generated / skipped / vendor-fetched-if-real) for the completion summary, which is where skipped technologies are reported. Nothing about a skip goes into `.ai/`.
 4. **Self-check before finishing each skill:** re-grep every symbol and re-`ls` every path you wrote. A skill that references anything you could not locate fails the phase — fix or remove it.
 5. **Do not write a Claude Code copy of the skill.** `.claude/skills` is a single relative symlink to `.agents/skills`, so a skill written to the source is already visible to Claude Code. `scripts/install.sh` creates the symlink and `scripts/mirror-claude.sh` recreates it; run the latter if `.claude/skills` is missing or is still a copied directory from an older standard. The rule and the Windows fallback are stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.
@@ -545,7 +545,7 @@ Before finalising, verify:
 4. No secrets are included.
 5. Both wiring files created/updated: `AGENTS.md` authored, `CLAUDE.md` importing it with `@AGENTS.md`. No generated copy of either was created for another tool.
 6. Existing agentic configuration is documented in `agent-registry.md`.
-7. At least one skill file created per detected technology — either downloaded from a vendor GitHub repo or generated from `.ai/` evidence as a fallback.
+7. A skill file exists for every technology that passed the skill filter in Step B, vendor-fetched or generated from code evidence, and for no other technology.
 8. `codebase-overview` skill emitted with `[PROJECT_NAME]` substituted, and its generated block carries the repository tree, stack table, placement conventions and high-fan-in symbols copied from `.ai/architecture.md` unchanged.
 9. `support.agent.md` created, with no `tools:` line: the agent has every tool the harness offers, MCP servers included.
 10. `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, and `.claude/agents/support.md` symlinks to `.github/agents/support.agent.md`.
