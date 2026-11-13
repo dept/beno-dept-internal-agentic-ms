@@ -158,5 +158,5 @@ Before declaring complete:
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
 - [ ] No support agent, and no skill names a `.ai/` file or another skill
-- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, `.claude/agents/support.md` symlinks to its `.github/` source
+- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`
 - [ ] No secrets in any generated file
