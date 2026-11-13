@@ -1,5 +1,5 @@
 ---
-description: "Phase 3: Wire AI tools to load .ai/ context and create Confluence documentation."
+description: "Phase 3: Point AGENTS.md at the central context and create Confluence documentation."
 ---
 
 # Phase 3: Integration
@@ -13,7 +13,9 @@ description: "Phase 3: Wire AI tools to load .ai/ context and create Confluence 
 
 ## Step 6: Wire AI Tools
 
-Create or update the two wiring files so every AI tool finds `.ai/` context. **`.ai/` is the single shared source of truth**; the wiring files are pointers into it.
+`.ai/` does not stay in this repository: Phase 4b imports it into
+`dept/beno-dept-ms-agentic-context` under `projects/<org>__<repo>/.ai/` and it is gitignored here.
+The project gets one pointer to it, and only one file may carry that pointer.
 
 There is one authored wiring file. Every harness in use reads it:
 
@@ -24,41 +26,17 @@ There is one authored wiring file. Every harness in use reads it:
 | Cursor | Natively |
 | Claude Code | Through the `@AGENTS.md` import in `CLAUDE.md` |
 
-Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. Those tools read `AGENTS.md`. If a project already has one of them, record it in `.ai/agent-registry.md` and leave it alone.
-
-**Rule:** Check each file first. If it exists, append only. Never overwrite existing content.
-
-> **Wiring files are pointers, not a second source of truth.** `.ai/` is
-> authoritative. `standards/writing-rules.md` §3 sets what may appear in a wiring
-> file: at most five repo-wide class 3 constraints, and nothing a formatter or a
-> type error already fixes. Everything else is a pointer into `.ai/`. §4 gives the
-> full ownership rule for both files and §4b says which `.ai/` file owns which topic.
->
-> **Each constraint is one line and names its owner.** The allowed shape is
-> ``Tailwind is v3, not v4: `dependencies.md` is authoritative.`` One line, the
-> instruction, the owning `.ai/` file named inline. A constraint with no owner named,
-> or a second line on the same topic, is a restatement (§2) and does not belong in
-> `AGENTS.md`. `AGENTS.md` never carries a summary of a `.ai/` file, however short:
-> every harness reads it first and it goes stale silently.
+Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. If a project already has one of them, record it in `.ai/agent-registry.md` and leave it alone, but remove any line in it that names a `.ai/` file.
 
 ### File 1: `AGENTS.md` (repository root)
-- **Not present**: create from `templates/AGENTS.template.md`
-- **Already present**: append the missing sections; leave what is there
-- Fill `[PROJECT_SUMMARY]` with two sentences on what the system is, from `.ai/project-context.md`
-- Fill `[SETUP_COMMANDS]` with the two or three commands run on every task, copied from the cheatsheet in `.ai/onboarding.md`, and add one line under the block naming `.ai/onboarding.md` as the home of the full list. Not the whole cheatsheet: `onboarding.md` owns it, and a second copy here is the one that drifts
-- Fill `[KEY_CONSTRAINTS_ONE_LINERS]` from `.ai/`, applying the §3 test to each candidate before writing it, and write each one in the constraint-line shape above with its owning `.ai/` file named inline
+- Write it from `templates/AGENTS.central.template.md`. Fill `[PROJECT_NAME]`, and `[ORG]`/`[REPO]` with the GitHub owner and repository name
+- **Already present**: keep project rules that are not context (for example a team's review etiquette) below the template text, and remove summaries, command lists and constraints: they are in `.ai/` now, and a copy here is the one that drifts
+- Add nothing else. `AGENTS.md` is the only file in the project that names the context repository or a `.ai/` path (`standards/writing-rules.md` §4c)
 
 ### File 2: `CLAUDE.md` (repository root)
 - **Not present**: create from `templates/CLAUDE.template.md`, which is the `@AGENTS.md` import
 - **Already present**: add the `@AGENTS.md` import line if it is missing, and leave the rest
-- **Never a symlink to `AGENTS.md`**: a write aimed at `CLAUDE.md` follows the link and overwrites `AGENTS.md`, and a Windows checkout without symlink support materialises the link as a one-line text file holding the path, so the project silently loses its instructions. Already a symlink: replace it with a real file carrying the import. The `.claude/skills/` mirror is the separate case where a copy or a symlink are both allowed
-- Claude-Code-only lines (a `.claude/skills/` note, for example) may live here. Anything that applies to every harness goes in `AGENTS.md`
-
-### Both wiring files must instruct AI to:
-1. Load `.ai/` files **on demand**, never at session start. The wiring file carries a two-to-three sentence summary of what the system is plus the always-on constraints, and a routing table saying which file to read for which kind of task. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
-2. Cross-reference `.ai/` with agents/instructions/skills found in Phase 2
-3. Respect constraints in existing agentic files
-4. Flag contradictions between `.ai/` and codebase (don't silently accept stale context)
+- **Never a symlink to `AGENTS.md`**: a write aimed at `CLAUDE.md` follows the link and overwrites `AGENTS.md`, and a Windows checkout without symlink support materialises the link as a one-line text file holding the path, so the project silently loses its instructions. Already a symlink: replace it with a real file carrying the import
 
 ## Step 7: Create Confluence Project Documentation
 
@@ -165,10 +143,9 @@ After wiring is complete, create handover documentation in Confluence.
 ## Verification
 
 Before proceeding to Phase 4, confirm:
-- [ ] `AGENTS.md` exists, has no unfilled `[PLACEHOLDER]`, and routes into `.ai/` (Copilot, Codex, Cursor)
+- [ ] `AGENTS.md` is `templates/AGENTS.central.template.md` with `[PROJECT_NAME]`, `[ORG]` and `[REPO]` filled, and nothing else
 - [ ] `CLAUDE.md` contains the `@AGENTS.md` import (Claude Code)
-- [ ] `AGENTS.md` carries at most five constraints, each of them class 3 by the `standards/writing-rules.md` §3 test, each one line, and each naming the `.ai/` file that owns it
-- [ ] `AGENTS.md` carries no command cheatsheet and no summary of a `.ai/` file, and `bash scripts/validate.sh .` reports no new Single-Source Integrity failure
+- [ ] `AGENTS.md` carries no summary, no commands and no constraints: those are in `.ai/`, which goes to the central repository
 - [ ] Confluence pages created, or the completion summary says what blocked it
 - [ ] No Confluence page instructs a human reader to read `.ai/` files (rule 6b; the landing page's AI tooling status entry and the diagram sync note are the only allowed mentions)
 - [ ] Every page body starts at `H2`, every recurring table uses the column set in `docs/confluence-layout.md`, and no section renders parallel facts as `Label: value` bullets

@@ -3,9 +3,16 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.8.10"
-  release_date: "2026-11-02"
+  version: "2.9.0"
+  release_date: "2026-11-13"
   changelog:
+    - version: "2.9.0"
+      date: "2026-11-13"
+      changes:
+        - "A new project is migrated straight onto the central context repository (dept/beno-dept-ms-agentic-context) and ends in the state beno-unicef-website reached by hand in #862: the context lives centrally, only AGENTS.md points at it, and none of the standard's own files stay in the project. Phases 1 to 4 still run in the project checkout, but scripts/install.sh adds `.ai/` to .gitignore on a fresh install so the context is never committed. Phase 4b is no longer the maintainer workflow: it is the handoff, where the new scripts/onboard-central.sh imports `.ai/` and the codebase-overview skill with the central repository's own ctx.sh import, lists the project as `state: final`, adds a CODEOWNERS line and opens the onboarding pull request. Phase 5 is required and removes the agents, prompts, scripts, standards/, config/ and the three context skills, with two gates: nothing standard-owned tracked, and no file but AGENTS.md naming `.ai/` or codebase-overview. migrate.prompt.md stops at the top on a project that is cut over or still tracks `.ai/`; those use the cutover checklist in the central README."
+        - "Skills state facts and never name a `.ai/` file or another skill. The fallback skill template in 04-stack-tooling carried a `## Project Context` section telling every generated skill to read `.ai/architecture.md`, which after the cutover is a path that does not exist in the project (Copilot review on beno-unicef-website #862). The section is gone, standards/writing-rules.md §4c states the rule, and scripts/validate.sh warns (Context Pointers) when a skill, a `.github/` file or CLAUDE.md names a `.ai/` path. It is a warning, not a failure, because projects in the dual period still carry such lines."
+        - "Phase 4 no longer generates a support agent. Its body summarised the project context, which now lives centrally, so it was the copy that drifted."
+        - "scripts/install.sh exits before writing on a project whose AGENTS.md names the central context repository, so `--update` cannot hand back the files the cutover removed."
     - version: "2.8.10"
       date: "2026-11-02"
       changes:

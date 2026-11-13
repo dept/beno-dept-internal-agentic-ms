@@ -19,6 +19,13 @@ Installs the DEPT agentic tooling into the target repository:
 - 3 helper scripts (Graphify bootstrap, validator, Claude mirror rebuilder)
 - 1 fixed skill: `confluence-axi` (Confluence handover pages, via the `confluence-axi` npm CLI)
 
+**Everything installed here is temporary.** It carries the project through Phases 2 to 4. Phase 4b
+hands the context to the central context repository and Phase 5 removes these files again, apart
+from the stack skills, MCP configs and Dependabot tooling.
+
+**Ignore `.ai/` first.** Append `.ai/` to `.gitignore` before Phase 2 writes it (`scripts/install.sh`
+does this on a fresh install). The context is never committed to the project.
+
 **Note on skills:** Only **fixed DEPT skills** are installed in Phase 1 — currently
 just `confluence-axi` (a shipped template, not stack-detected). Datadog "key features"
 are fetched via the **Datadog MCP** (browser OAuth), which is configured in Phase 4 —
@@ -99,6 +106,7 @@ installs under their `ms-` names; the script generates the mirrors for a project
 ## Verification
 
 Before proceeding to Phase 2, confirm:
+- [ ] `.gitignore` has a `.ai/` line
 - [ ] `.github/agents/` contains 2 agent files
 - [ ] `.claude/agents/` contains `discovery.md` + `maintainer.md`, each a symlink to its `.github/agents/*.agent.md` source
 - [ ] `.github/prompts/` contains `migrate.prompt.md` and `01-04` phase prompts

@@ -289,7 +289,7 @@ Rules: only accept vendor-org results (e.g. `vercel/`, `shopify/`, `github/`), n
 2. **Real paths only.** Confirm every path with `ls`/glob before writing it. Never infer a route/dir from framework convention (e.g. `app/[locale]/`) without checking it exists.
 3. **Copy code from real call sites.** Base each code sample on an actual usage found in the repo (`grep` the call, read the file).
 4. **No empty/stub sections.** Every heading has real content or is omitted.
-5. **No restated global constraints.** A rule already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) gets one **constraint line** at most: one line, stating the instruction, naming the owning `.ai/` file inline, as in ``Tailwind is v3, not v4: `dependencies.md` is authoritative.`` Without the named owner it is a restatement. Two lines on one topic is a restatement. No command cheatsheet, no version floors, no deploy or image details in a skill body: those get a pointer to their owner in `standards/writing-rules.md` §4b. §2 applies to skill bodies as it does to `.ai/`.
+5. **No restated global constraints.** A rule already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) is left out, or kept as one line stating the instruction, as in ``Tailwind is v3, not v4``. Two lines on one topic is a restatement. A skill never names a `.ai/` file or another skill (`standards/writing-rules.md` §4c): after the handoff that path does not exist in the project. No command cheatsheet, no version floors, no deploy or image details in a skill body: their owners are in `standards/writing-rules.md` §4b. §2 applies to skill bodies as it does to `.ai/`.
 6. **Scope matches frontmatter.** Don't add off-topic sections; the body must stay within the skill's declared scope.
 7. **Mark residual uncertainty honestly.** If something genuinely can't be verified, write `Assumption:` — never state an unverified guess as fact.
 
@@ -480,55 +480,10 @@ Read [relevant .ai/ file] for how [technology] is configured in this project.
 
 Populate from `.ai/` evidence — no generic placeholders.
 
-#### Support agent
+#### No support agent
 
-After all skills are installed, create `.github/agents/support.agent.md` if not already present.
-
-No `tools:` line: both Copilot and Claude Code read an agent without one as having every available
-tool, including every MCP server wired into the project, and one file with no harness-specific
-frontmatter is what lets the Claude Code mirror be a symlink to this file.
-
-```markdown
----
-description: "Support agent for [PROJECT_NAME]. Use for feature development, debugging, support tasks, and code changes in this [tech stack summary] project. Skills: [comma-separated list of installed skills]."
-name: Support Agent
----
-
-You are the support agent for **[PROJECT_NAME]**.
-
-## Project Context
-Load `.ai/` files on demand, only when the task needs them, not all at once. `.ai/architecture.md` for structure (layout, stack, shared helpers, where new code goes), `.ai/coding-standards.md` before any code change, `.ai/project-context.md` for scope and ownership, the rest when the task touches their area.
-
-## Available Skills
-[list each installed skill, e.g.: - `/nextjs` — Next.js App Router patterns for this project]
-
-## Available MCP Integrations
-[list each MCP server wired in, e.g.:
-- `contentful/*` — read/write content models and entries
-- `vercel/*` — deployments, env vars, project settings
-- `github/*` — issues, PRs, code search]
-
-## Behaviour Rules
-- Evidence first: read code before changing it.
-- Follow `.ai/coding-standards.md` conventions on all changes.
-- Respect service boundaries defined in `.ai/architecture.md`.
-- Use MCP tools directly when interacting with connected services — do not hardcode API calls.
-- For browser testing: use playwright or chrome-devtools MCP tools if available; fall back to `execute` to run test scripts.
-- Flag stale or missing `.ai/` context rather than guessing.
-- Never write secrets or credentials to any file.
-```
-
-**Example for a Next.js + Contentful + Vercel project:**
-```markdown
----
-description: "Support agent for Acme. Use for feature development, debugging, support tasks, and code changes in this Next.js + Contentful + Vercel project. Skills: nextjs, contentful, vercel."
-name: Support Agent
----
-```
-
-**Mirror to Claude Code:** run `bash scripts/mirror-claude.sh`. It points `.claude/agents/support.md` at the `.github/agents/support.agent.md` you just wrote, as a relative symlink. There is no second copy to write and none to keep in step: `standards/agentic-project-standard.md` -> Claude Code mirrors.
-
-`name:` is the display form (`Support Agent`): it is the string a human reads in both pickers, and the filename already carries the machine-facing role. Claude Code documents lowercase-and-hyphens, but a name with spaces and capitals registers and loads: verified in a client repository, where `Maintainer Agent` and `Support Agent` both appear as loadable subagents. VS Code Copilot default-scans both `.github/agents/` and `.claude/agents/`, so the agent is listed twice; it is literally one file, so the two rows carry the same name. This can't be disabled; hide the extra row via VS Code's *Agent Customizations* eye icon if it bothers a developer.
+Do not create `.github/agents/support.agent.md`. Its body summarised the project context, which
+moves to the central context repository at the handoff, so a project copy is the one that drifts.
 
 ## Output Format
 
@@ -547,8 +502,8 @@ Before finalising, verify:
 6. Existing agentic configuration is documented in `agent-registry.md`.
 7. A skill file exists for every technology that passed the skill filter in Step B, vendor-fetched or generated from code evidence, and for no other technology.
 8. `codebase-overview` skill emitted with `[PROJECT_NAME]` substituted, and its generated block carries the repository tree, stack table, placement conventions and high-fan-in symbols copied from `.ai/architecture.md` unchanged.
-9. `support.agent.md` created, with no `tools:` line: the agent has every tool the harness offers, MCP servers included.
-10. `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, and `.claude/agents/support.md` symlinks to `.github/agents/support.agent.md`.
+9. No support agent created, and no skill names a `.ai/` file or another skill.
+10. `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`.
 11. `architecture.md` carries the repository tree, the technology stack table, the high-fan-in symbol table, and the placement conventions; `project-context.md` restates none of them.
 12. Every `.ai/` file passes `standards/writing-rules.md`: no banned sentence from §1, no fact owned by another file restated (§2, owners in §4b), no tool-enforced rule that fails the §3 test, and an ownership header from §4 at the top of each. `bash scripts/validate.sh .` reports no Single-Source Integrity failure.
 
@@ -571,10 +526,6 @@ Output after all files are written:
 
 ### MCP servers added
 [list any entries merged into .vscode/mcp.json, .cursor/mcp.json, .mcp.json — or "None"]
-
-### Support agent
-[created / already present]
-[.claude/agents/support.md -> ../../.github/agents/support.agent.md, created by scripts/mirror-claude.sh]
 
 ### Existing agentic setup found
 [list files found in step 0, or "None"]

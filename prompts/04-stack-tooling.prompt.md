@@ -125,9 +125,6 @@ description: "Use when working with <technology> in [PROJECT_NAME]: [specific sc
 
 # <Technology Display Name>
 
-## Project Context
-Read `.ai/architecture.md` for how <technology> fits this project.
-
 ## Key Files
 - [actual paths found during discovery]
 
@@ -140,8 +137,9 @@ Read `.ai/architecture.md` for how <technology> fits this project.
 - **Real paths only.** Every path must be confirmed with `ls`/glob. Do not invent route segments like `app/[locale]/` unless that directory exists.
 - **Copy, don't imagine.** Base each code sample on a real call site found in the repo; cite the file you took it from.
 - **No empty sections.** Every heading has real content or is omitted. Do not emit stub headings.
-- **Don't restate global constraints.** A rule already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) gets a pointer, or at most one **constraint line**: one line, the instruction, with the owning `.ai/` file named inline (``Tailwind is v3, not v4: `dependencies.md` is authoritative.``). No owner named, or two lines on one topic, makes it a restatement. `standards/writing-rules.md` §2 is the test and §4b says who owns what.
-- **A skill body carries no command cheatsheet, no toolchain version floor, and no deploy, environment or container-image detail.** `onboarding.md` owns the cheatsheet, `dependencies.md` the version floors, `operational-context.md` the deploy and image facts. A skill that lists the project's commands is the third drifted copy of that list; point at the owner instead. The one exception is the generated block in `codebase-overview`, which a script rewrites from `.ai/architecture.md`.
+- **State facts, never point at context.** A skill never names a `.ai/` file, the `codebase-overview` skill or any other skill. After the handoff the context lives in the central context repository and only `AGENTS.md` points there, so a path like `.ai/architecture.md` in a skill is a dead link in the project. Write the fact itself in one line, or leave it out.
+- **Don't restate global constraints.** A rule already in `.ai/` or `AGENTS.md` (commits, `process.env`, deploy target) is left out, or kept as one line stating the instruction (``Tailwind is v3, not v4``). Two lines on one topic make it a restatement. `standards/writing-rules.md` §2 is the test and §4b says who owns what.
+- **A skill body carries no command cheatsheet, no toolchain version floor, and no deploy, environment or container-image detail.** `onboarding.md` owns the cheatsheet, `dependencies.md` the version floors, `operational-context.md` the deploy and image facts. A skill that lists the project's commands is the third drifted copy of that list; leave it out. The one exception is the generated block in `codebase-overview`, which the central maintainer rewrites from `.ai/architecture.md`.
 - **State scope precisely.** A skill's frontmatter scope and body must match — don't add off-topic sections (e.g. Docker build steps inside a framework skill) unless the skill's stated scope covers them.
 
 **Expectation:** a common stack such as React plus Next.js usually ends with few skills: `codebase-overview`, the two the standard installs, and one per technology that passed the filter at the top of Step 9. A skill count that tracks the dependency list means the filter was not applied.
@@ -163,6 +161,10 @@ owns it.
 generated block is a derived copy that is rewritten whenever those sections change (Maintainer Agent
 Phase 4d), so an agent whose harness loads skills but not `.ai/` still gets the structure. Editing
 the generated block instead of `.ai/architecture.md` is the failure mode.
+
+This skill is written here so the handoff can carry it: `scripts/onboard-central.sh` imports it into
+the central context repository next to `.ai/`, and Phase 5 removes it from the project. It is
+context, not a stack skill, so it never stays in the project.
 
 ## Step 9.4: Mirror Skills to Other Clients
 
@@ -244,53 +246,18 @@ Config in `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`.
 
 If the section already exists, merge new entries — never remove existing rows.
 
-## Step 11: Generate Support Agent
+## No project support agent
 
-Create `.github/agents/support.agent.md` if not already present.
-
-**No `tools:` line.** Both Copilot and Claude Code read an agent without one as having every
-available tool, MCP servers included, so the enumerated list added nothing and went stale as soon as
-a server was added. Leaving it out is also what makes the source valid for both harnesses, which is
-what lets the Claude Code mirror be a symlink rather than a second file.
-
-Do list what the project has in the body, where it is documentation rather than a restriction:
-- installed skills, from `.agents/skills/`
-- MCP servers, from `.vscode/mcp.json`, `.cursor/mcp.json` and `.mcp.json`
-
-**Agent content from template:**
-- Use `templates/agents/support.template.md`
-- Substitute all `[PLACEHOLDER]` values in the body:
-  - `[PROJECT_NAME]` → from `.ai/project-context.md`
-  - `[TECH_STACK_SUMMARY]` → e.g., "Node.js + Next.js + PostgreSQL + Vercel"
-  - `[SKILL_LIST]` → bulleted list of installed skills with brief descriptions
-  - `[MCP_SERVERS_TABLE]` → table of MCP servers (name, tools, purpose)
-  - `[TECH_STACK_DETAILS]` → detailed tech stack from `.ai/architecture.md`
-  - `[CONSTRAINTS]` → notable items from `.ai/` files (monorepo layout, deploy constraints, gotchas)
-- Leave the frontmatter at `description` and `name: Support Agent`. Add no `tools:` line.
-
-**Quality checks:**
-- All MCP servers in config files are listed in agent
-- No MCP server tool name conflicts (if 2 servers have same tool name, disambiguate)
-- Agent references `.ai/` context files explicitly
-- Behaviour rules emphasize evidence-first and MCP tool usage
-
-### Mirror to Claude Code
-
-Claude Code auto-loads subagents from `.claude/agents/`. Do not write that file: link it to the source you just wrote by running
-
-```bash
-bash scripts/mirror-claude.sh
-```
-
-It creates `.claude/agents/support.md` as a relative symlink to `../../.github/agents/support.agent.md`. There is no second copy of the support agent, so there is nothing to keep in step and nothing that can drift: in a client repository the second copy had decayed into a wrapper telling the reader to go and read the real file.
-
-`name: Support Agent` is the display form: it is what a human reads in both pickers, while the filename carries the machine-facing role. Claude Code documents lowercase-and-hyphens, but a name with spaces and capitals registers and loads, verified in a client repository and again on this branch's fixture. VS Code Copilot default-scans both folders and lists the agent twice; it is one file, so the two rows carry the same name.
+The standard no longer generates `.github/agents/support.agent.md`. Its body was a summary of the
+project context, which lives in the central context repository after the handoff, so a project copy
+was the one that drifted. Skills and MCP servers are discovered by every harness on their own.
 
 ## Verification
 
 - [ ] No skill for a general-purpose framework or tool the model already knows (filter at the top of Step 9); a skill file exists for every technology that passed it, and every skipped technology is named with its reason in this run's completion summary
 - [ ] Every code sample in a generated skill uses only symbols/imports verified to exist (grep/exports), and every path was confirmed with `ls`/glob: no invented APIs or route segments
-- [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/` or `AGENTS.md` (pointer only)
+- [ ] No generated skill has empty/stub sections, and none restates global constraints already in `.ai/` or `AGENTS.md` (left out, or one line stating the instruction)
+- [ ] No skill names a `.ai/` file, `codebase-overview` or another skill: `grep -rn '\.ai/\|codebase-overview' .agents/skills --include=SKILL.md | grep -v '^.agents/skills/codebase-overview/'` is empty
 - [ ] Testing skill installed only if test files exist AND framework is detected, not otherwise
 - [ ] No generic `test-driven-development` skill installed (it's methodology-prescriptive, not evidence-based)
 - [ ] `codebase-overview` skill emitted, `[PROJECT_NAME]` substituted, and its generated block carries the repository tree, stack table, placement conventions and high-fan-in symbols verbatim from `.ai/architecture.md`
@@ -298,13 +265,12 @@ It creates `.claude/agents/support.md` as a relative symlink to `../../.github/a
 - [ ] MCP servers installed where the registry has an entry; anything not installed is named in this run's completion summary
 - [ ] MCP config written to all 3 IDE files
 - [ ] `.ai/agent-registry.md` `## MCP Servers` section updated with installed servers
-- [ ] Project support agent created
-- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, and `.claude/agents/support.md` symlinks to `.github/agents/support.agent.md`
+- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`
 - [ ] Nothing under `.claude/` was written or edited by hand
 
 ## Completion Signal
 
 ```
 ✓ Phase 4 complete: Stack-specific tools installed.
-  Migration workflow complete. Run scripts/validate.sh to verify compliance.
+  Next: hand off to the central context repository (migrate.prompt.md, Phase 4b).
 ```

@@ -10,21 +10,39 @@ You are running the **DEPT Managed Services Migration** workflow. This installs 
 
 ## What You'll Get
 
+The project context is written once, in this checkout, and then handed to the central context
+repository `dept/beno-dept-ms-agentic-context`. The project keeps only what developers use day to day.
+
 After this workflow completes:
-- ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding)
-- ✓ Discovery and Maintainer agents installed and ready to use: one authored file each in `.github/agents/`, linked into `.claude/agents/` so Claude Code sees the same file
-- ✓ Migration slash commands installed for Copilot (`@workspace /ms-migration`), Claude Code + Cursor (`/ms-migration` from `.claude/commands/` + `.cursor/commands/`); Codex runs it by reading the prompt file referenced in `AGENTS.md`
-- ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification), referenced as agent guidance, not installed as files
-- ✓ Every harness wired to `.ai/` context through one authored file: `AGENTS.md` (Copilot on github.com and in VS Code, Codex, Cursor) and `CLAUDE.md`, which imports it (Claude Code)
+- ✓ Complete `.ai/` documentation (9 files covering architecture, operations, standards, and onboarding), generated here and imported into `projects/<org>__<repo>/.ai/` of the central repository by an onboarding pull request there. `.ai/` is gitignored in the project and never committed to it
+- ✓ The central repository maintains that context from then on (its *Maintain context* workflow runs the Maintainer from this standard), so the project gets no maintainer agent, no maintainer workflow and no secrets
+- ✓ `AGENTS.md` from `templates/AGENTS.central.template.md`: the one file in the project that points at the context. `CLAUDE.md` imports it
 - ✓ Confluence handover pages created (or staged as drafts when Confluence access is unavailable)
 - ✓ Client **key features** (Datadog Synthetic tests) fetched by `client:<name>` tag and added to `.ai/project-context.md` + the Confluence Overview page (or `[To fill in]` when Datadog access is unavailable)
-- ✓ Stack-specific skills (Phase 4) and MCP servers installed
-- ✓ Optional biweekly Maintainer cron (`.github/workflows/maintainer.yml`) — offered, never forced
-- ✓ Support agent configured
+- ✓ Stack-specific skills and MCP servers installed. Skills state facts and never name a context file
+- ✓ Optional Dependabot config, patch auto-merge and branch hygiene
+- ✓ Every standard-owned file removed again in Phase 5: agents, phase prompts, `scripts/validate.sh`, `standards/`, `config/standard-version.yml` and the context skills
+- ✓ Superpowers disciplines applied (evidence-first, systematic-debugging, verification), referenced as agent guidance, not installed as files
 - ✓ Graphify structural pre-pass attempted before Discovery
 - ✓ Discovery Agent explicitly used for the discovery phase
 
 **Time estimate:** 15-30 minutes depending on repository complexity.
+
+## Stop if this project is not new
+
+This workflow is for a project with no context yet. Check before Phase 1:
+
+```bash
+grep -qs beno-dept-ms-agentic-context AGENTS.md && echo "already on the central context repository"
+git ls-files .ai | head -1
+```
+
+- `AGENTS.md` already names `beno-dept-ms-agentic-context`: the project is cut over. Stop. Context
+  changes are a pull request on that repository.
+- `git ls-files .ai` prints a file: the project migrated under an older standard and still holds
+  its own `.ai/` (dual period). Stop. Cut it over with the checklist in the central repository's
+  README instead, which keeps its history.
+- `dept/beno-dept-ms-agentic-context` `projects.yml` already lists this repository: stop, same reason.
 
 ## Critical Disciplines
 
@@ -244,7 +262,7 @@ https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/
 ### Phase 1: Installation
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/01-install.prompt.md`
 **Does:** Fetches agents, installs local phase prompts, installs Graphify helper + validator script, and installs the fixed `confluence-axi` skill (stack-specific skills come in Phase 4). Builds the Claude Code mirrors with `scripts/mirror-claude.sh` (`.claude/skills` as a symlink to `.agents/skills`, one symlink per agent in `.claude/agents/`, and the prompt mirrors in `.claude/commands/` and `.cursor/commands/` generated from `.github/prompts/`), so Copilot, Claude Code and Cursor all auto-load them.
-**Verify before continuing:** `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` and `.agents/skills/context-ownership/` exist and resolve through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
+**Verify before continuing:** `.gitignore` has a `.ai/` line, `.github/agents/` has 2 files (mirrored in `.claude/agents/`), `.github/prompts/` has `migrate` + `01-04` (mirrored in `.claude/commands/`), `scripts/graphify-bootstrap.sh`, `scripts/validate.sh` and `standards/writing-rules.md` exist, `.agents/skills/confluence-axi/` and `.agents/skills/context-ownership/` exist and resolve through the `.claude/skills` symlink, `scripts/mirror-claude.sh` exists. Other (stack) skills are added in Phase 4.
 
 ### Phase 1a: Dependabot configuration (ask first, default yes)
 **Does:** Generates `.github/dependabot.yml` from the lockfiles actually present (`scripts/gen-dependabot.sh`, install-if-absent: it never overwrites a hand-tuned config). Inline (no separate prompt file). **Always ask**, defaulting to yes: most repos want it, but some already run a different update tool or have a delivery lead who wants to decide update cadence separately.
@@ -282,31 +300,38 @@ Majors are not part of this decision: the generated config ignores `semver-major
 
 ### Phase 3: Integration
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/03-integrate.prompt.md`
-**Does:** Writes the two wiring files (`AGENTS.md` and its `CLAUDE.md` import) so every harness finds `.ai/`, creates Confluence documentation
-**Verify before continuing:** `AGENTS.md` routes into `.ai/` with no unfilled placeholders, `CLAUDE.md` contains the `@AGENTS.md` import; Confluence pages published via the `confluence-axi` skill (or staged as `.ai/confluence/` drafts if access was unavailable, see Preflight)
+**Does:** Writes the two wiring files (`AGENTS.md` from `templates/AGENTS.central.template.md`, and its `CLAUDE.md` import), creates Confluence documentation
+**Verify before continuing:** `AGENTS.md` points at `projects/<org>__<repo>/.ai/` in the central repository with no unfilled placeholders, `CLAUDE.md` contains the `@AGENTS.md` import; Confluence pages published via the `confluence-axi` skill (or staged as `.ai/confluence/` drafts if access was unavailable, see Preflight)
 
 ### Phase 4: Stack-Aware Tooling
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/04-stack-tooling.prompt.md`
-**Does:** Detects tech stack, installs skills + MCP servers, creates the support agent, then runs `scripts/mirror-claude.sh` to link `.claude/agents/support.md` to it. Nothing is copied: both Claude mirrors are symlinks.
-**Verify before continuing:** MCP config in all 3 IDEs, the support agent exists and `.claude/agents/support.md` resolves to it, `.claude/skills` resolves to the installed skills
+**Does:** Detects tech stack, installs skills + MCP servers, writes the `codebase-overview` skill for the handoff, then runs `scripts/mirror-claude.sh`. No support agent.
+**Verify before continuing:** MCP config in all 3 IDEs, `.claude/skills` resolves to the installed skills, no skill names a `.ai/` file or another skill
 
-### Phase 4b: Maintainer Automation (ask the user)
+### Phase 4b: Hand off to the central context repository
 
-**Does:** Optionally installs the scheduled Maintainer workflow so `.ai/` stays fresh without anyone remembering to run it. Inline (no separate prompt file). **Always ask first** — some repos have their own scheduling, restricted Actions, or no `ANTHROPIC_API_KEY` secret.
+**Does:** Moves the context out of this checkout into `dept/beno-dept-ms-agentic-context` with one
+pull request there. Inline (no separate prompt file). Needs `gh` logged in with write access to that
+repository.
 
-Ask, verbatim in spirit:
+1. Run `bash scripts/validate.sh .` and resolve every FAIL. This is the last time the context is
+   checked in the project; after the handoff the central workflow checks it.
+2. Ask who owns the context (GitHub handles of the project's tech lead and one developer) and
+   whether Confluence was published in Phase 3.
+3. Run, from the project root:
 
-> Install the Maintainer cron (GitHub Actions, runs every 2 weeks and opens a PR only when docs actually drifted)? [yes / no]
+   ```bash
+   bash scripts/onboard-central.sh <org>/<repo> --owners "@lead @dev"
+   ```
 
-If **yes**:
-1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/maintainer.yml` → write to `.github/workflows/maintainer.yml`. If that file already exists, show the diff and ask before overwriting.
-2. Tell the user which repo secrets it needs, and that the workflow is inert until they exist:
-   - `ANTHROPIC_API_KEY` — required.
-   - `CONFLUENCE_USERNAME` + `CONFLUENCE_API_TOKEN` — only if this repo syncs `.ai/` to Confluence. If it does not, delete the "Build Atlassian MCP config" step, the three `CONFLUENCE_*` env lines, the `--mcp-config` flag, and `mcp__atlassian` from `--allowedTools`.
-3. Adjust the workflow's commit/PR title convention to this repo (e.g. prepend the issue key if commitlint requires one).
-4. Cadence is the 1st and 15th at 09:00 UTC. Change the `cron:` line if the team wants a different rhythm.
+   Add `--no-confluence-sync` when Phase 3 only staged drafts. It imports `.ai/` and
+   `.agents/skills/codebase-overview/`, lists the project as `state: final` in `projects.yml`, adds
+   the CODEOWNERS line and prints the pull request URL. `--dry-run` shows the commit without pushing.
+4. Record the URL for the completion summary and this project's pull request description. Do not
+   merge it: its reviewers are the central repository's owners.
 
-If **no**: skip it and note in the summary that the Maintainer runs on demand only (`@agent maintainer` / run the agent manually after each sprint).
+The project does not get `.github/workflows/maintainer.yml` and needs no `ANTHROPIC_API_KEY` or
+`CONFLUENCE_*` secret: the central repository holds them.
 
 ### Phase 4c: Dependabot patch auto-merge (ask first, default yes)
 **Does:** Installs a workflow that merges Dependabot's patch-level pull requests once every check on them is green. Minor and major bumps stay a human decision. Inline (no separate prompt file). **Always ask**, defaulting to yes, and ask the delivery lead, not only the developer running the migration: this hands a bot the right to move code into the base branch. The workflow ships dormant either way: its job only runs when the Actions variable `DEPENDABOT_AUTO_MERGE` is `true` (Settings > Secrets and variables > Actions > Variables), so the ask here decides whether the file exists at all, and the variable is the day-to-day on/off switch a team flips later without a new PR. Do not use the native `Allow auto-merge` setting for this: developers use it for their own pull requests, so it is already on in most repositories.
@@ -366,51 +391,45 @@ If **yes**:
 
 If **no**: skip it. Stale branches stay a manual cleanup.
 
-### Phase 5: Cleanup (recommended)
-**Does:** Removes one-time migration artifacts so the repo keeps only what has ongoing value. This is inline (no separate prompt file). **Ask the user before deleting** — some teams prefer to keep the migration tooling in-repo for cheap re-runs.
+### Phase 5: Remove the standard's files (required)
 
-The migration installs both **runtime** artifacts (used forever) and **install-time** artifacts (used once). After a successful, verified migration, the install-time set is dead weight.
+**Does:** Removes everything the standard installed for the migration. The context now lives in the
+central repository, so these files would only be stale copies or tools pointed at a `.ai/` that is
+not committed. Inline (no separate prompt file). Run it only after Phase 4b printed a pull request URL.
 
-**Keep (runtime — never remove):**
-- `.ai/` (9 files + `.meta.yml`) — single source of truth
-- `.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md` — ongoing drift maintenance
-- `.github/agents/support.agent.md` + `.claude/agents/support.md`
-- Wiring: `AGENTS.md` (the authored file) and `CLAUDE.md` (its import)
-- `standards/writing-rules.md`: the rules the Maintainer applies on every run
-- `.agents/skills/context-ownership/`: the per-section procedure for those rules, applied on every documentation edit
-- Stack skills under `.agents/skills/` (including `confluence-axi`, used by the Maintainer to re-sync Confluence), reached by Claude Code through the `.claude/skills` symlink
-- Datadog MCP (in the MCP configs) — used to fetch/refresh key features via browser OAuth
+**Remove:**
+- `.ai/` from the working tree (it is gitignored; the central pull request carries it). Keep the `.gitignore` line
+- `.github/agents/` (discovery, maintainer) and `.claude/agents/`
+- `.github/prompts/migrate.prompt.md`, `01` to `04`, and their mirrors in `.claude/commands/ms-*.md` and `.cursor/commands/ms-*.md`
+- `scripts/validate.sh`, `scripts/mirror-claude.sh`, `scripts/graphify-bootstrap.sh`, `scripts/onboard-central.sh`, `scripts/confluence-adf.py`
+- `standards/`, `config/standard-version.yml`, `config/change-impact-matrix.yml`, `docs/confluence-page-standard.md`, `docs/confluence-layout.md`
+- `.agents/skills/codebase-overview/`, `.agents/skills/confluence-axi/`, `.agents/skills/context-ownership/`
+- `.graphifyignore` and `graphify-out/`. **Leave the `graphify-out/` line in `.gitignore`**
+
+**Keep:**
+- `AGENTS.md` and `CLAUDE.md`
+- Stack skills under `.agents/skills/` and the `.claude/skills` symlink
 - MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
-- `scripts/validate.sh` — Maintainer/CI compliance check
-- `scripts/mirror-claude.sh` — creates and repairs the Claude Code mirror symlinks after an agent or skill is added or removed
-- `scripts/gen-dependabot.sh` — regenerates `.github/dependabot.yml` from the lockfiles actually present, and `scripts/install.sh` runs it on every `--update` when the repository has one (an absent file means Dependabot was declined, and stays absent). It is a runtime artifact, not a bootstrap one: deleting it leaves the repository with no way to refresh its update targets when a package or solution moves
-- `.github/workflows/maintainer.yml` — if installed in Phase 4b
+- `.github/dependabot.yml` and `scripts/gen-dependabot.sh`, the auto-merge workflow, `.github/workflows/branch-hygiene.yml` and `scripts/branch-hygiene.sh`, when installed in 1a, 4c, 4d. `scripts/gen-dependabot.sh` is how the repository refreshes its update targets when a package or solution moves, so it stays even though the rest of the standard's scripts go
 
-**Safe to remove after a successful migration (ask, then delete):**
-- `.ai/confluence/*.md` drafts — **only once published** (`.meta.yml` `confluence.published: true` with real page `id`s). The Maintainer syncs Confluence from the `.ai/` files via `sync_map`, never from these drafts.
-- Discovery agent (`.github/agents/discovery.agent.md`, `.claude/agents/discovery.md`) — needed only for initial bootstrap / a full re-discovery; the Maintainer handles incremental updates and does not invoke it. Keep only if you want a cheap re-bootstrap.
-- Phase prompts `01`–`04` and their command mirrors (`.claude/commands/ms-install|ms-discover|ms-integrate|ms-stack-tooling.md`, same under `.cursor/commands/`) — one-time steps that otherwise clutter the slash-command palette permanently.
-- The migration entry point itself: `.github/prompts/migrate.prompt.md` and its `.claude/commands/ms-migration.md` and `.cursor/commands/ms-migration.md` mirrors — one-time too. A full re-run is started from the standards repository bootstrap (`bash <(curl -fsSL .../scripts/install.sh) .`), which reinstalls a current copy of the prompt, so a vendored copy is a stale slash command in the palette forever.
-- `scripts/graphify-bootstrap.sh` **and `.graphifyignore`** — the one-time structural pre-pass and the exclude list it writes. Delete the two together: `.graphifyignore` is read by the Graphify CLI, not by the script, so keeping it after the script is gone leaves an inert config file for a tool the repository no longer carries, and a later re-run bootstraps a fresh copy from the standards repository anyway. Keep both only if periodic re-graphing is planned.
-- `graphify-out/` — ephemeral. **Leave the `graphify-out/` line in `.gitignore`** either way: it is one line, and it is what stops a later re-graph committing a multi-megabyte `graph.json`.
+**Delete only what this migration created.** Before removing a path, run `git ls-files -- <path>`
+against the base branch: anything already tracked there is project content and stays. This is the
+case the cleanup got wrong on dtnl-keter-webshop#2124, where `graphify-out/` was a committed
+knowledge graph with its own tooling. Where the repository owns it, keep it and add no ignore line.
 
-**Delete only what this migration created.** Before removing any of the three, run `git log --oneline -1 -- <path>` (or `git ls-files -- <path>`) against the base branch: anything that was already tracked there is project content and stays, however ephemeral the standard calls it. This is the case the cleanup got wrong on dtnl-keter-webshop#2124, where `graphify-out/` was a committed knowledge graph with its own `README.md`, `query_graph.py` and `/graphify` command — the migration ignored it, deleted ten tracked files, and none of that belonged to it. Where the repository owns the graph: keep `graphify-out/`, keep its `.graphifyignore`, and add no `graphify-out/` line to `.gitignore`.
+**Gates (both must print nothing):**
 
-**A later version refresh does not undo this cleanup.** `bash scripts/install.sh . --update` treats the migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and `scripts/graphify-bootstrap.sh` as bootstrap-only and installs none of them in a project that has a `.ai/.meta.yml`, naming what it skipped in its summary. The runtime set above is refreshed as usual.
+```bash
+git ls-files | grep -E '^(\.ai/|\.github/agents/|\.claude/agents/|standards/|config/standard-version)'
+git grep -n -e '\.ai/' -e 'codebase-overview' -- '*.md' ':!AGENTS.md'
+```
 
-**Do not remove** anything if the migration reported WARNINGS/NOT COMPLIANT or Confluence was only staged: resolve those first.
+The second gate is the rule from the central repository's cutover checklist: only `AGENTS.md`
+names the context. A skill or doc that still names `.ai/...` gets the fact written into it, or the
+line removed.
 
-**Remove symmetrically.** `scripts/validate.sh` compares *file counts* between each source directory and its mirror and warns if they diverge. So delete an artifact from **all** of source + mirrors together, with one exception:
-
-- **Agents:** delete from `.github/agents/` **and** `.claude/agents/` (for example the discovery agent). The `.claude/` entry is a symlink, so once its source is gone it is a broken link, and that is exactly the orphan `scripts/mirror-claude.sh` reports and refuses to delete for you.
-- **Prompts:** delete each phase prompt from `.github/prompts/`, `.claude/commands/` **and** `.cursor/commands/`.
-- **Skills:** delete from `.agents/skills/` **only**. `.claude/skills` is a single symlink to that directory, so the removal is already symmetric and there is nothing on the mirror side to delete. Deleting the symlink itself is what breaks the count, so leave it alone.
-
-Deleting from one side only, apart from the skills case above, will introduce a new "mirror out of sync" warning.
-
-**Nothing about this cleanup is written into `.ai/`.** No "removed during Phase 5" note, no *Cleanup* section, no row in `agent-registry.md` for something that is no longer there. `agent-registry.md` lists what is present after the cleanup, and the deletions are described in this run's completion summary and in the pull request. `standards/writing-rules.md` §1 is the rule.
-
-**Verify before finishing:** re-run `scripts/validate.sh .` after cleanup: it must still report the same status or better. Removing install-time artifacts must not drop any COMPLIANT check or add a warning.
+**`install.sh --update` will not undo this.** It sees `AGENTS.md` pointing at the central
+repository and exits without writing.
 
 ---
 
@@ -436,7 +455,7 @@ After all phases complete, output:
 - Confidence: [average % across files]
 
 ### Phase 3: Integration
-- AGENTS.md (Copilot, Codex, Cursor): [created / appended / present]
+- AGENTS.md (central pointer): [created / replaced]
 - CLAUDE.md (@AGENTS.md import): [created / import added / present]
 - Confluence: [created / staged as drafts / skipped, with the reason]
 
@@ -444,11 +463,10 @@ After all phases complete, output:
 - Technologies detected: [count]
 - Skills installed: [list or "None matched"] (reached by Claude Code through the .claude/skills symlink)
 - MCP servers added: [list or "None"]
-- Support agent: [created / present] (linked as .claude/agents/support.md)
 
-### Phase 4b: Maintainer Automation
-- .github/workflows/maintainer.yml: [installed (biweekly) / declined — on-demand only / already present]
-- Secrets still needed: [ANTHROPIC_API_KEY, CONFLUENCE_* / none]
+### Phase 4b: Central handoff
+- Onboarding PR: [URL on dept/beno-dept-ms-agentic-context]
+- Owners: [handles], confluence_sync: [true / false, drafts only]
 
 ### Phase 4c: Dependabot patch auto-merge
 - .github/workflows/dependabot-auto-merge.yml: [installed, dormant until DEPENDABOT_AUTO_MERGE=true / declined]
@@ -457,9 +475,9 @@ After all phases complete, output:
 ### Phase 4d: Branch hygiene
 - .github/workflows/branch-hygiene.yml + scripts/branch-hygiene.sh: [installed, dry run only until schedule is trusted / declined]
 
-### Validation
+### Validation (before the handoff)
 Run: scripts/validate.sh .
-Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
+Result: [COMPLIANT / WARNINGS]
 
 ### Graphify pre-pass
 - Install path: [already installed / uv / pipx / unavailable]
@@ -467,18 +485,15 @@ Result: [COMPLIANT / WARNINGS / NOT COMPLIANT]
 - `graphify-out/` available to Discovery: [yes / no]
 - `graphify-out/` owned by the repository: [no / yes — left untouched, not ignored, not deleted]
 
-### Phase 5: Cleanup
-- Confluence drafts removed: [yes / n/a — staged, kept]
-- Discovery agent removed: [yes / kept for re-bootstrap]
-- Phase prompts 01–04 removed: [yes / kept]
-- graphify-bootstrap.sh + .graphifyignore removed: [yes / kept / kept — tracked before this branch]
-- Post-cleanup validate.sh: [COMPLIANT / unchanged]
+### Phase 5: Standard files removed
+- Removed: [list]
+- Kept as project content (tracked before this branch): [list / none]
+- Gates: [both empty]
 
 ### Next Steps
-1. Review .ai/ files and resolve Validation Questions
-2. Commit changes to a feature branch
-3. Open a pull request for team review, carrying the two required links (below)
-4. After merging, run Maintainer Agent after each sprint
+1. Get the central onboarding PR reviewed and merged
+2. Open this project's PR, carrying the two required links (below) and the onboarding PR URL
+3. After both merge, run *Maintain context* once for this project on the central repository
 ```
 
 ### The pull request description
@@ -498,8 +513,9 @@ touched (no application code, no dependencies, no pipeline config), and what it 
 repository link is for whoever wants the mechanics. Put both in the description itself, not in a
 follow-up comment, because a comment is what a reviewer reads after already forming an opinion.
 
-The rest of the description then states what the migration added, the `scripts/validate.sh` result,
-what Phase 5 deleted, and the Validation Questions the team has to answer.
+The rest of the description then links the central onboarding pull request, states what the
+migration added and what Phase 5 deleted, and lists the Validation Questions the team has to answer
+(they are answered on the central pull request, where the context now lives).
 
 ---
 
@@ -514,4 +530,5 @@ what Phase 5 deleted, and the Validation Questions the team has to answer.
 | Graphify produced no graph.json | Set an LLM key (`OPENAI_API_KEY` etc.) and rerun `scripts/graphify-bootstrap.sh .`; code-only fallback still needs the bootstrap's fixed `.graphifyignore` (bare `*.md`, not `**/*.md`) |
 | MCP tools not callable after Phase 4 | MCP config loads only on tool/IDE restart; expected — it's for the next session |
 | No skills found for stack | Expected for niche tech; MCP registry is the primary value |
-| validate.sh reports warnings | Run Maintainer Agent to address quality issues |
+| validate.sh reports warnings | Resolve them before Phase 4b; after the handoff the central repository's workflow checks the context |
+| `onboard-central.sh` says `.ai/` is tracked | The project migrated under an older standard: use the central repository's cutover checklist |

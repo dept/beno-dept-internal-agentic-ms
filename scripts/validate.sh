@@ -793,6 +793,30 @@ fi
 
 echo ""
 
+# ── Context pointers ───────────────────────────────────────
+# Only AGENTS.md names the context. A skill or instruction file that says "read .ai/x.md" breaks the
+# day the context moves to the central repository, and duplicates AGENTS.md until then. A warning,
+# not a failure: projects in the dual period still carry such lines. The standard's own agents and
+# prompts and its three context skills (codebase-overview, confluence-axi, context-ownership) are
+# left out: they describe .ai/ itself.
+if [[ "$CENTRAL" = false ]]; then
+  echo -e "${BLUE}── Context Pointers ──${NC}"
+  ptr_hits="$(cd "$PROJECT_DIR" && grep -rln '\.ai/' --include='*.md' .agents/skills .github CLAUDE.md 2>/dev/null \
+    | grep -v -e '^\.agents/skills/\(codebase-overview\|confluence-axi\|context-ownership\)/' \
+        -e '^\.github/agents/' -e '^\.github/prompts/' || true)"
+  if [[ -n "$ptr_hits" ]]; then
+    while IFS= read -r f; do
+      echo -e "  ${YELLOW}△${NC} ${f} names a .ai/ path"
+      WARNED=$((WARNED + 1))
+    done <<< "$ptr_hits"
+    echo -e "    ${YELLOW}Fix:${NC} write the fact into the file, or drop the line. Only AGENTS.md points at the context."
+  else
+    echo -e "  ${GREEN}✓${NC} only AGENTS.md names the context"
+    PASSED=$((PASSED + 1))
+  fi
+  echo ""
+fi
+
 # ── Summary ────────────────────────────────────────────────
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 TOTAL=$((PASSED + WARNED + FAILED))

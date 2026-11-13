@@ -142,8 +142,8 @@ Apply the skill filter at the top of Step 9 of `prompts/04-stack-tooling.prompt.
 4. Check DEPT MCP registry for servers
 5. Fallback to public MCP registry
 6. Write MCP config to all three IDE files
-7. Generate the support agent (no `tools:` line: an agent without one has every available tool)
-8. Run `scripts/mirror-claude.sh`. Claude Code reads `.claude/agents/` and `.claude/skills/`, not `.github/` or `.agents/`, and neither mirror is a file: the script points `.claude/skills` at `.agents/skills` and `.claude/agents/support.md` at `.github/agents/support.agent.md`, both relative symlinks. **Never write a file under `.claude/`; the rule is stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker; it is one file, so the rows read as one agent; skills/commands don't duplicate.
+7. No support agent: the context it summarised moves to the central repository at the handoff
+8. Run `scripts/mirror-claude.sh`. Claude Code reads `.claude/agents/` and `.claude/skills/`, not `.github/` or `.agents/`, and neither mirror is a file: the script points `.claude/skills` at `.agents/skills` as a relative symlink. **Never write a file under `.claude/`; the rule is stated once in `standards/agentic-project-standard.md` -> Claude Code mirrors.** Note: VS Code Copilot default-scans both agent folders, so agents show twice in its picker; it is one file, so the rows read as one agent; skills/commands don't duplicate.
 
 ## Quality Gates
 
@@ -157,6 +157,6 @@ Before declaring complete:
 - [ ] `bash scripts/validate.sh .` reports no Single-Source Integrity failure
 - [ ] Every symbol/path/code sample in each generated skill re-verified against real source (no invented APIs, no unchecked paths, no empty sections)
 - [ ] MCP servers installed where available
-- [ ] Support agent created
-- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`, `.claude/agents/support.md` symlinks to its `.github/` source
+- [ ] No support agent, and no skill names a `.ai/` file or another skill
+- [ ] `scripts/mirror-claude.sh` run: `.claude/skills` symlinks to `.agents/skills`
 - [ ] No secrets in any generated file
