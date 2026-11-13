@@ -81,6 +81,15 @@ if [[ ! -d "$TARGET_DIR/.git" ]]; then
   echo -e "${YELLOW}Continuing anyway.${NC}"
 fi
 
+# A project cut over to the central context repository keeps none of the standard's files: its
+# context, the maintainer and the scripts all run from dept/beno-dept-ms-agentic-context. Installing
+# here would hand back exactly what the cutover removed, so stop before anything is written.
+if grep -qs 'beno-dept-ms-agentic-context' "$TARGET_DIR/AGENTS.md"; then
+  echo "${TARGET_DIR} is on the central context repository (AGENTS.md points there): nothing to install."
+  echo "Context changes are a pull request on dept/beno-dept-ms-agentic-context."
+  exit 0
+fi
+
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo -e "${BLUE}  DEPT Migration Bootstrap Installer${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
@@ -104,6 +113,7 @@ ARTIFACTS=(
   ".github/agents/discovery.agent.md|agents/discovery.agent.md"
   ".github/agents/maintainer.agent.md|agents/maintainer.agent.md"
   "scripts/graphify-bootstrap.sh|scripts/graphify-bootstrap.sh"
+  "scripts/onboard-central.sh|scripts/onboard-central.sh"
   "scripts/validate.sh|scripts/validate.sh"
   "scripts/mirror-claude.sh|scripts/mirror-claude.sh"
   "scripts/gen-dependabot.sh|scripts/gen-dependabot.sh"
@@ -136,10 +146,19 @@ BOOTSTRAP_ONLY=(
   ".github/prompts/04-stack-tooling.prompt.md"
   ".github/agents/discovery.agent.md"
   "scripts/graphify-bootstrap.sh"
+  "scripts/onboard-central.sh"
 )
 
 MIGRATED=0
 [[ -f "${TARGET_DIR}/.ai/.meta.yml" ]] && MIGRATED=1
+
+# A new project's context goes to the central context repository, never into this one: ignore
+# .ai/ before Phase 2 writes it, so it cannot be committed by accident. A project that already
+# tracks .ai/ (dual period) is left alone.
+if [[ $MIGRATED -eq 0 ]] && ! grep -qsx '/\{0,1\}\.ai/\{0,1\}' "$TARGET_DIR/.gitignore"; then
+  printf '\n# Project context lives in dept/beno-dept-ms-agentic-context\n.ai/\n' >> "$TARGET_DIR/.gitignore"
+  echo -e "  ${GREEN}+${NC} .gitignore: .ai/"
+fi
 # Newline-separated "dest_rel|reason" lines, not an array: bash 3.2 (the macOS default) errors on
 # an empty array expansion under `set -u`.
 BOOTSTRAP_SKIPPED=""
@@ -361,6 +380,7 @@ for required in \
   ".github/agents/maintainer.agent.md" \
   ".claude/agents/maintainer.md" \
   "scripts/graphify-bootstrap.sh" \
+  "scripts/onboard-central.sh" \
   "scripts/validate.sh" \
   "scripts/mirror-claude.sh" \
   "config/change-impact-matrix.yml" \
