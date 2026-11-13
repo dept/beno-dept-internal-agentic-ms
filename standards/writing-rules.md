@@ -325,6 +325,16 @@ floors, not the deploy model. The single exception is `codebase-overview`, whose
 is a script-maintained copy of four named sections of `architecture.md`; it cannot drift because
 nobody hand-edits it, and its scope is those four sections only.
 
+## 4c. Only `AGENTS.md` names the context
+
+No file in the project except `AGENTS.md` names a `.ai/` file, the context repository or the
+`codebase-overview` skill. A skill, an instruction file or a doc states the fact itself in one line,
+or leaves it out. A pointer anywhere else duplicates `AGENTS.md`, and it breaks the day the context
+moves: a new project's context lives in the central context repository from the start, so
+`.ai/architecture.md` in a project skill is a path that does not exist. `scripts/validate.sh` warns
+on it (Context Pointers). The standard's own agents, prompts and context skills are the exception,
+since they describe `.ai/` itself; Phase 5 removes them from a new project.
+
 ---
 
 ## 5. Deleting content that breaks these rules

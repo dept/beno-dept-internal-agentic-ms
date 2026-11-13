@@ -17,6 +17,14 @@ A framework that transforms any repository into an AI-ready project by:
 
 Install the migration toolkit and run the Discovery Agent to auto-generate `.ai/` from your repo.
 
+Since 2.9.0 the context does not stay in the project. The migration writes `.ai/` in a gitignored
+folder, hands it to the central context repository
+[`dept/beno-dept-ms-agentic-context`](https://github.com/dept/beno-dept-ms-agentic-context) with an
+onboarding pull request (`scripts/onboard-central.sh`), and removes the standard's own files again.
+The project keeps `AGENTS.md` (the one pointer to the context), `CLAUDE.md`, its stack skills, MCP
+configs and the optional Dependabot tooling. A project that already tracks `.ai/` is cut over with
+the checklist in the central repository's README instead.
+
 **Step 1** — Install the migration bundle (run once):
 ```bash
 # If you have this repo cloned locally:
@@ -302,10 +310,11 @@ dept-agentic-standards/
 │   ├── 01-install.prompt.md       # Phase 1: Install agents + skills
 │   ├── 02-discover.prompt.md      # Phase 2: Analyze + generate .ai/
 │   ├── 03-integrate.prompt.md     # Phase 3: Wire tools + Confluence
-│   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP + support agent
+│   └── 04-stack-tooling.prompt.md # Phase 4: Skills + MCP servers
 ├── scripts/
 │   ├── install.sh                 # Installs the standard into a target repository
 │   ├── graphify-bootstrap.sh      # Structural pre-pass helper
+│   ├── onboard-central.sh         # Hands a new project's context to the central context repository
 │   ├── mirror-claude.sh           # Creates and repairs the Claude Code mirror symlinks
 │   ├── gen-dependabot.sh          # Seeds .github/dependabot.yml from tracked lockfiles
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
