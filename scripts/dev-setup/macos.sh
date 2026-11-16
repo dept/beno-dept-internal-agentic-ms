@@ -90,8 +90,12 @@ if [[ -d "$CTX/skills/ms-agentic-context" ]]; then
   echo "Skill installed in ~/.claude/skills/ms-agentic-context"
 fi
 # Bookmarks are generated from each project's context, so re-run this script for a fresh file.
-if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks.py" > "$HOME/Downloads/dept-ms-bookmarks.html"; then
+BM="$HOME/Downloads/dept-ms-bookmarks.html"
+if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks.py" > "$BM.tmp"; then
+  mv "$BM.tmp" "$BM"
   TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome: Bookmarks > Import bookmarks and settings > Bookmarks HTML file). It adds a 'DEPT (MS)' folder with every project.")
+else
+  rm -f "$BM.tmp"
 fi
 
 # 9. Manual steps
