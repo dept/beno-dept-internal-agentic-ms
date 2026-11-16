@@ -101,9 +101,10 @@ else
   rm -f "$BM.tmp"
 fi
 
-# 9. Manual steps
+# 9. Manual steps (Cato has no Homebrew cask)
+[[ -d /Applications/CatoClient.app ]] ||
+  TODO+=("Install Cato Client VPN: https://clientdownload.catonetworks.com (ask for an account).")
 TODO+=(
-  "Install Cato Client VPN: https://clientdownload.catonetworks.com (ask for an account)."
   "Run 'claude' once and sign in to Claude Code."
   "Check access: GitHub teams, Jira/Confluence (dept-nl), Keeper, Datadog EU, Slack. See the 'MS Developer Onboarding' page in Confluence."
 )
