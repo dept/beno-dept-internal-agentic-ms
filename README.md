@@ -108,7 +108,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dept/beno-dept-internal-agen
 Installs the toolchain (Homebrew, git, gh, mise, corepack, VS Code, Claude Code, .NET SDKs),
 then, once your GitHub access works, the ms-agentic-context skill and a browser bookmarks file
 generated from every project's context.
-Safe to re-run. Want the starship prompt too? Prefix the command with `WITH_STARSHIP=1`. Access requests and everything else are on the Confluence page
+Safe to re-run. Access requests and everything else are on the Confluence page
 [MS Developer Onboarding](https://dept-nl.atlassian.net/wiki/spaces/MS/pages/21692416055).
 
 ## What Gets Created
