@@ -9,7 +9,7 @@ Enable rapid and consistent onboarding for engineers and AI agents to project de
 - Local run/test instructions
 - Deployment and release orientation
 - Support and escalation orientation
-- **Platform Access Links**: the single home for every URL and access link in the project. GitHub, environment URLs (test/acceptance/prod), Keeper, plus a link for each detected CMS (e.g. Contentful space), cloud/hosting platform (e.g. Azure Portal, AWS/GCP console, Vercel), and design platform (Figma file/project, when Figma clues are present). Include a row only for platforms the project actually uses; use `[Fill in]` when a used platform's exact URL is unconfirmed. `cms.md` and `operational-context.md` point here rather than repeating URLs.
+- **Platform Access Links**: the single home for every URL and access link in the project. GitHub, environment URLs (test/acceptance/prod), Keeper, the Jira board, plus a link for each detected CMS (e.g. Contentful space), cloud/hosting platform (e.g. Azure Portal, AWS/GCP console, Vercel), and design platform (Figma file/project, when Figma clues are present). Include a row only for platforms the project actually uses; use `[Fill in]` when a used platform's exact URL is unconfirmed. `cms.md` and `operational-context.md` point here rather than repeating URLs.
 
 If a package needs a note here, write only what is specific to this file's topic and to that
 package: what a newcomer has to do to run it. The package's purpose is in `architecture.md`.

@@ -199,10 +199,11 @@ Collect and validate these onboarding links from repository evidence:
 - Acceptance environment URL
 - Production environment URL
 - Keeper URL (or equivalent secret-management location for `.env` values)
+- Jira board URL: the project's Jira board. Take the project key from ticket keys in branch names, commit messages and PR titles (e.g. `DTNL-123` gives `DTNL`); a board on a client's own Jira tenant counts too. Write `[Fill in]` when the board URL is not confirmed
 
 Do not ask for a Confluence URL. Confluence pages are created in a fixed DEPT location.
 
-If any GitHub/environment/Keeper link cannot be verified, prompt the user for the missing values.
+If any GitHub/environment/Keeper/Jira link cannot be verified, prompt the user for the missing values.
 
 ### 9) AI Context Wiring
 
