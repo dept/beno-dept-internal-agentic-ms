@@ -35,7 +35,6 @@ brew "mise"
 brew "starship"
 brew "jq"
 cask "visual-studio-code"
-cask "1password"
 cask "claude-code"
 cask "dotnet-sdk@8"
 cask "dotnet-sdk"
@@ -69,29 +68,14 @@ fi
 git config --global init.defaultBranch main
 git config --global pull.rebase false
 
-# 7. SSH through the 1Password agent (if enabled in 1Password > Settings > Developer)
-say "SSH agent"
-OP_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-if [[ -S "$OP_SOCK" ]]; then
-  mkdir -p "$HOME/.ssh"; touch "$HOME/.ssh/config"
-  grep -q "2BUA8C4S2C.com.1password" "$HOME/.ssh/config" || cat >> "$HOME/.ssh/config" <<'EOF'
-
-Host *
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-EOF
-  echo "1Password SSH agent configured."
-else
-  TODO+=("Open 1Password, sign in, enable Settings > Developer > 'Use the SSH agent', create an SSH key, add it to GitHub, then re-run this script.")
-fi
-
-# 8. GitHub login
+# 7. GitHub login (HTTPS through gh, no SSH key needed)
 say "GitHub CLI login"
 if ! gh auth status >/dev/null 2>&1; then
   gh auth login --hostname github.com --git-protocol https --web
 fi
 gh auth setup-git
 
-# 9. MS project context + ms-agentic-context skill for Claude Code
+# 8. MS project context + ms-agentic-context skill for Claude Code
 say "MS agentic context"
 CTX="$HOME/.cache/ms-agentic-context"
 if [[ -d "$CTX/.git" ]]; then
@@ -105,12 +89,12 @@ if [[ -d "$CTX/skills/ms-agentic-context" ]]; then
   cp -R "$CTX/skills/ms-agentic-context" "$HOME/.claude/skills/"
   echo "Skill installed in ~/.claude/skills/ms-agentic-context"
 fi
-if [[ -f "$CTX/onboarding/ms-bookmarks.html" ]]; then
-  cp "$CTX/onboarding/ms-bookmarks.html" "$HOME/Downloads/dept-ms-bookmarks.html"
+# Bookmarks are generated from each project's context, so re-run this script for a fresh file.
+if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks.py" > "$HOME/Downloads/dept-ms-bookmarks.html"; then
   TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome: Bookmarks > Import bookmarks and settings > Bookmarks HTML file). It adds a 'DEPT (MS)' folder with every project.")
 fi
 
-# 10. Manual steps
+# 9. Manual steps
 TODO+=(
   "Install Cato Client VPN: https://clientdownload.catonetworks.com (ask for an account)."
   "Run 'claude' once and sign in to Claude Code."

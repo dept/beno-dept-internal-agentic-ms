@@ -105,8 +105,9 @@ See [docs/graphify-integration.md](docs/graphify-integration.md) for setup and t
 bash <(curl -fsSL https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/dev-setup/macos.sh)
 ```
 
-Installs the toolchain (Homebrew, git, gh, mise, corepack, VS Code, 1Password, Claude Code, .NET SDKs),
-then, once your GitHub access works, the ms-agentic-context skill and the MS browser bookmarks.
+Installs the toolchain (Homebrew, git, gh, mise, corepack, VS Code, Claude Code, .NET SDKs),
+then, once your GitHub access works, the ms-agentic-context skill and a browser bookmarks file
+generated from every project's context.
 Safe to re-run. Access requests and everything else are on the Confluence page
 [MS Developer Onboarding](https://dept-nl.atlassian.net/wiki/spaces/MS/pages/21692416055).
 
