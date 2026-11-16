@@ -32,12 +32,14 @@ eval "$("$BREW" shellenv)"
 
 # 3. Packages: each one only when it is missing, so an existing setup is left alone
 say "CLI tools and apps"
-for f in gh mise jq; do if had "$f"; then skip "$f"; else brew install "$f"; fi; done
-if had code || [[ -d "/Applications/Visual Studio Code.app" ]]; then skip "VS Code"; else brew install --cask visual-studio-code; fi
-if had claude; then skip "Claude Code"; else brew install --cask claude-code; fi
+# A failed install (for example a sudo prompt that was cancelled) becomes a manual step, the rest still runs.
+inst() { brew install "$@" || { warn "brew install $* failed"; TODO+=("Install manually: brew install $*"); }; }
+for f in gh mise jq; do if had "$f"; then skip "$f"; else inst "$f"; fi; done
+if had code || [[ -d "/Applications/Visual Studio Code.app" ]]; then skip "VS Code"; else inst --cask visual-studio-code; fi
+if had claude; then skip "Claude Code"; else inst --cask claude-code; fi
 SDKS=$(had dotnet && dotnet --list-sdks 2>/dev/null || true)
-if grep -q '^8\.' <<<"$SDKS"; then skip ".NET SDK 8"; else brew install --cask dotnet-sdk@8; fi
-if grep -v '^8\.' <<<"$SDKS" | grep -q '^[0-9]'; then skip ".NET SDK (current)"; else brew install --cask dotnet-sdk; fi
+if grep -q '^8\.' <<<"$SDKS"; then skip ".NET SDK 8"; else inst --cask dotnet-sdk@8; fi
+if grep -v '^8\.' <<<"$SDKS" | grep -q '^[0-9]'; then skip ".NET SDK (current)"; else inst --cask dotnet-sdk; fi
 
 # 4. Shell config (zsh): only what this script set up
 say "Shell config (~/.zshrc)"
