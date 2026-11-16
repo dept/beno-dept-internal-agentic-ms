@@ -99,6 +99,17 @@ The full migration can pre-scan your repo with **Graphify** before Discovery. Th
 
 See [docs/graphify-integration.md](docs/graphify-integration.md) for setup and troubleshooting.
 
+### New MS developer: set up your Mac
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/dev-setup/macos.sh)
+```
+
+Installs the toolchain (Homebrew, git, gh, mise, corepack, VS Code, 1Password, Claude Code, .NET SDKs),
+then, once your GitHub access works, the ms-agentic-context skill and the MS browser bookmarks.
+Safe to re-run. Access requests and everything else are on the Confluence page
+[MS Developer Onboarding](https://dept-nl.atlassian.net/wiki/spaces/MS/pages/21692416055).
+
 ## What Gets Created
 
 After migration, your project has:
@@ -298,6 +309,7 @@ dept-agentic-standards/
 │   ├── gen-dependabot.sh          # Seeds .github/dependabot.yml from tracked lockfiles
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
 │   ├── validate.sh                # Quality gate for .ai/ compliance
+│   ├── dev-setup/macos.sh         # One-run Mac setup for a new MS developer (not installed into projects)
 │   └── version-report.sh          # Which projects run an outdated standard version
 ├── standards/
 │   ├── agentic-project-standard.md # The formal standard definition
