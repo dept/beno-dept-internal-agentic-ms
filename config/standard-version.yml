@@ -3,9 +3,15 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.9.0"
-  release_date: "2026-11-13"
+  version: "2.9.1"
+  release_date: "2026-11-16"
   changelog:
+    - version: "2.9.1"
+      date: "2026-11-16"
+      changes:
+        - "Phase 3 no longer drops team-written AGENTS.md content that is not in `.ai/`. The *Already present* rule removed summaries, commands and constraints on the assumption that Discovery had put them in `.ai/`, and nothing checked it: in the cutover of dtnl-d66-website (#150) the team's block file layout and theme bootstrap were in AGENTS.md and nowhere in the central context. Each line is now checked against `.ai/` and written into its owning file first when missing, the team's authors are named in the completion summary, and the verification checklist and standards/writing-rules.md allow the team's own non-context rules below the pointer (they said \"nothing else\", contradicting *Already present*)."
+        - "The first Phase 5 gate in migrate.prompt.md matched every file under `.github/agents/` and `.claude/agents/`, so it failed on a project with its own agents (beno-centrica-website keeps four parity agents) while the same phase says to keep project content. It now matches only the standard's discovery, maintainer and support agents."
+        - "README: *After Migration* and *What to keep vs. remove* still described the in-repo model of 2.8 (commit `.ai/`, keep the maintainer and support agents, validate.sh and writing-rules). They now describe what a project keeps after the central handoff and point to Phase 5 for the removal list."
     - version: "2.9.0"
       date: "2026-11-13"
       changes:

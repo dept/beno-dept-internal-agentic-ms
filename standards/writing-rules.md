@@ -311,7 +311,7 @@ migrated repository.
 
 Neither is a place where `.ai/` facts get a second home.
 
-**For a project that still tracks its own `.ai/`, `AGENTS.md` is an index plus up to five constraint lines.** A project on the central context repository has the pointer from `templates/AGENTS.central.template.md` and nothing else (§4c). The index is the routing table saying
+**For a project that still tracks its own `.ai/`, `AGENTS.md` is an index plus up to five constraint lines.** A project on the central context repository has the pointer from `templates/AGENTS.central.template.md`, plus the team's own rules that are not context when the file already existed (§4c, Phase 3 *Already present*). The index is the routing table saying
 which `.ai/` file to read for which kind of task, and it carries no facts from those files. The
 constraint lines are the §2 allowance: one line each, naming the owning `.ai/` file inline, only
 for a rule that has to be seen before the agent writes rather than after it fails. Everything else

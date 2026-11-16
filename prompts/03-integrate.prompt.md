@@ -30,7 +30,9 @@ Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instruc
 
 ### File 1: `AGENTS.md` (repository root)
 - Write it from `templates/AGENTS.central.template.md`. Fill `[PROJECT_NAME]`, and `[ORG]`/`[REPO]` with the GitHub owner and repository name
-- **Already present**: keep project rules that are not context (for example a team's review etiquette) below the template text, and remove summaries, command lists and constraints: they are in `.ai/` now, and a copy here is the one that drifts
+- **Already present**: keep project rules that are not context (for example a team's review etiquette, or which MCP tool to call before editing a block) below the template text, and remove summaries, command lists and constraints: they are in `.ai/` now, and a copy here is the one that drifts
+  - **Check before you remove.** For each summary, command or constraint, find the fact in `.ai/`. When it is not there, write it into the owning `.ai/` file first, then remove the line. A team-written `AGENTS.md` is the one input Discovery may not have fully absorbed: on dtnl-d66-website#150 the block file layout and the theme bootstrap were in `AGENTS.md` and nowhere in `.ai/`
+  - Run `git log --format='%an' -- AGENTS.md | sort -u` and name every author who is not part of the migration in the completion summary, so their reviewer can confirm what moved
 - Add nothing else. `AGENTS.md` is the only file in the project that names the context repository or a `.ai/` path (`standards/writing-rules.md` §4c)
 
 ### File 2: `CLAUDE.md` (repository root)
@@ -143,9 +145,9 @@ After wiring is complete, create handover documentation in Confluence.
 ## Verification
 
 Before proceeding to Phase 4, confirm:
-- [ ] `AGENTS.md` is `templates/AGENTS.central.template.md` with `[PROJECT_NAME]`, `[ORG]` and `[REPO]` filled, and nothing else
+- [ ] `AGENTS.md` is `templates/AGENTS.central.template.md` with `[PROJECT_NAME]`, `[ORG]` and `[REPO]` filled, plus only the team rules kept under *Already present*
 - [ ] `CLAUDE.md` contains the `@AGENTS.md` import (Claude Code)
-- [ ] `AGENTS.md` carries no summary, no commands and no constraints: those are in `.ai/`, which goes to the central repository
+- [ ] `AGENTS.md` carries no summary, no commands and no constraints, and every one removed from an existing `AGENTS.md` is in `.ai/`, which goes to the central repository
 - [ ] Confluence pages created, or the completion summary says what blocked it
 - [ ] No Confluence page instructs a human reader to read `.ai/` files (rule 6b; the landing page's AI tooling status entry and the diagram sync note are the only allowed mentions)
 - [ ] Every page body starts at `H2`, every recurring table uses the column set in `docs/confluence-layout.md`, and no section renders parallel facts as `Label: value` bullets
