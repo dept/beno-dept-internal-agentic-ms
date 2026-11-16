@@ -399,7 +399,7 @@ not committed. Inline (no separate prompt file). Run it only after Phase 4b prin
 
 **Remove:**
 - `.ai/` from the working tree (it is gitignored; the central pull request carries it). Keep the `.gitignore` line
-- `.github/agents/` (discovery, maintainer) and `.claude/agents/`
+- The standard's agents: `.github/agents/discovery.agent.md`, `maintainer.agent.md` and `support.agent.md`, and their `.claude/agents/` links. Any other agent belongs to the project and stays
 - `.github/prompts/migrate.prompt.md`, `01` to `04`, and their mirrors in `.claude/commands/ms-*.md` and `.cursor/commands/ms-*.md`
 - `scripts/validate.sh`, `scripts/mirror-claude.sh`, `scripts/graphify-bootstrap.sh`, `scripts/onboard-central.sh`, `scripts/confluence-adf.py`
 - `standards/`, `config/standard-version.yml`, `config/change-impact-matrix.yml`, `docs/confluence-page-standard.md`, `docs/confluence-layout.md`
@@ -420,7 +420,7 @@ knowledge graph with its own tooling. Where the repository owns it, keep it and 
 **Gates (both must print nothing):**
 
 ```bash
-git ls-files | grep -E '^(\.ai/|\.github/agents/|\.claude/agents/|standards/|config/standard-version)'
+git ls-files | grep -E '^(\.ai/|\.github/agents/(discovery|maintainer|support)\.agent\.md|\.claude/agents/(discovery|maintainer|support)\.md|standards/|config/standard-version)'
 git grep -n -e '\.ai/' -e 'codebase-overview' -- '*.md' ':!AGENTS.md'
 ```
 

@@ -132,64 +132,43 @@ your-project/
 
 ## After Migration
 
-Once Discovery completes, your `.ai/` folder is live. Next steps:
+The migration ends in Phase 5: the project keeps only what developers use day to day, and its context
+lives in the central context repository (`dept/beno-dept-ms-agentic-context`, under
+`projects/<org>__<repo>/.ai/`). Nothing is left in the project to schedule or maintain: the central
+repository's maintain workflow keeps `.ai/` current.
 
-1. **Validate** — Run the standard check:
-   ```bash
-   ./scripts/validate.sh /path/to/your/project
-   ```
-
-2. **Wire AI tools**: Phase 3 writes these, check they are present:
-   - `AGENTS.md` → Copilot (github.com and VS Code), Codex, Cursor
+1. **Merge both pull requests**: the onboarding pull request Phase 4b opened in the central repository,
+   and the migration pull request in the project.
+2. **Check the wiring**: Phase 3 writes these, check they are present:
+   - `AGENTS.md` → Copilot (github.com and VS Code), Codex, Cursor. It is the only file in the project that names the context repository
    - `CLAUDE.md` → Claude Code, as an `@AGENTS.md` import
-   - `.vscode/mcp.json` → VS Code + MCP servers
-   - `.cursor/mcp.json` → Cursor + MCP servers
+   - `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json` → MCP servers
+3. **Confluence**: the central repository publishes the project pages once the project is listed with `confluence_sync: true` in its `projects.yml`.
 
-3. **Create Confluence docs** — Export summaries from `.ai/` files:
-   - `project-context.md` → "Project Overview" page
-   - `architecture.md` → "System Architecture" page
-   - `onboarding.md` → "Getting Started" page
-   - `runbooks.md` → "Incident Response" page
-
-4. **Distribute to team** — Check `.ai/` into Git and point developers to `CLAUDE.md` or `CLAUDE.code` (IDE extensions auto-load these).
-
-5. **Schedule Maintainer** — Set a monthly or quarterly reminder to run the **Maintainer Agent** (see agents below) to keep `.ai/` current as the codebase evolves.
-
-6. **Clean up (Phase 5)** — Remove one-time migration artifacts so the repo keeps only what has ongoing value. See the table below. Migrate prompt's Phase 5 automates this (asks first).
+A project that still tracks `.ai/` from a migration before 2.9.0 is not migrated again: cut it over
+with the checklist under *Cutting a project over* in the central repository's README.
 
 ### What to keep vs. remove after migration
 
-The migration installs **runtime** artifacts (used forever) and **install-time** artifacts (used once). After a successful, verified migration you can prune the latter.
+Phase 5 of `prompts/migrate.prompt.md` holds the exact list and its two gates. In short:
 
 | Artifact | Keep? | Why |
 |---|---|---|
-| `.ai/` (9 files + `.meta.yml`) | **Keep** | Single source of truth |
-| Maintainer agent (`.github/agents/maintainer.agent.md` + `.claude/agents/maintainer.md`) | **Keep** | Ongoing drift maintenance |
-| Support agent (`support.agent.md` + `.claude/agents/support.md`) | **Keep** | Day-to-day dev/support |
-| Wiring (`AGENTS.md` and its `CLAUDE.md` import) | **Keep** | Every harness routes into `.ai/` through it |
-| `standards/writing-rules.md` | **Keep** | The Maintainer applies it on every run |
-| Stack skills (`.agents/skills/`, including `confluence-axi` and `context-ownership`) | **Keep** | Reused; Maintainer re-syncs Confluence via `confluence-axi` and applies `context-ownership` on every documentation edit |
-| MCP config incl. `datadog` (browser OAuth) | **Keep** | Maintainer re-fetches key features via the Datadog MCP |
+| `AGENTS.md` and its `CLAUDE.md` import | **Keep** | Every harness finds the central context through it. Team rules that are not context stay below the pointer |
+| Stack skills under `.agents/skills/` and the `.claude/skills` symlink | **Keep** | Day-to-day development |
 | MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`) | **Keep** | Developer sessions |
-| `scripts/validate.sh` | **Keep** | Maintainer/CI compliance |
-| `scripts/mirror-claude.sh` | **Keep** | Creates and repairs the Claude Code mirror symlinks when an agent or skill is added or removed |
-| `scripts/confluence-adf.py` | **Keep** | Maintainer writes pages holding the Mermaid viewer (or any macro) as ADF, without losing it |
-| `scripts/gen-dependabot.sh` | **Keep** | Seeds `.github/dependabot.yml` from the tracked lockfiles when a project has none; re-run after a new ecosystem is added |
-| `.ai/confluence/*.md` drafts | **Remove once published** | Maintainer syncs from `.ai/` via `sync_map`, not from drafts |
-| Discovery agent (`discovery.agent.md` + `.claude/agents/discovery.md`) | **Remove** (optional) | Only for initial bootstrap; Maintainer does incremental. Keep for cheap re-bootstrap |
-| Phase prompts `01`–`04` + command mirrors (`ms-install`/`ms-discover`/`ms-integrate`/`ms-stack-tooling`) | **Remove** (optional) | One-time steps; clutter the command palette |
-| Migrate prompt + `ms-migration` command mirrors (`.github/prompts/migrate.prompt.md`, `.claude/commands/`, `.cursor/commands/`) | **Remove** (optional) | One-time too; a full re-run starts from the standards repo bootstrap, which installs a current copy |
-| `scripts/graphify-bootstrap.sh` + `.graphifyignore` | **Remove** (optional) | One-time pre-pass and the exclude list it writes; keep both if re-graphing planned |
-| `graphify-out/` | **Remove** | Ephemeral (already gitignored) — **unless the repository tracked it before the migration**, in which case it is the team's own graph: keep it, leave `.gitignore` alone, and keep a tracked `.graphifyignore` |
+| `.github/dependabot.yml`, `scripts/gen-dependabot.sh`, auto-merge workflow | **Keep** (when installed) | `gen-dependabot.sh` refreshes the update targets when a package or solution moves |
+| `.github/workflows/branch-hygiene.yml`, `scripts/branch-hygiene.sh` | **Keep** (when installed) | Ongoing branch cleanup |
+| Project-owned agents, skills and docs that were tracked before the migration | **Keep** | Not the standard's. Phase 5 deletes only what this migration created |
+| `.ai/` | **Remove** from the working tree | It is gitignored; the central pull request carries it |
+| Discovery and maintainer agents, phase prompts and command mirrors | **Remove** | The maintainer runs in the central repository |
+| `scripts/validate.sh`, `mirror-claude.sh`, `graphify-bootstrap.sh`, `onboard-central.sh`, `confluence-adf.py` | **Remove** | They work on a `.ai/` the project no longer has |
+| `standards/`, `config/standard-version.yml`, `config/change-impact-matrix.yml`, the Confluence docs | **Remove** | Standard-owned copies that drift |
+| `codebase-overview`, `confluence-axi`, `context-ownership` skills | **Remove** | `codebase-overview` moves to the central repository; the other two serve the maintainer |
+| `.graphifyignore`, `graphify-out/` | **Remove** | Ephemeral. Keep the `graphify-out/` line in `.gitignore`, and keep both when the repository tracked them before the migration |
 
-> **A version refresh does not bring the removed artifacts back.** `scripts/install.sh` treats the
-> migrate prompt, the `ms-migration` command, the discovery agent, the phase prompts `01`–`04` and
-> `scripts/graphify-bootstrap.sh` as bootstrap-only: in a project that has a `.ai/.meta.yml` it
-> neither creates nor refreshes them, and it lists what it skipped and why in its summary.
-> Everything in the **Keep** rows above is refreshed as usual. The installer never deletes anything,
-> so removing them stays your explicit choice.
-
-> **Remove symmetrically.** `validate.sh` compares file counts between each source directory and its mirror (`.github/agents/` with `.claude/agents/`, `.github/prompts/` with the two command folders, `.agents/skills/` with `.claude/skills`). Delete an agent from `.github/agents/` **and** its `.claude/agents/` symlink (which is a broken link once the source is gone), and a prompt from `.github/prompts/` **and** both command folders, or you introduce a "mirror out of sync" warning. Skills are the exception: `.claude/skills` is one symlink to the whole `.agents/skills` directory, so deleting the skill from the source is already symmetric and the symlink itself stays. Re-run `validate.sh` after cleanup to confirm status is unchanged. Nothing about the cleanup is written into `.ai/`.
+> **A version refresh does not bring the removed files back.** `scripts/install.sh` exits before
+> writing on a project whose `AGENTS.md` names the central context repository.
 
 ## Validation
 
