@@ -2,6 +2,7 @@
 # MS developer setup for macOS (DEPT Managed Services).
 # Safe to re-run: every step skips what is already installed.
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/dev-setup/macos.sh)
+# Optional: WITH_STARSHIP=1 bash <(curl ...) also installs the starship prompt (off by default: a personal choice).
 set -euo pipefail
 
 say()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
@@ -32,7 +33,6 @@ brew bundle --file=- <<'EOF'
 brew "git"
 brew "gh"
 brew "mise"
-brew "starship"
 brew "jq"
 cask "visual-studio-code"
 cask "claude-code"
@@ -47,7 +47,10 @@ touch "$ZSHRC"
 add_line() { grep -qxF "$1" "$ZSHRC" || echo "$1" >> "$ZSHRC"; }
 add_line "eval \"\$($BREW shellenv)\""
 add_line 'eval "$(mise activate zsh)"'
-add_line 'eval "$(starship init zsh)"'
+if [[ "${WITH_STARSHIP:-0}" == "1" ]]; then
+  brew install starship
+  add_line 'eval "$(starship init zsh)"'
+fi
 
 # 5. Node via mise: read .nvmrc / .node-version per repo, Node LTS as global default
 say "Node (mise) and corepack"
