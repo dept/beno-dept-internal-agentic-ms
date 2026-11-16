@@ -53,7 +53,7 @@ add_line 'eval "$(starship init zsh)"'
 say "Node (mise) and corepack"
 mise settings add idiomatic_version_file_enable_tools node 2>/dev/null || true
 mise use -g node@lts
-# ponytail: newer Node majors no longer bundle corepack, so install it when missing
+# Newer Node majors no longer bundle corepack, so install it when missing
 mise exec -- sh -c 'command -v corepack' >/dev/null || mise exec -- npm install -g corepack
 mise exec -- corepack enable
 
