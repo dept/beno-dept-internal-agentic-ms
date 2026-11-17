@@ -33,6 +33,11 @@ if [[ ! -f .ai/.meta.yml ]]; then
   echo "onboard-central: no .ai/.meta.yml here. Run from the project root after Phase 2." >&2
   exit 1
 fi
+if [[ -n "$(git ls-files .ai)" ]]; then
+  echo "onboard-central: .ai/ is tracked here. The context lives in $CENTRAL only." >&2
+  echo "Untrack it first: git rm -r --cached .ai && git commit -m 'chore: stop tracking .ai/'" >&2
+  exit 1
+fi
 [[ -n "$branch" ]] || branch="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##' || true)"
 [[ -n "$branch" ]] || branch="$(git rev-parse --abbrev-ref HEAD)"
 

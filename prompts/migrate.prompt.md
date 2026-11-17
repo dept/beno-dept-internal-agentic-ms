@@ -321,7 +321,7 @@ repository.
    ```
 
    Add `--no-confluence-sync` when Phase 3 only staged drafts. It imports `.ai/` and
-   `.agents/skills/codebase-overview/`, lists the project as `state: final` in `projects.yml`, adds
+   `.agents/skills/codebase-overview/`, lists the project in `projects.yml`, adds
    the CODEOWNERS line and prints the pull request URL. `--dry-run` shows the commit without pushing.
 4. Record the URL for the completion summary and this project's pull request description. Do not
    merge it: its reviewers are the central repository's owners.

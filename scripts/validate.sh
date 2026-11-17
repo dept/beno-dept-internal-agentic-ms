@@ -560,32 +560,16 @@ else
   echo ""
 fi
 
-# ── 5b. Maintainer Workflow Guard ──────────────────────────
-# The Maintainer Agent workflow (bootstrap-only, so not present in every repo) triggers on schedule
-# and workflow_dispatch. schedule always fires with github.ref = the default branch; a manual
-# dispatch can name any branch, and without a guard it would check out that branch and open a PR
-# from the wrong base. The maintain job carries a default-branch guard to close that. Assert it is
-# present when the workflow is. Cheap and specific: match the compound if-condition on one line, no
-# YAML parser. Conditional on the file existing, so a repo without the workflow is silent.
+# ── 5b. No project Maintainer workflow ─────────────────────
+# The central repository's Maintain context workflow runs the Maintainer for every project. A
+# project-side maintainer.yml is a leftover: it needs ANTHROPIC_API_KEY and a write path the
+# central model removed. A warning, so validation of an unfinished cleanup still passes.
 WF="${PROJECT_DIR}/.github/workflows/maintainer.yml"
-if [[ -f "$WF" ]]; then
-  echo -e "${BLUE}── Maintainer Workflow Guard ──${NC}"
-  # The guard has to pin the run to one named branch, not to a particular spelling of it. A repo
-  # whose default branch is `main` and whose guard names only `main` is guarded; demanding the
-  # template's `main || master` line of it fails a workflow that is already correct. Nor is the
-  # default branch always one of those two: BENO-Optiver-Website defaults to `develop`, where a
-  # `main || master` guard is false on every scheduled run and silently disables the Maintainer.
-  # Any `github.ref == 'refs/heads/<branch>'` comparison closes the hole the guard exists for,
-  # which is a manual dispatch against an arbitrary branch, so accept any branch name.
-  if grep -qE "github\.ref[[:space:]]*==[[:space:]]*['\"]refs/heads/[A-Za-z0-9._/-]+['\"]" "$WF" 2>/dev/null; then
-    echo -e "  ${GREEN}✓${NC} maintainer.yml guards the maintain job to a named branch"
-    PASSED=$((PASSED + 1))
-  else
-    echo -e "  ${RED}✗${NC} maintainer.yml is missing the default-branch job guard"
-    echo -e "    ${YELLOW}Fix:${NC} add \`if: github.ref == 'refs/heads/<default-branch>'\` at the maintain job level"
-    echo -e "    ${YELLOW}     ${NC} the template ships \`'refs/heads/main' || github.ref == 'refs/heads/master'\`; name this repo's default branch instead if it is neither"
-    FAILED=$((FAILED + 1))
-  fi
+if [[ "$CENTRAL" != true && -f "$WF" ]]; then
+  echo -e "${BLUE}── Maintainer Workflow ──${NC}"
+  echo -e "  ${YELLOW}△${NC} .github/workflows/maintainer.yml is present; the central repository runs the Maintainer"
+  echo -e "    ${YELLOW}Fix:${NC} delete it and the ANTHROPIC_API_KEY and CONFLUENCE_* secrets it used"
+  WARNED=$((WARNED + 1))
   echo ""
 fi
 
