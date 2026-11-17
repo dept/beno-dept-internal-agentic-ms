@@ -93,20 +93,19 @@ Count the facts a sentence carries about a topic this file does not own.
 | Shape | Facts it carries | Looks like | Allowed in |
 |---|---|---|---|
 | **Pointer** | none | ``Environments: `operational-context.md` -> *Environments*.`` | every file, always |
-| **Constraint line** | one, with the owning file named in the same line | ``Tailwind is v3, not v4: `dependencies.md` is authoritative.`` | `AGENTS.md` and skill bodies only |
+| **Constraint line** | one, with the owning file named in the same line | ``Tailwind is v3, not v4: `dependencies.md` is authoritative.`` | skill bodies only |
 | **Restatement** | two or more, or one with no owner named | a table with two of the owner's five columns; a "short summary"; "see also" followed by three sentences of the content | nowhere: delete it |
 
 **The constraint line is deliberate, and it is capped.** It exists for the one case a pointer
 cannot serve: a rule that has to be under an agent's nose at the moment it writes code, where a
-link arrives too late. That is the five repo-wide constraints in `AGENTS.md` (§3), and a global
-rule a skill body would otherwise have an agent break. Its shape is fixed: one line, stating the
+link arrives too late: a global rule a skill body would otherwise have an agent break. Its shape is fixed: one line, stating the
 instruction rather than describing the topic, naming its owning `.ai/` file inline. **Without the
 named owner it is not a constraint line, it is a restatement.** Two constraint lines on the same
 topic in the same file is a restatement of that topic split over two lines; write the pointer.
 
 **Between two `.ai/` files there is no constraint line.** A `.ai/` file that is not the owner
-writes a pointer or writes nothing. The allowance is for `AGENTS.md` and skill bodies, which are
-read at a different moment and for a different reason.
+writes a pointer or writes nothing. The allowance is for skill bodies, which are read at a
+different moment and for a different reason.
 
 ### Two tests, and both must pass
 
@@ -207,9 +206,8 @@ the tool, do not name the rule ID, do not describe the consequence of getting it
 commitlint, review expectations, the accessibility target, testing conventions, "this is a fork,
 keep diffs minimal". The test above governs tool-enforced rules only.
 
-**In wiring files** (`AGENTS.md`, `CLAUDE.md`): nothing from class 1 or class 2 at all, and from
-class 3 only rules that apply repo-wide. Five maximum. Everything else is a pointer to
-`coding-standards.md`.
+**In wiring files** (`AGENTS.md`, `CLAUDE.md`): no rule from any class. They live in
+`coding-standards.md`, and `AGENTS.md` is the pointer to the context (§4c).
 
 ---
 
@@ -230,7 +228,7 @@ each file's ownership header.
 | `onboarding.md` | **Every URL and access link in the project**: repository, environments, CMS console, secret store, dashboards. **The command cheatsheet**: every command a developer or an agent runs, one row each with what it does. First-day setup; local development workflow; contacts | Explanations of what the systems behind those URLs do (-> the owning file); what a quality gate enforces (-> `coding-standards.md`) |
 | `agent-registry.md` | The agents, skills, MCP servers and instruction files present now, one row each, with what each is for; governance rules for using them | Anything about how they got there: install dates, migration phases, what was removed, skipped, or did not exist before (§1) |
 | `.meta.yml` | Standard version, generation and maintenance stamps, the Confluence `sync_map` and resolved page IDs | Prose. Any fact about the codebase |
-| `AGENTS.md` | The one authored wiring file. Two sentences on what the project is; the two or three commands run on every task, as a block naming `onboarding.md` as the home of the full cheatsheet; up to five class 3 repo-wide constraint lines, each naming the `.ai/` file that owns it (§2); the index into `.ai/` and into skills | Any class 1 or class 2 rule; the command cheatsheet (-> `onboarding.md`); a constraint line that names no owner, which is a restatement (§2); any other fact that lives in a `.ai/` file |
+| `AGENTS.md` | The one authored wiring file. The pointer from `templates/AGENTS.central.template.md` to `projects/<org>__<repo>/.ai/` in the central context repository, plus the team's own rules that are not context when the file already existed | A summary of `.ai/`; any command, the cheatsheet included (-> `onboarding.md`); any class 1, 2 or 3 rule (-> `coding-standards.md`); any other fact that lives in a `.ai/` file |
 | `CLAUDE.md` | One line: `@AGENTS.md`, plus Claude-Code-only lines if any exist, in a real file | Everything else. It is an import, not a copy, and never a symlink to `AGENTS.md` |
 | `.agents/skills/codebase-overview/SKILL.md` | A description that triggers discovery, plus the structural content generated from `.ai/architecture.md`: annotated tree, stack table, placement conventions, high-fan-in symbols. Those four sections inside the generated block are the one copy this standard sanctions, because a script rewrites them | Facts not present in `.ai/architecture.md`; the command cheatsheet (-> `onboarding.md`); a routing table into the other `.ai/` files beyond one pointer line; hand edits inside the generated block |
 | `.agents/skills/<technology>/SKILL.md` | How this project uses that technology, with code copied from real call sites | Global constraints already in `.ai/`, beyond a single constraint line naming the owner (§2); the command cheatsheet (-> `onboarding.md`); line numbers; evidence residue; negative trivia |
@@ -301,8 +299,7 @@ migrated repository.
   writes no environment table at all.
 - **The command cheatsheet versus the quality gates.** Every command is listed once, in
   `onboarding.md`. `coding-standards.md` says what a gate enforces and names the command, and
-  never re-lists the set. `AGENTS.md` may carry the two or three commands run on every task, as a
-  block that names `onboarding.md`. Splitting the list by audience is how one project ended up
+  never re-lists the set. `AGENTS.md` carries none of them. Splitting the list by audience is how one project ended up
   with three copies that had already drifted.
 - **Monitoring tooling versus monitored features.** `operational-context.md` owns the wiring and
   the sampling ratios. `project-context.md` owns which user flows are covered and by which test.

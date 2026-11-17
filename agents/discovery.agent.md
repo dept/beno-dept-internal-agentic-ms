@@ -207,7 +207,7 @@ If any GitHub/environment/Keeper/Jira link cannot be verified, prompt the user f
 
 ### 9) AI Context Wiring
 
-After generating `.ai/`, create or update the wiring files so every supported harness reads the project context. There are two, and only one of them is authored. **Check if each file exists first**: if it does, append; never overwrite.
+After generating `.ai/`, create or update the wiring files so every supported harness reaches the project context. There are two, and only one of them is authored. **Check if each file exists first**: never overwrite a file a team wrote.
 
 **`AGENTS.md`** (repository root, the one authored wiring file)
 - Every harness in use reads it: Copilot on the GitHub website and in VS Code as agent instructions, Codex and Cursor natively, Claude Code through the import below.
@@ -221,11 +221,7 @@ After generating `.ai/`, create or update the wiring files so every supported ha
 
 Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. They target tools that already read `AGENTS.md`, and a generated copy is one more file to keep in sync. If a project already has them, leave them in place, record them in `agent-registry.md`, and do not extend them.
 
-In the wiring files, instruct the AI to:
-1. Load `.ai/` files **on demand**, never at session start. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
-2. Cross-reference `.ai/` content with any existing agents, instructions, and prompts found in step 0
-3. Respect constraints and scopes defined in existing agentic files
-4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context
+Add no instructions of your own to the wiring files: the template text is the whole of `AGENTS.md` apart from the team's own rules. When an existing agent, instruction or prompt found in step 0 contradicts `.ai/` or the codebase, flag it in the discovery report instead of writing a rule for it.
 
 ### Confluence Project Documentation
 

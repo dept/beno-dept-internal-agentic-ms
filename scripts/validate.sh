@@ -694,8 +694,8 @@ echo ""
 #      mandated in every file by the standard and is allowlisted.
 #   b. Repeated commands. The command cheatsheet has one home, .ai/onboarding.md. The same command
 #      line inside fenced blocks in two places is that list growing a second copy. Warns rather
-#      than fails: AGENTS.md and a skill body may carry a capped block or constraint line that
-#      names its owner (§2), and that is a legitimate repeat.
+#      than fails: a skill body may carry a constraint line that names its owner (§2), and that
+#      is a legitimate repeat.
 #
 # A skill directory counts as one place, so a skill and its own references/ file repeating a
 # command is not reported.
@@ -784,7 +784,7 @@ else
       echo -e "  ${YELLOW}△${NC} \`${cmd}\` appears in ${count} places: ${places}"
       WARNED=$((WARNED + 1))
     done <<< "$ss_dupe_cmds"
-    echo -e "    ${YELLOW}Fix:${NC} .ai/onboarding.md owns the command cheatsheet. Elsewhere, a pointer, or in AGENTS.md a capped block naming it."
+    echo -e "    ${YELLOW}Fix:${NC} .ai/onboarding.md owns the command cheatsheet. Elsewhere, write a pointer."
   else
     echo -e "  ${GREEN}✓${NC} no command line is written out in more than one place"
     PASSED=$((PASSED + 1))
@@ -796,7 +796,7 @@ echo ""
 # ── Context pointers ───────────────────────────────────────
 # Only AGENTS.md names the context. A skill or instruction file that says "read .ai/x.md" points at
 # a path the project does not hold: the context lives in the central repository. A warning, not a
-# failure, so a maintenance run on an older checkout still completes. The standard's own agents and
+# failure. The standard's own agents and
 # prompts and its three context skills (codebase-overview, confluence-axi, context-ownership) are
 # left out: they describe .ai/ itself.
 if [[ "$CENTRAL" = false ]]; then

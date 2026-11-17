@@ -223,7 +223,7 @@ project.
 
 | Workflow | Cadence | What it does |
 |---|---|---|
-| `maintainer.yml` | Twice a month | Not installed in project repositories. Runs the Maintainer Agent against an in-repo `.ai/`; the central repository's *Maintain context* workflow replaces it |
+| `maintainer.yml` | Twice a month | Not installed in project repositories: the central repository's *Maintain context* workflow runs the Maintainer Agent for every project |
 | `dependabot-auto-merge.yml` | On each Dependabot PR | Merges patch-level updates once every check is green; leaves minors and majors for a human |
 | `branch-hygiene.yml` | Monthly (1st, 06:00 UTC) | Classifies every branch on origin into tiers and cleans up, dry run by default |
 

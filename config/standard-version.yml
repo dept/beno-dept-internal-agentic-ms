@@ -10,7 +10,7 @@ standard:
       date: "2026-11-17"
       changes:
         - "The dual period is over: every project is on dept/beno-dept-ms-agentic-context, and a project repository holds only the AGENTS.md pointer, CLAUDE.md with `@AGENTS.md` and `.ai/` in `.gitignore`. `scripts/onboard-central.sh` no longer refuses a checkout that tracks `.ai/`, and `scripts/install.sh` now adds `.ai/` to `.gitignore` also when `.ai/.meta.yml` is already present. The migrate prompt drops its tracked-`.ai/` stop check. onboard-central.sh still lists a new project as `state: final`, because the central Maintain context workflow selects on it."
-        - "Text cleanup to match: the standard, the writing rules, the AGENTS.central template, the discovery and maintainer agents and the README no longer describe a project that keeps its own `.ai/`, an index-style AGENTS.md or a maintainer.yml workflow in the project repository. The central Maintain context workflow runs the Maintainer for every project."
+        - "Text cleanup to match: the standard, the writing rules, the AGENTS.central template, the discovery and maintainer agents and the README no longer describe a project that keeps its own `.ai/`, an index-style AGENTS.md (summary, commands, constraint lines, routing table) or a maintainer.yml workflow in the project repository. `scripts/validate.sh` messages follow: its command-duplication fix no longer suggests a block in AGENTS.md. The central Maintain context workflow runs the Maintainer for every project."
     - version: "2.9.1"
       date: "2026-11-16"
       changes:
