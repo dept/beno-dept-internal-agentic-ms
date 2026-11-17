@@ -95,9 +95,9 @@ separate case where a symlink is the rule, see Claude Code mirrors below.)
 
 A new project's context goes to the central context repository `dept/beno-dept-ms-agentic-context`
 from the start: the migration writes `.ai/` in a gitignored folder, `scripts/onboard-central.sh`
-opens the onboarding pull request there, and Phase 5 removes the standard's files again. A project
-that still tracks its own `.ai/` is in the dual period and is cut over with the checklist in the
-central repository's README.
+opens the onboarding pull request there, and Phase 5 removes the standard's files again. `.ai/`
+lives only under `projects/<org>__<repo>/.ai/` in the central repository; the project repository
+lists `.ai/` in `.gitignore` and never commits it.
 
 A project whose context has moved to the central context repository keeps `AGENTS.md` and
 `CLAUDE.md` and none of the standard's own files (agents, prompts, scripts, `standards/`,

@@ -211,8 +211,8 @@ After generating `.ai/`, create or update the wiring files so every supported ha
 
 **`AGENTS.md`** (repository root, the one authored wiring file)
 - Every harness in use reads it: Copilot on the GitHub website and in VS Code as agent instructions, Codex and Cursor natively, Claude Code through the import below.
-- Not present: create from `templates/AGENTS.template.md`, filling the project summary, setup commands and key-constraint one-liners from `.ai/`.
-- Already present: append the `.ai/` routing table and the setup section it lacks, and leave the rest alone.
+- Write it from `templates/AGENTS.central.template.md`: a pointer to `projects/<org>__<repo>/.ai/` in `dept/beno-dept-ms-agentic-context` and nothing else. No summary, commands or routing table: those are in `.ai/`, which the project gitignores.
+- Already present: keep the team's own rules that are not context and follow `prompts/03-integrate.prompt.md` File 1 for the rest.
 
 **`CLAUDE.md`** (repository root, an import)
 - Not present: create from `templates/CLAUDE.template.md`. It is `@AGENTS.md` plus any Claude-Code-only line.
@@ -222,7 +222,7 @@ After generating `.ai/`, create or update the wiring files so every supported ha
 Do not create `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, or `.cursor/rules/*.mdc`. They target tools that already read `AGENTS.md`, and a generated copy is one more file to keep in sync. If a project already has them, leave them in place, record them in `agent-registry.md`, and do not extend them.
 
 In the wiring files, instruct the AI to:
-1. Load `.ai/` files **on demand**, never at session start. The wiring file carries a two-to-three sentence summary of what the system is plus the always-on constraints, and a routing table saying which file to read for which kind of task. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
+1. Load `.ai/` files **on demand**, never at session start. Reading nothing from `.ai/` is the correct behaviour for a task that touches none of those areas, so do not instruct an eager load of `project-context.md`, `architecture.md` and `coding-standards.md`.
 2. Cross-reference `.ai/` content with any existing agents, instructions, and prompts found in step 0
 3. Respect constraints and scopes defined in existing agentic files
 4. Flag contradictions between `.ai/` and codebase rather than silently accepting stale context

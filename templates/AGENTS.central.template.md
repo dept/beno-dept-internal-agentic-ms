@@ -1,10 +1,9 @@
 # AGENTS.md: [PROJECT_NAME]
 
-<!-- The wiring file of a project whose context has moved to the central context repository. It is
-a pointer and nothing else: no summary, no commands, no constraints. Those live in the project
-context, and a copy here is the one that drifts. A project that still holds its own .ai/ folder
-uses AGENTS.template.md instead. [ORG]__[REPO] is the GitHub owner and repository name joined by
-two underscores, the folder name the central repository uses. -->
+<!-- The wiring file of a project whose context lives in the central context repository. It is a
+pointer and nothing else: no summary, no commands, no constraints. Those live in the project
+context, and a copy here is the one that drifts. [ORG]__[REPO] is the GitHub owner and repository
+name joined by two underscores, the folder name the central repository uses. -->
 
 The project context (architecture, conventions, commands, environments, runbooks, onboarding)
 is not in this repository. It lives in `dept/beno-dept-ms-agentic-context`, under
