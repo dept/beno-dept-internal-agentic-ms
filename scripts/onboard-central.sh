@@ -33,11 +33,6 @@ if [[ ! -f .ai/.meta.yml ]]; then
   echo "onboard-central: no .ai/.meta.yml here. Run from the project root after Phase 2." >&2
   exit 1
 fi
-if [[ -n "$(git ls-files .ai)" ]]; then
-  echo "onboard-central: .ai/ is tracked in this repository, so it is a dual-period project." >&2
-  echo "Cut it over with the checklist in the $CENTRAL README instead." >&2
-  exit 1
-fi
 [[ -n "$branch" ]] || branch="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##' || true)"
 [[ -n "$branch" ]] || branch="$(git rev-parse --abbrev-ref HEAD)"
 
@@ -68,8 +63,7 @@ git add projects.yml "projects/$slug"
 [[ -f .github/CODEOWNERS ]] && git add .github/CODEOWNERS
 git commit -q -m "feat: onboard $repo
 
-Imported from a fresh migration with the DEPT standard (scripts/onboard-central.sh).
-The project never tracked .ai/, so it starts in state: final."
+Imported from a fresh migration with the DEPT standard (scripts/onboard-central.sh)."
 
 if [[ $dry -eq 1 ]]; then
   git show --stat --format='%s' HEAD

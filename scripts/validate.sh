@@ -794,9 +794,9 @@ fi
 echo ""
 
 # ── Context pointers ───────────────────────────────────────
-# Only AGENTS.md names the context. A skill or instruction file that says "read .ai/x.md" breaks the
-# day the context moves to the central repository, and duplicates AGENTS.md until then. A warning,
-# not a failure: projects in the dual period still carry such lines. The standard's own agents and
+# Only AGENTS.md names the context. A skill or instruction file that says "read .ai/x.md" points at
+# a path the project does not hold: the context lives in the central repository. A warning, not a
+# failure, so a maintenance run on an older checkout still completes. The standard's own agents and
 # prompts and its three context skills (codebase-overview, confluence-axi, context-ownership) are
 # left out: they describe .ai/ itself.
 if [[ "$CENTRAL" = false ]]; then
