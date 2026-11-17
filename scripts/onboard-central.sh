@@ -7,7 +7,7 @@
 # Run from the project root after Phases 1 to 4, while .ai/ (gitignored) and
 # .agents/skills/codebase-overview/ are still in the working tree. It clones
 # dept/beno-dept-ms-agentic-context into a temporary directory, imports both with the central
-# repository's own scripts/ctx.sh, lists the project as state: final, adds a CODEOWNERS line and
+# repository's own scripts/ctx.sh, lists the project, adds a CODEOWNERS line and
 # opens a pull request. --dry-run stops before the push and prints where the clone is.
 set -euo pipefail
 
@@ -51,7 +51,7 @@ fi
 git checkout -q -b "onboard/$slug"
 bash scripts/ctx.sh import "$slug" "$proj"
 
-printf '  - repo: %s\n    branch: %s\n    state: final\n    confluence_sync: %s\n' \
+printf '  - repo: %s\n    branch: %s\n    confluence_sync: %s\n' \
   "$repo" "$branch" "$sync" >> projects.yml
 
 if [[ -n "$owners" ]]; then
@@ -77,5 +77,5 @@ gh pr create --repo "$CENTRAL" --base main --head "onboard/$slug" \
   --body "Context for \`$repo\` (branch \`$branch\`), produced by the DEPT standard migration and handed off with \`scripts/onboard-central.sh\`.
 
 - \`projects/$slug/.ai/\` and \`projects/$slug/skills/codebase-overview/\` imported with \`scripts/ctx.sh import\`
-- \`projects.yml\`: \`state: final\`, \`confluence_sync: $sync\`
+- \`projects.yml\`: \`confluence_sync: $sync\`
 - After merge: run *Maintain context* once for \`$repo\`."
