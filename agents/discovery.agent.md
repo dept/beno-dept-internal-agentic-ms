@@ -211,7 +211,7 @@ After generating `.ai/`, create or update the wiring files so every supported ha
 
 **`AGENTS.md`** (repository root, the one authored wiring file)
 - Every harness in use reads it: Copilot on the GitHub website and in VS Code as agent instructions, Codex and Cursor natively, Claude Code through the import below.
-- Write it from `templates/AGENTS.central.template.md`: a pointer to `projects/<org>__<repo>/.ai/` in `dept/beno-dept-ms-agentic-context` and nothing else. No summary, commands or routing table: those are in `.ai/`, which the project gitignores.
+- Write it from `templates/AGENTS.central.template.md`: a pointer to `projects/<org>__<repo>/.ai/` in `dept/beno-dept-ms-agentic-context` and nothing else, apart from the team's own constraint lines that `standards/writing-rules.md` allows. No summary, commands or routing table: those are in `.ai/`, which the project gitignores.
 - Already present: keep the team's own rules that are not context and follow `prompts/03-integrate.prompt.md` File 1 for the rest.
 
 **`CLAUDE.md`** (repository root, an import)

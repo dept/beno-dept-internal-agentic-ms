@@ -1,8 +1,9 @@
 # AGENTS.md: [PROJECT_NAME]
 
 <!-- The wiring file of a project whose context lives in the central context repository. It is a
-pointer and nothing else: no summary, no commands, no constraints. Those live in the project
-context, and a copy here is the one that drifts. [ORG]__[REPO] is the GitHub owner and repository
+pointer: no summary, no commands. Those live in the project context, and a copy here is the one
+that drifts. The one exception is up to five constraint lines the team owns, for a rule nothing in
+the repository enforces (standards/writing-rules.md); the central file wins on a conflict. [ORG]__[REPO] is the GitHub owner and repository
 name joined by two underscores, the folder name the central repository uses. -->
 
 The project context (architecture, conventions, commands, environments, runbooks, onboarding)
