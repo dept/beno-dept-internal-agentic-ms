@@ -98,7 +98,38 @@ fi
 BM="$HOME/Downloads/dept-ms-bookmarks.html"
 if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks.py" > "$BM.tmp"; then
   mv "$BM.tmp" "$BM"
-  TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome: Bookmarks > Import bookmarks and settings > Bookmarks HTML file). It adds a 'DEPT (MS)' folder with every project.")
+  # Browsers have no command-line import, so open the chosen browser's import page and show the file.
+  BROWSERS=()
+  for b in "Google Chrome" "Microsoft Edge" "Brave Browser" "Firefox" "Safari"; do
+    [[ -d "/Applications/$b.app" ]] && BROWSERS+=("$b")
+  done
+  PICK=""
+  if [[ -t 0 && ${#BROWSERS[@]} -gt 0 ]]; then
+    echo "Import the bookmarks into a browser now? Pick a number:"
+    select PICK in "${BROWSERS[@]}" "Skip"; do break; done
+  fi
+  case "$PICK" in
+    "Google Chrome"|"Microsoft Edge"|"Brave Browser")
+      case "$PICK" in
+        "Google Chrome") URL="chrome://settings/importData" ;;
+        "Microsoft Edge") URL="edge://settings/profiles/importBrowsingData" ;;
+        *) URL="brave://settings/importData" ;;
+      esac
+      # chrome:// style pages only open through AppleScript (macOS may ask to let Terminal control the browser).
+      osascript -e "tell application \"$PICK\"" -e "activate" -e "if (count of windows) = 0 then make new window" \
+        -e "tell front window to make new tab with properties {URL:\"$URL\"}" -e "end tell" >/dev/null ||
+        warn "Could not open the import page in $PICK"
+      HOW="in the import page choose 'Bookmarks HTML file', then pick the file"
+      ;;
+    "Firefox") open -a Firefox; HOW="Bookmarks > Manage bookmarks > Import and Backup > Import Bookmarks from HTML" ;;
+    "Safari") open -a Safari; HOW="File > Import From > Bookmarks HTML File" ;;
+  esac
+  if [[ -n "${HOW:-}" ]]; then
+    open -R "$BM"
+    echo "In $PICK: $HOW (~/Downloads/dept-ms-bookmarks.html). It adds a 'DEPT (MS)' folder with every project."
+  else
+    TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome: Bookmarks > Import bookmarks and settings > Bookmarks HTML file). It adds a 'DEPT (MS)' folder with every project.")
+  fi
 else
   rm -f "$BM.tmp"
 fi
