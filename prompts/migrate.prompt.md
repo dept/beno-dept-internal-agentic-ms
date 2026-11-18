@@ -34,14 +34,10 @@ This workflow is for a project with no context yet. Check before Phase 1:
 
 ```bash
 grep -qs beno-dept-ms-agentic-context AGENTS.md && echo "already on the central context repository"
-git ls-files .ai | head -1
 ```
 
-- `AGENTS.md` already names `beno-dept-ms-agentic-context`: the project is cut over. Stop. Context
-  changes are a pull request on that repository.
-- `git ls-files .ai` prints a file: the project migrated under an older standard and still holds
-  its own `.ai/` (dual period). Stop. Cut it over with the checklist in the central repository's
-  README instead, which keeps its history.
+- `AGENTS.md` already names `beno-dept-ms-agentic-context`: the project is already onboarded. Stop.
+  Context changes are a pull request on that repository.
 - `dept/beno-dept-ms-agentic-context` `projects.yml` already lists this repository: stop, same reason.
 
 ## Critical Disciplines
@@ -348,7 +344,7 @@ repository.
    ```
 
    Add `--no-confluence-sync` when Phase 3 only staged drafts. It imports `.ai/` and
-   `.agents/skills/codebase-overview/`, lists the project as `state: final` in `projects.yml`, adds
+   `.agents/skills/codebase-overview/`, lists the project in `projects.yml`, adds
    the CODEOWNERS line and prints the pull request URL. `--dry-run` shows the commit without pushing.
 4. Record the URL for the completion summary and this project's pull request description. Do not
    merge it: its reviewers are the central repository's owners.
@@ -447,8 +443,7 @@ git ls-files | grep -E '^(\.ai/|\.github/agents/(discovery|maintainer|support)\.
 git grep -n -e '\.ai/' -e 'codebase-overview' -- '*.md' ':!AGENTS.md'
 ```
 
-The second gate is the rule from the central repository's cutover checklist: only `AGENTS.md`
-names the context. A skill or doc that still names `.ai/...` gets the fact written into it, or the
+The second gate is `standards/writing-rules.md` §4c: only `AGENTS.md` names the context. A skill or doc that still names `.ai/...` gets the fact written into it, or the
 line removed.
 
 **`install.sh --update` will not undo this.** It sees `AGENTS.md` pointing at the central
@@ -558,4 +553,3 @@ migration added and what Phase 5 deleted, and lists the Validation Questions the
 | MCP tools not callable after Phase 4 | MCP config loads only on tool/IDE restart; expected — it's for the next session |
 | No skills found for stack | Expected for niche tech; MCP registry is the primary value |
 | validate.sh reports warnings | Resolve them before Phase 4b; after the handoff the central repository's workflow checks the context |
-| `onboard-central.sh` says `.ai/` is tracked | The project migrated under an older standard: use the central repository's cutover checklist |

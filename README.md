@@ -22,8 +22,8 @@ folder, hands it to the central context repository
 [`dept/beno-dept-ms-agentic-context`](https://github.com/dept/beno-dept-ms-agentic-context) with an
 onboarding pull request (`scripts/onboard-central.sh`), and removes the standard's own files again.
 The project keeps `AGENTS.md` (the one pointer to the context), `CLAUDE.md`, its stack skills, MCP
-configs and the optional Dependabot tooling. A project that already tracks `.ai/` is cut over with
-the checklist in the central repository's README instead.
+configs and the optional Dependabot tooling. `.ai/` is gitignored in the project and never committed
+there.
 
 **Step 1** — Install the migration bundle (run once):
 ```bash
@@ -157,8 +157,8 @@ repository's maintain workflow keeps `.ai/` current.
    - `.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json` → MCP servers
 3. **Confluence**: the central repository publishes the project pages once the project is listed with `confluence_sync: true` in its `projects.yml`.
 
-A project that still tracks `.ai/` from a migration before 2.9.0 is not migrated again: cut it over
-with the checklist under *Cutting a project over* in the central repository's README.
+A project already listed in the central repository's `projects.yml` is not migrated again: context
+changes are a pull request there.
 
 ### What to keep vs. remove after migration
 
@@ -214,14 +214,16 @@ Agent logic is separated from tool-specific wiring — see `agents/*/logic.md` f
 ## Automated maintenance workflows
 
 Three GitHub Actions workflows ship as templates under `templates/workflows/`. None of them is
-installed by `scripts/install.sh`: each is opt-in and copied into a repository by hand, so a
-project keeps whatever thresholds and schedule it has tuned and a later change to the template
-never overwrites it. The migrate prompt offers them (Phases 4b, 4c and 4d) and asks the delivery
-lead first, because each one acts on the repository unattended.
+installed by `scripts/install.sh`: each is copied into a repository by hand, so a project keeps
+whatever thresholds and schedule it has tuned and a later change to the template never overwrites
+it. The migrate prompt offers the Dependabot and branch hygiene workflows (Phases 4c and 4d) and
+asks the delivery lead first, because each one acts on the repository unattended. A project does
+not get `maintainer.yml`: the central context repository runs the Maintainer Agent for every
+project.
 
 | Workflow | Cadence | What it does |
 |---|---|---|
-| `maintainer.yml` | Twice a month | Runs the Maintainer Agent to keep `.ai/` current, opens a PR, guarded to the default branch so it never pushes to main/master |
+| `maintainer.yml` | Twice a month | Not installed in project repositories: the central repository's *Maintain context* workflow runs the Maintainer Agent for every project |
 | `dependabot-auto-merge.yml` | On each Dependabot PR | Merges patch-level updates once every check is green; leaves minors and majors for a human |
 | `branch-hygiene.yml` | Monthly (1st, 06:00 UTC) | Classifies every branch on origin into tiers and cleans up, dry run by default |
 
@@ -329,7 +331,7 @@ dept-agentic-standards/
     │   ├── confluence-axi/SKILL.md
     │   └── context-ownership/SKILL.md
     ├── workflows/
-    │   ├── maintainer.yml            # Scheduled .ai/ drift maintenance (opt-in)
+    │   ├── maintainer.yml            # Scheduled .ai/ drift maintenance (not installed in projects)
     │   ├── dependabot-auto-merge.yml # Auto-merge green Dependabot patch PRs (opt-in)
     │   └── branch-hygiene.yml        # Monthly tiered stale-branch cleanup (opt-in)
     └── agents/support.template.md

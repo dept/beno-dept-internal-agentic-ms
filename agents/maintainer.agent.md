@@ -318,9 +318,9 @@ Same rule for Confluence: a page whose only delta would be the "Last synced" lin
 
 ## CI/CD Integration
 
-Automated triggering runs this agent via a **cost-gated GitHub Actions workflow**: a cheap `git log` step skips the paid agent run whenever nothing outside `.ai/**` changed, and the agent opens a PR (never pushes to `main`) — and only when the run produced real content changes (see the no-op rule above). Triggers: biweekly `schedule` (1st + 15th, 09:00 UTC) + manual `workflow_dispatch`.
+Automated triggering runs this agent from the central context repository `dept/beno-dept-ms-agentic-context`, not from the project: its *Maintain context* workflow (1st and 15th at 09:00 UTC, plus manual `workflow_dispatch`) checks each listed project out read-only, lays `projects/<org>__<repo>/` over that checkout, runs this agent there and opens a PR in the central repository (never pushes to `main`), and only when the run produced real content changes (see the no-op rule above). The project repository is never written to.
 
-Setup is not part of this agent's runtime job. Check `.github/workflows/maintainer.yml` before assuming it is missing — the migrate prompt's Phase 4b installs it on a fresh migration, and a standards refresh (the installer's `--update` mode, run from the standards repository) never touches it afterward (a project's own schedule/permissions stay project-tuned, not overwritten by a refresh). If it is genuinely absent, or `scripts/validate.sh`'s Maintainer Workflow Guard check flags it, fetch the current template (permissions, cost-gate step, model choice, the Atlassian-MCP-for-Confluence note, the default-branch guard) from the standards repository at `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/maintainer.yml`, write it to `.github/workflows/maintainer.yml`, and set the guard's branch name to this repo's actual default branch.
+Setup is not part of this agent's runtime job. A project repository has no `.github/workflows/maintainer.yml`, no `ANTHROPIC_API_KEY` and no `CONFLUENCE_*` secret, and needs none: the central repository holds them. Do not create the workflow in a project.
 
 ---
 

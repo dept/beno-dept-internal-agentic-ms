@@ -230,7 +230,7 @@ each file's ownership header.
 | `onboarding.md` | **Every URL and access link in the project**: repository, environments, CMS console, secret store, dashboards. **The command cheatsheet**: every command a developer or an agent runs, one row each with what it does. First-day setup; local development workflow; contacts | Explanations of what the systems behind those URLs do (-> the owning file); what a quality gate enforces (-> `coding-standards.md`) |
 | `agent-registry.md` | The agents, skills, MCP servers and instruction files present now, one row each, with what each is for; governance rules for using them | Anything about how they got there: install dates, migration phases, what was removed, skipped, or did not exist before (§1) |
 | `.meta.yml` | Standard version, generation and maintenance stamps, the Confluence `sync_map` and resolved page IDs | Prose. Any fact about the codebase |
-| `AGENTS.md` | The one authored wiring file. Two sentences on what the project is; the two or three commands run on every task, as a block naming `onboarding.md` as the home of the full cheatsheet; up to five class 3 repo-wide constraint lines, each naming the `.ai/` file that owns it (§2); the index into `.ai/` and into skills | Any class 1 or class 2 rule; the command cheatsheet (-> `onboarding.md`); a constraint line that names no owner, which is a restatement (§2); any other fact that lives in a `.ai/` file |
+| `AGENTS.md` | The one authored wiring file. The pointer from `templates/AGENTS.central.template.md` to `projects/<org>__<repo>/.ai/` in the central context repository; the team's own rules that are not context when the file already existed; up to five class 3 repo-wide constraint lines, each naming the `.ai/` file that owns it (§2) | A summary of `.ai/`; any class 1 or class 2 rule; the command cheatsheet (-> `onboarding.md`); a constraint line that names no owner, which is a restatement (§2); any other fact that lives in a `.ai/` file |
 | `CLAUDE.md` | One line: `@AGENTS.md`, plus Claude-Code-only lines if any exist, in a real file | Everything else. It is an import, not a copy, and never a symlink to `AGENTS.md` |
 | `.agents/skills/codebase-overview/SKILL.md` | A description that triggers discovery, plus the structural content generated from `.ai/architecture.md`: annotated tree, stack table, placement conventions, high-fan-in symbols. Those four sections inside the generated block are the one copy this standard sanctions, because a script rewrites them | Facts not present in `.ai/architecture.md`; the command cheatsheet (-> `onboarding.md`); a routing table into the other `.ai/` files beyond one pointer line; hand edits inside the generated block |
 | `.agents/skills/<technology>/SKILL.md` | How this project uses that technology, with code copied from real call sites | Global constraints already in `.ai/`, beyond a single constraint line naming the owner (§2); the command cheatsheet (-> `onboarding.md`); line numbers; evidence residue; negative trivia |
@@ -301,8 +301,7 @@ migrated repository.
   writes no environment table at all.
 - **The command cheatsheet versus the quality gates.** Every command is listed once, in
   `onboarding.md`. `coding-standards.md` says what a gate enforces and names the command, and
-  never re-lists the set. `AGENTS.md` may carry the two or three commands run on every task, as a
-  block that names `onboarding.md`. Splitting the list by audience is how one project ended up
+  never re-lists the set. `AGENTS.md` carries none of them. Splitting the list by audience is how one project ended up
   with three copies that had already drifted.
 - **Monitoring tooling versus monitored features.** `operational-context.md` owns the wiring and
   the sampling ratios. `project-context.md` owns which user flows are covered and by which test.
@@ -311,11 +310,11 @@ migrated repository.
 
 Neither is a place where `.ai/` facts get a second home.
 
-**For a project that still tracks its own `.ai/`, `AGENTS.md` is an index plus up to five constraint lines.** A project on the central context repository has the pointer from `templates/AGENTS.central.template.md`, plus the team's own rules that are not context when the file already existed (§4c, Phase 3 *Already present*). The index is the routing table saying
-which `.ai/` file to read for which kind of task, and it carries no facts from those files. The
-constraint lines are the §2 allowance: one line each, naming the owning `.ai/` file inline, only
-for a rule that has to be seen before the agent writes rather than after it fails. Everything else
-in `AGENTS.md` is a pointer. A summary of `.ai/` in `AGENTS.md` is a restatement however short it
+**`AGENTS.md` is the pointer from `templates/AGENTS.central.template.md`, plus up to five constraint lines.** The team's own rules that are not context stay when the file already existed (§4c, Phase 3 *Already present*). The constraint lines are the §2 allowance: one line each, naming the owning `.ai/` file in the central
+context repository inline, only for a rule that has to be seen before the agent writes rather than
+after it fails, and only when nothing in the repository already enforces it. They are team content:
+nothing keeps them in sync, so the central file wins when they disagree. Everything else in
+`AGENTS.md` is a pointer. A summary of `.ai/` in `AGENTS.md` is a restatement however short it
 is, because it goes stale silently and every harness reads it first.
 
 **A skill body is how this project uses one technology**, with code copied from real call sites. It

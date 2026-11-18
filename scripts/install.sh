@@ -154,12 +154,14 @@ BOOTSTRAP_ONLY=(
 MIGRATED=0
 [[ -f "${TARGET_DIR}/.ai/.meta.yml" ]] && MIGRATED=1
 
-# A new project's context goes to the central context repository, never into this one: ignore
-# .ai/ before Phase 2 writes it, so it cannot be committed by accident. A project that already
-# tracks .ai/ (dual period) is left alone.
-if [[ $MIGRATED -eq 0 ]] && ! grep -qsx '/\{0,1\}\.ai/\{0,1\}' "$TARGET_DIR/.gitignore"; then
+# A project's context lives in the central context repository, never in this one: ignore .ai/
+# before Phase 2 writes it, so it cannot be committed by accident.
+if ! grep -qsx '/\{0,1\}\.ai/\{0,1\}' "$TARGET_DIR/.gitignore"; then
   printf '\n# Project context lives in dept/beno-dept-ms-agentic-context\n.ai/\n' >> "$TARGET_DIR/.gitignore"
   echo -e "  ${GREEN}+${NC} .gitignore: .ai/"
+fi
+if [[ -n "$(git -C "$TARGET_DIR" ls-files .ai 2>/dev/null)" ]]; then
+  echo -e "  ${YELLOW}!${NC} .ai/ is still tracked, so the ignore line has no effect: git rm -r --cached .ai"
 fi
 # Newline-separated "dest_rel|reason" lines, not an array: bash 3.2 (the macOS default) errors on
 # an empty array expansion under `set -u`.
