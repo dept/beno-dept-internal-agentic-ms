@@ -158,6 +158,7 @@ fi
   TODO+=("Install Cato Client VPN: https://clientdownload.catonetworks.com (ask for an account).")
 TODO+=(
   "Run 'claude' once and sign in to Claude Code."
+  "Something failed or unclear? Run 'claude' and paste the output: it can explain the error and fix your setup with you."
   "Check access: GitHub teams, Jira/Confluence (dept-nl), Keeper, Datadog EU, Slack. See the 'MS Developer Onboarding' page in Confluence."
 )
 say "Done. Open a new terminal, then do these manual steps:"
