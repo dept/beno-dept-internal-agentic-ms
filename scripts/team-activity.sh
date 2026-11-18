@@ -18,7 +18,7 @@ days=180 repo="" branch=""
 # Output: TSV "key<TAB>login (- when unlinked)<TAB>commits<TAB>prs<TAB>reviews<TAB>last<TAB>role", newest first.
 aggregate() {
   awk -F'\t' '
-    $2 ~ /\[bot\]$/ || $3 ~ /\[bot\]$/ || tolower($2) ~ /^(dependabot|renovate|github-actions|copilot)/ { next }
+    $2 ~ /\[bot\]$/ || $3 ~ /\[bot\]$/ || tolower($2) ~ /^(app\/|copilot)|^(dependabot|renovate|github-actions)$/ { next }
     {
       # ponytail: an unlinked email is keyed by git name, so one person with a linked and an
       # unlinked email shows as two rows; a human merges them when confirming the table.
@@ -45,6 +45,12 @@ aggregate() {
     }' | sort -t$'\t' -k6,6r
 }
 
+# Input: TSV "commit<TAB>login<TAB>name<TAB>date<TAB>sha" on stdin, file $1 with one sha per line.
+# Drops the commits whose sha is in $1; prints the first 4 fields.
+drop_skipped() {
+  awk -F'\t' 'FILENAME == ARGV[1] { s[$1]; next } !($5 in s) { print $1 "\t" $2 "\t" $3 "\t" $4 }' "$1" -
+}
+
 self_test() {
   local out
   out=$(printf '%s\n' \
@@ -62,15 +68,22 @@ self_test() {
     $'review\terin\t\t2026-11-06T10:00:00Z' \
     $'review\terin\t\t2026-11-06T10:00:00Z' \
     $'review\terin\t\t2026-11-06T10:00:00Z' \
-    $'review\tcopilot-pull-request-reviewer\t\t2026-11-10T10:00:00Z' | aggregate)
+    $'review\tcopilot-pull-request-reviewer\t\t2026-11-10T10:00:00Z' \
+    $'pr\tapp/claude\t\t2026-11-10T10:00:00Z' | aggregate)
   grep -q $'^bob\tbob\t0\t0\t3\t2026-11-05\tTech lead' <<<"$out" || { echo "FAIL tech lead: $out" >&2; exit 1; }
   grep -q $'^alice\talice\t2\t1\t0\t2026-11-02\tDeveloper$' <<<"$out" || { echo "FAIL developer: $out" >&2; exit 1; }
   grep -q $'^carol\tcarol\t0\t0\t1\t2026-09-01\tReviewer$' <<<"$out" || { echo "FAIL reviewer: $out" >&2; exit 1; }
   grep -q $'^dave\tdave\t0\t0\t0\t-\tCode owner, no recent activity$' <<<"$out" || { echo "FAIL owner: $out" >&2; exit 1; }
   grep -q $'^~Unlinked Person\t-\t1\t' <<<"$out" || { echo "FAIL unlinked: $out" >&2; exit 1; }
-  ! grep -qi 'bot\|copilot' <<<"$out" || { echo "FAIL bots kept: $out" >&2; exit 1; }
+  ! grep -qi 'bot\|copilot\|app/' <<<"$out" || { echo "FAIL bots kept: $out" >&2; exit 1; }
   grep -q $'^erin\terin\t0\t0\t3\t2026-11-06\tReviewer$' <<<"$out" || { echo "FAIL tie-break: $out" >&2; exit 1; }
   [[ $(head -1 <<<"$out" | cut -f1) == erin ]] || { echo "FAIL order: $out" >&2; exit 1; }
+  local kept
+  kept=$(printf '%s\n' $'commit\ta\tA\t1\taaa' $'commit\ta\tA\t2\tbbb' $'commit\ta\tA\t3\tccc' |
+    drop_skipped <(printf 'aaa\nccc\n') | cut -f4)
+  [[ $kept == 2 ]] || { echo "FAIL skip: $kept" >&2; exit 1; }
+  kept=$(printf '%s\n' $'commit\ta\tA\t1\taaa' | drop_skipped /dev/null | cut -f4)
+  [[ $kept == 1 ]] || { echo "FAIL empty skip: $kept" >&2; exit 1; }
   echo "team-activity self-test: ok"
 }
 
@@ -88,24 +101,41 @@ if [[ ! "$repo" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ || ! "$days" =~ ^[0-9]+$ ]]
   echo "usage: team-activity.sh <org/repo> [--days N] [--branch B] | --self-test" >&2
   exit 2
 fi
-command -v gh >/dev/null || { echo "team-activity: gh CLI not found" >&2; exit 1; }
+for c in gh jq; do command -v "$c" >/dev/null || { echo "team-activity: $c not found" >&2; exit 1; }; done
 
 since=$(date -u -v-"${days}"d +%Y-%m-%d 2>/dev/null || date -u -d "${days} days ago" +%Y-%m-%d)
 [[ -n "$branch" ]] || branch=$(gh api "repos/$repo" --jq .default_branch)
 
-raw=$(mktemp); trap 'rm -f "$raw"' EXIT
+raw=$(mktemp); prs=$(mktemp); skip=$(mktemp); trap 'rm -f "$raw" "$prs" "$skip"' EXIT
 
-# Commits on the branch. A commit whose email is not linked to a GitHub account has no login;
-# it is kept under the git author name.
-gh api --paginate "repos/$repo/commits?sha=$branch&since=${since}T00:00:00Z&per_page=100" \
-  --jq '.[] | ["commit", (.author.login // ""), .commit.author.name, .commit.author.date] | @tsv' >>"$raw"
+# Pull requests from tooling branches (the agentic standard rollout, maintainer runs, dependency
+# bots) say who runs the tooling, not who builds the project: skip them, their reviews, and the
+# commits they merged.
+# ponytail: matched on branch name, so a human branch named like tooling is skipped too, and a
+# rebase-merged tooling pull request leaks (its rebased commits get new shas). Use labels if that bites.
+ignore='^(chore/(agentic-standard|dept-agentic|standard-|central-context|branch-hygiene|dependabot|add-dependabot|ai-maintenance|ai-docs-maintenance|ms-migration)|feat/ms-migration|docs/ai-maintenance|ci/(stale-pr|branch-hygiene)|dependabot/|renovate/)'
 
 # Pull requests touched in the window: authors of those opened in it, and reviews submitted in it
 # by someone other than the author (replies on your own pull request are reviews too).
 gh pr list -R "$repo" --state all --search "updated:>=$since" --limit 500 \
-  --json author,createdAt,reviews \
-  --jq ".[] | (select(.createdAt >= \"$since\") | [\"pr\", .author.login, \"\", .createdAt] | @tsv),
-              (.author.login as \$a | .reviews[] | select(.submittedAt >= \"$since\" and .author.login != \$a) | [\"review\", .author.login, \"\", .submittedAt] | @tsv)" >>"$raw"
+  --json number,headRefName,author,createdAt,reviews,mergeCommit >"$prs"
+[[ $(jq length "$prs") -lt 500 ]] || echo "team-activity: 500 pull requests, older ones not read; try a smaller --days" >&2
+jq -r --arg s "$since" --arg ig "$ignore" '.[] | select(.headRefName | test($ig) | not) |
+  (select(.createdAt >= $s) | ["pr", .author.login, "", .createdAt] | @tsv),
+  (.author.login as $a | .reviews[] | select(.submittedAt >= $s and .author.login != $a) | ["review", .author.login, "", .submittedAt] | @tsv)' "$prs" >>"$raw"
+jq -r --arg ig "$ignore" '.[] | select(.headRefName | test($ig)) | .mergeCommit.oid // empty' "$prs" >"$skip"
+merged=$(jq -r --arg ig "$ignore" '.[] | select((.headRefName | test($ig)) and .mergeCommit) | .number' "$prs")
+for n in $merged; do
+  gh api --paginate "repos/$repo/pulls/$n/commits?per_page=100" --jq '.[].sha' >>"$skip" ||
+    echo "team-activity: commits of #$n not read, they count as activity" >&2
+done
+
+# Commits on the branch, minus those a skipped pull request brought in (its own commits and its
+# merge or squash commit). A commit whose email is not linked to a GitHub account has no login; it is kept
+# under the git author name.
+gh api --paginate "repos/$repo/commits?sha=$branch&since=${since}T00:00:00Z&per_page=100" \
+  --jq '.[] | ["commit", (.author.login // ""), .commit.author.name, .commit.author.date, .sha] | @tsv' |
+  drop_skipped "$skip" >>"$raw"
 
 # Members of teams named in CODEOWNERS. Listing team members needs org read access the token
 # may lack; a failure is noted, not fatal.
@@ -132,7 +162,7 @@ echo "|---|---|---|---|---|---|---|"
 while IFS=$'\t' read -r key login c p r last role; do
   [[ -n "$key" ]] || continue
   if [[ "$login" != "-" ]]; then
-    name=$(gh api "users/$login" --jq '.name // ""' 2>/dev/null || true)
+    name=$(gh api "users/$login" --jq '.name // ""' 2>/dev/null) || name=""
     name=${name//|/ }  # names are typed by contributors: keep them from breaking the table
     echo "| ${name:-$login} | @$login | $c | $p | $r | $last | $role |"
   else
