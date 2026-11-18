@@ -267,7 +267,7 @@ shown:
 | `BRANCH_HYGIENE_ENV_BRANCHES` | `develop,test,acceptance,main` | Promotion chain, lowest to highest; last entry is production; branches that do not exist are dropped; `main` falls back to `master` |
 | `BRANCH_HYGIENE_STALE_DAYS` | `60` | Tier 3 age threshold, in days |
 | `BRANCH_HYGIENE_ARCHIVE_DAYS` | `180` | Tier 4 age threshold, in days |
-| `BRANCH_HYGIENE_KEEP_PATTERNS` | `release/*,hotfix/*,keep/*,dependabot/*,renovate/*` | Globs never deleted, archived or promoted |
+| `BRANCH_HYGIENE_KEEP_PATTERNS` | `master,release/*,hotfix/*,keep/*,dependabot/*,renovate/*` | Globs never deleted, archived or promoted |
 | `BRANCH_HYGIENE_PROMOTE_MAX` | `5` | Most tier 2 PRs one run may open; the rest are reported and picked up next month |
 | `BRANCH_HYGIENE_SLACK_MAX` | `10` | Most branches listed in the Slack digest |
 

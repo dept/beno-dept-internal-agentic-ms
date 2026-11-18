@@ -3,9 +3,17 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.12.0"
+  version: "2.12.1"
   release_date: "2026-11-18"
   changelog:
+    - version: "2.12.1"
+      date: "2026-11-18"
+      changes:
+        - "scripts/branch-hygiene.sh fails safe on `DRY_RUN`: only the exact value `false` acts. Any other value (a typo such as `False` or `0`, from a repository's own dry-run variable or a local run) runs as a dry run and prints a warning, instead of taking the delete, archive and promote paths."
+        - "`master` joins the default keep patterns in the script, the workflow template and the README, so a legacy `master` that is not an env branch is never deleted or archived. A repository that sets `BRANCH_HYGIENE_KEEP_PATTERNS` itself decides whether to list it."
+        - "Promotion pull requests opened from GitHub Actions say in their body that no checks ran (GitHub starts no workflows for a pull request opened by the workflow token) and that closing and reopening the pull request runs them."
+        - "The Slack digest stops listing tier 3 branches at 2800 characters as well as at `SLACK_MAX_LISTED` (the first branch is always listed), so long branch names can no longer push the section over Slack's 3000-character limit and get the whole message rejected. The \"more not shown\" count follows the number actually listed."
+        - "Found by Copilot review on dept/uki-hubo-store#539. Existing projects pick it up on their next standard update."
     - version: "2.12.0"
       date: "2026-11-18"
       changes:
