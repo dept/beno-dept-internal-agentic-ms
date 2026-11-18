@@ -95,7 +95,7 @@ After wiring is complete, create handover documentation in Confluence.
    - `## Quick links` table: GitHub, test, acceptance, production, Keeper/secrets
    - `## Documentation structure` bullet list linking to the four subpages
    - `## AI tooling status` — list context files, agents, skills, code graph, MCP servers, instructions; add a warning panel if not yet confirmed
-   - `## Key contacts` table (last section) — columns `Role`, `Name`, `Contact (email)`; add a warning panel asking the team to verify before sharing
+   - `## Key contacts` table (last section) — columns `Role`, `Name`, `Contact (email)`, one row per row of the `## Team` table in `.ai/project-context.md` (same roles, same order, `Unknown` kept visible); add a warning panel asking the team to verify before sharing
 6. Make content readable for mixed roles (developer + client manager).
 6b. **Confluence is written for humans; `.ai/` is written for AI tools. Never tell a Confluence reader to go read `.ai/`.** Every page must stand on its own — the answer goes on the page, not behind a pointer to a repository file. Do not write onboarding or orientation instructions such as "read the context files in order: `.ai/project-context.md`, then `.ai/architecture.md`", and do not describe `.ai/` as background reading or the fastest route into the codebase. Where the substance only exists in `.ai/`, restate it on the page in human wording.
    Two narrow exceptions, both describing the repository rather than instructing the reader: the landing page's `## AI tooling status` section may state that `.ai/` exists and what it holds, and a sync note under a synced artifact (the architecture diagram) may name the `.ai/` file that owns the source so an engineer knows where to change it.

@@ -118,6 +118,7 @@ ARTIFACTS=(
   "scripts/mirror-claude.sh|scripts/mirror-claude.sh"
   "scripts/gen-dependabot.sh|scripts/gen-dependabot.sh"
   "scripts/confluence-adf.py|scripts/confluence-adf.py"
+  "scripts/team-activity.sh|scripts/team-activity.sh"
   "config/standard-version.yml|config/standard-version.yml"
   "config/change-impact-matrix.yml|config/change-impact-matrix.yml"
   "standards/writing-rules.md|standards/writing-rules.md"
@@ -147,6 +148,7 @@ BOOTSTRAP_ONLY=(
   ".github/agents/discovery.agent.md"
   "scripts/graphify-bootstrap.sh"
   "scripts/onboard-central.sh"
+  "scripts/team-activity.sh"
 )
 
 MIGRATED=0

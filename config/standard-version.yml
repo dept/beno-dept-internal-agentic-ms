@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.9.1"
-  release_date: "2026-11-16"
+  version: "2.11.0"
+  release_date: "2026-11-18"
   changelog:
+    - version: "2.11.0"
+      date: "2026-11-18"
+      changes:
+        - "project-context.md gets a fixed `## Team` table (Role, Name, GitHub, Contact, Last checked; roles Client manager, Delivery lead, Tech lead, Developer, QA). 34 of 36 central project contexts named no client manager, and team sections were free text that went stale. The new scripts/team-activity.sh lists who committed, opened pull requests or reviewed in the last 180 days (bots dropped, CODEOWNERS team members included) with a suggested role. Migration Phase 1b runs it and always asks for the client manager and delivery lead, since git cannot see those roles; `Unknown` is allowed and recorded as an open item, and Phase 4b reuses the answers as `--owners`. The Confluence `Key contacts` table mirrors the Team table. The maintainer's gap check replaces the loose \"new team members (from git log)\" line: it adds active developers, marks listed people with 90+ days of no activity `(possibly left)` without deleting them, and never touches the client manager, delivery lead or client contact rows. scripts/validate.sh warns (not fails) when the table or the Client manager row is missing. Existing projects pick the table up through the central maintain run, which passes the team activity table to the maintainer."
     - version: "2.9.1"
       date: "2026-11-16"
       changes:

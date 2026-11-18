@@ -60,7 +60,7 @@ The `[Project Name]` page is the top-level Confluence entry point. It should let
 
 ### Content rules
 - Keep it short and scannable — this is a landing page, not a deep dive.
-- `## Key contacts` must be the **last section**.
+- `## Key contacts` must be the **last section**. Its rows mirror the `## Team` table in `project-context.md`; change the table there, not on the page.
 - Include a warning panel in `## Key contacts` when contact details have not yet been confirmed.
 - Include a `## Key facts` table: repo, framework, package manager, CMS, hosting, database, monitoring. Use `[To fill in]` for unknowns.
 - Include a `## AI tooling status` section listing which DEPT agentic standard components are in place. Use a warning panel when setup has not yet been confirmed.
