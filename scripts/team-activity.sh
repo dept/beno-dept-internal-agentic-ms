@@ -133,9 +133,11 @@ while IFS=$'\t' read -r key login c p r last role; do
   [[ -n "$key" ]] || continue
   if [[ "$login" != "-" ]]; then
     name=$(gh api "users/$login" --jq '.name // ""' 2>/dev/null || true)
+    name=${name//|/ }  # names are typed by contributors: keep them from breaking the table
     echo "| ${name:-$login} | @$login | $c | $p | $r | $last | $role |"
   else
-    echo "| ${key#\~} | - (email not linked) | $c | $p | $r | $last | $role |"
+    name=${key#\~}
+    echo "| ${name//|/ } | - (email not linked) | $c | $p | $r | $last | $role |"
   fi
 done <<<"$rows"
 [[ -z "$owners_note" ]] || { echo; echo "CODEOWNERS:${owners_note}"; }

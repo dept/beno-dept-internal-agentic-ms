@@ -224,7 +224,8 @@ Identify new things that should be documented but aren't:
   table (from `scripts/team-activity.sh`), use it; otherwise use `git log --since=180.days`. Add a
   `Developer` row for anyone with commits or pull requests in the window who is not listed, mark a
   listed Tech lead, Developer or QA with no activity for 90+ days as `(possibly left)` after the
-  name (never delete the row), and update `Last checked` on rows you confirmed. Never add, change
+  name (never delete the row), and set `Last checked` to today on the rows you change (refreshing
+  dates alone is churn, not drift). Never add, change
   or remove `Client manager`, `Delivery lead` or `Client contact` rows: git cannot see those roles.
   A missing `## Team` table or an `Unknown` Client manager is reported as a gap, not filled in
 
