@@ -101,9 +101,9 @@ if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks
   # Browsers have no command-line import, so open the chosen browser's import page and show the file.
   BROWSERS=()
   for b in "Google Chrome" "Microsoft Edge" "Brave Browser" "Firefox" "Safari"; do
-    [[ -d "/Applications/$b.app" ]] && BROWSERS+=("$b")
+    [[ -d "/Applications/$b.app" || -d "$HOME/Applications/$b.app" ]] && BROWSERS+=("$b")
   done
-  PICK=""
+  PICK="" HOW=""
   if [[ -t 0 && ${#BROWSERS[@]} -gt 0 ]]; then
     echo "Import the bookmarks into a browser now? Pick a number:"
     select PICK in "${BROWSERS[@]}" "Skip"; do break; done
@@ -115,20 +115,22 @@ if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks
         "Microsoft Edge") URL="edge://settings/profiles/importBrowsingData" ;;
         *) URL="brave://settings/importData" ;;
       esac
-      # chrome:// style pages only open through AppleScript (macOS may ask to let Terminal control the browser).
-      osascript -e "tell application \"$PICK\"" -e "activate" -e "if (count of windows) = 0 then make new window" \
-        -e "tell front window to make new tab with properties {URL:\"$URL\"}" -e "end tell" >/dev/null ||
+      # chrome:// style pages only open through AppleScript (macOS asks to let Terminal control the browser).
+      if osascript -e "tell application \"$PICK\"" -e "activate" -e "if (count of windows) = 0 then make new window" \
+        -e "tell front window to make new tab with properties {URL:\"$URL\"}" -e "end tell" >/dev/null; then
+        HOW="choose 'Bookmarks HTML file' in the import page that just opened (check it is your work profile)"
+      else
         warn "Could not open the import page in $PICK"
-      HOW="in the import page choose 'Bookmarks HTML file', then pick the file"
+      fi
       ;;
-    "Firefox") open -a Firefox; HOW="Bookmarks > Manage bookmarks > Import and Backup > Import Bookmarks from HTML" ;;
-    "Safari") open -a Safari; HOW="File > Import From > Bookmarks HTML File" ;;
+    "Firefox") open -a Firefox || true; HOW="Bookmarks > Manage bookmarks > Import and Backup > Import Bookmarks from HTML" ;;
+    "Safari") open -a Safari || true; HOW="File > Import From > Bookmarks HTML File" ;;
   esac
-  if [[ -n "${HOW:-}" ]]; then
-    open -R "$BM"
-    echo "In $PICK: $HOW (~/Downloads/dept-ms-bookmarks.html). It adds a 'DEPT (MS)' folder with every project."
+  if [[ -n "$HOW" ]]; then
+    open -R "$BM" || true
+    echo "In $PICK: $HOW, then pick ~/Downloads/dept-ms-bookmarks.html. It adds a 'DEPT (MS)' folder with every project."
   else
-    TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome: Bookmarks > Import bookmarks and settings > Bookmarks HTML file). It adds a 'DEPT (MS)' folder with every project.")
+    TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome, Edge, Brave: Bookmarks > Import bookmarks and settings > Bookmarks HTML file. Firefox: Manage bookmarks > Import and Backup. Safari: File > Import From). It adds a 'DEPT (MS)' folder with every project.")
   fi
 else
   rm -f "$BM.tmp"
