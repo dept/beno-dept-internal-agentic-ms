@@ -13,7 +13,7 @@ is in `docs/confluence-layout.md`, and it is not restated here. Read both before
 ## Fixed page tree
 Every project should use this structure under `MS / Projects`:
 
-- `[Project Name]` ← landing page: Key facts, AI tooling status, Key contacts
+- `[Project Name]` ← landing page: Key facts, Key contacts
   - `[Project Name] - Overview`
   - `[Project Name] - Architecture & Package Map`
   - `[Project Name] - Environments & Access`
@@ -40,7 +40,7 @@ pages up by that full title when creating or syncing.
 - Do not create extra sibling pages such as `Coding Standards`, `Dependencies`, or `Runbooks` unless explicitly requested.
 - Use clear mixed-audience language: understandable for both engineers and client managers.
 - **Confluence is the human surface; `.ai/` is the agent surface. Never send a human reader into `.ai/`.** These pages must stand on their own: a reader gets the answer on the page, not a pointer to a repository file written for AI tools. Do not write instructions like "read `.ai/project-context.md`, then `.ai/architecture.md`", and do not describe `.ai/` files as onboarding reading, background reading, or the fastest route into the codebase. If content only exists in `.ai/`, copy the substance onto the page in human wording instead of linking to the file.
-  Two narrow exceptions, both of which describe the repository rather than instruct the reader: the landing page's *AI tooling status* section may state that `.ai/` exists and what it contains, and a sync note under a synced artifact (such as the architecture diagram) may name the `.ai/` file that owns the source, so an engineer editing it knows where to change it. Neither is an instruction to go read `.ai/` to understand the project.
+  One narrow exception, which describes the repository rather than instructs the reader: a sync note under a synced artifact (such as the architecture diagram) may name the `.ai/` file that owns the source, so an engineer editing it knows where to change it. Neither is an instruction to go read `.ai/` to understand the project.
 - **Read the repository's own prose first.** `README.md` at the root, a per-package `README.md`, `CONTRIBUTING.md`, and a `doc/` or `docs/` folder are the primary wording source: they hold the project's own explanation of what it is, plus the conventions (commit format, branch format, required tooling, local setup order) that no config file states. Use them for wording and for facts, then verify important claims against code and config. A repository readme that documents a commit convention and does not reach the Onboarding page is the standard failing, not the readme being irrelevant.
 - Sanitize titles before creating Confluence pages: decode HTML entities and prefer readable words over raw symbols.
 
@@ -55,15 +55,15 @@ The `[Project Name]` page is the top-level Confluence entry point. It should let
 2. `## Key facts`
 3. `## Quick links`
 4. `## Documentation structure`
-5. `## AI tooling status`
-6. `## Key contacts`
+5. `## Key contacts`
 
 ### Content rules
 - Keep it short and scannable — this is a landing page, not a deep dive.
 - `## Key contacts` must be the **last section**. Its rows mirror the `## Team` table in `project-context.md`; change the table there, not on the page.
 - Include a warning panel in `## Key contacts` when contact details have not yet been confirmed.
 - Include a `## Key facts` table: repo, framework, package manager, CMS, hosting, database, monitoring. Use `[To fill in]` for unknowns.
-- Include a `## AI tooling status` section listing which DEPT agentic standard components are in place. Use a warning panel when setup has not yet been confirmed.
+- No `## AI tooling status` section: which agents, skills and MCP servers a project has is agent-facing and lives in `.ai/agent-registry.md`, which is not synced to Confluence.
+- In `## Key contacts`, write each GitHub handle as a link to `https://github.com/<handle>`.
 
 ### Example section skeleton
 ```md
@@ -91,30 +91,18 @@ The `[Project Name]` page is the top-level Confluence entry point. It should let
 - **Overview** — what the system does, business capabilities, key packages
 - **Architecture and Package Map** — service boundaries, external systems, packages
 - **Environments and Access** — environment URLs, CI/CD, env vars
-- **Onboarding and Handover** — local setup, troubleshooting, key contacts
-
-## AI tooling status
-> [!WARNING]
-> Fill in or remove this warning once AI tooling setup has been confirmed.
-
-- **Context files:** [e.g. `.ai/` directory with N context documents]
-- **Agents:** [e.g. Discovery, Maintainer, Support in `.github/agents/`]
-- **Skills:** [e.g. N skills in `.agents/skills/`, mirrored to Claude Code by the `.claude/skills` symlink]
-- **Code graph:** [e.g. Graphify with X nodes, Y edges]
-- **MCP servers:** [e.g. list of configured integrations]
-- **Instructions:** [e.g. `AGENTS.md`, `CLAUDE.md`]
+- **Onboarding and Handover** — local setup, troubleshooting, escalation
 
 ## Key contacts
 > [!WARNING]
 > Verify contact details with the project team before sharing this page.
 
-| Role | Name | Contact (email) |
-| --- | --- | --- |
-| Tech Lead | [To fill in] | [To fill in] |
-| Client Manager | [To fill in] | [To fill in] |
-| Project Manager | [To fill in] | [To fill in] |
-| DevOps Owner | [To fill in] | [To fill in] |
-| CMS Admin | [To fill in] | [To fill in] |
+| Role | Name | GitHub | Contact (email) |
+| --- | --- | --- | --- |
+| Client manager | [To fill in] | - | [To fill in] |
+| Delivery lead | [To fill in] | - | [To fill in] |
+| Tech lead | [To fill in] | [@handle](https://github.com/handle) | [To fill in] |
+| Developer | [To fill in] | [@handle](https://github.com/handle) | [To fill in] |
 ```
 
 ---
@@ -390,7 +378,7 @@ The `.ai/` folder has ~9 files; the Confluence tree has 4 subpages + a landing p
 | `runbooks.md` | Environments & Access |
 | `onboarding.md` | Onboarding & Handover |
 | `coding-standards.md` | Onboarding & Handover |
-| `agent-registry.md` | landing page → `## AI tooling status` section |
+| `agent-registry.md` | not synced (agent-facing only) |
 
 ### `.meta.yml` `confluence:` block (schema)
 
@@ -418,7 +406,6 @@ confluence:
     runbooks.md: environments
     onboarding.md: onboarding
     coding-standards.md: onboarding
-    agent-registry.md: landing
 ```
 
 `sync_map` entries for `.ai/` files that don't exist in a given project (e.g. `cms.md` on a non-CMS repo) are ignored.
@@ -450,8 +437,8 @@ When an agent creates Confluence documentation, it should:
 3. fill the standard sections in order, choosing each section's block type per `docs/confluence-layout.md` → *Rule 0* and its canonical column sets
 4. add project-specific sections only when needed
 5. explain any structural deviation explicitly in its final report
-6. place Key facts, AI tooling status, and Key contacts **only on the main `[Project Name]` landing page** — never repeat them on Overview, Architecture, or Onboarding subpages
-7. write for the human reader and keep `.ai/` out of the pages, per the Confluence-is-human rule in **Standardization rules** above; the landing page's AI tooling status entry and the diagram sync note are the only permitted mentions
+6. place Key facts and Key contacts **only on the main `[Project Name]` landing page** — never repeat them on Overview, Architecture, or Onboarding subpages
+7. write for the human reader and keep `.ai/` out of the pages, per the Confluence-is-human rule in **Standardization rules** above; the diagram sync note is the only permitted mention
 8. title pages per the **Page titles (collision-safe)** rule above: landing = project name (no affix), every subpage prefixed with the landing title (`<landing title> - <subpage>`); write the full titles into `.ai/.meta.yml` and resolve pages by them
 
 ## Recommended implementation pattern in prompts and skills
