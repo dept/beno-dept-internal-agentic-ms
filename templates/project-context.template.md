@@ -36,11 +36,11 @@ Confluence `Key contacts` table and for the maintainer's team checks.
 
 | Role | Name | GitHub | Contact | Last checked |
 |---|---|---|---|---|
-| Client manager | Jane Doe | - | jane.doe@deptagency.com | 2026-11-18 |
-| Delivery lead | ... | ... | ... | ... |
-| Tech lead | ... | @handle | ... | ... |
-| Developer | ... | @handle | ... | ... |
-| QA | ... | @handle | ... | ... |
+| Client manager | [Name or Unknown] | - | [email] | [YYYY-MM-DD] |
+| Delivery lead | [Name or Unknown] | - | [email] | [YYYY-MM-DD] |
+| Tech lead | [Name] | @[handle] | [email] | [YYYY-MM-DD] |
+| Developer | [Name] | @[handle] | [email] | [YYYY-MM-DD] |
+| QA | [Name] | @[handle] | [email] | [YYYY-MM-DD] |
 
 - Roles, in this order: `Client manager`, `Delivery lead`, `Tech lead`, `Developer` (one row per
   person), `QA`. Add `Client contact` rows only when the client side is known.

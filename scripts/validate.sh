@@ -298,10 +298,10 @@ fi
 # project-context.md should carry the ## Team table with a Client manager row. Warning-level:
 # projects migrated before 2.11.0 have none yet, and Unknown is an allowed value.
 if [[ -f "${AI_DIR}/project-context.md" ]]; then
-  if ! grep -q '^## Team' "${AI_DIR}/project-context.md"; then
+  if ! grep -qE '^## Team[[:space:]]*$' "${AI_DIR}/project-context.md"; then
     echo -e "  ${YELLOW}△${NC} project-context.md has no ## Team table (see templates/project-context.template.md)"
     WARNED=$((WARNED + 1))
-  elif ! grep -qiE '^\| *Client manager *\|' "${AI_DIR}/project-context.md"; then
+  elif ! grep -qiE '^\|? *\**Client manager\** *\|' "${AI_DIR}/project-context.md"; then
     echo -e "  ${YELLOW}△${NC} project-context.md ## Team has no Client manager row"
     WARNED=$((WARNED + 1))
   else
