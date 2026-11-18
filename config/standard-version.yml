@@ -3,9 +3,15 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.12.1"
+  version: "2.12.2"
   release_date: "2026-11-18"
   changelog:
+    - version: "2.12.2"
+      date: "2026-11-18"
+      changes:
+        - "scripts/dev-setup/macos.sh asks before installing the .NET SDKs (default no), since only the .NET projects need them. `DOTNET=1` installs them without asking."
+        - "The bookmarks import now reveals the file in Finder before opening the browser's import tab, so the browser ends up in front instead of behind the Finder window."
+        - "The closing manual steps point to Claude Code for help when a step failed or is unclear."
     - version: "2.12.1"
       date: "2026-11-18"
       changes:
