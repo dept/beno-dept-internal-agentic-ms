@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.12.2"
+  version: "2.12.3"
   release_date: "2026-11-18"
   changelog:
+    - version: "2.12.3"
+      date: "2026-11-18"
+      changes:
+        - "scripts/dev-setup/macos.sh drops the Dutch macOS menu names from the bookmarks import steps."
     - version: "2.12.2"
       date: "2026-11-18"
       changes:
