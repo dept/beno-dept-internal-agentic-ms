@@ -20,7 +20,7 @@ aggregate() {
   awk -F'\t' '
     $2 ~ /\[bot\]$/ || $3 ~ /\[bot\]$/ || tolower($2) ~ /^(app\/|copilot)|^(dependabot|renovate|github-actions)$/ { next }
     {
-      # ponytail: an unlinked email is keyed by git name, so one person with a linked and an
+      # An unlinked email is keyed by git name, so one person with a linked and an
       # unlinked email shows as two rows; a human merges them when confirming the table.
       key = ($2 != "") ? $2 : "~" $3
       if (key == "~") next
@@ -111,7 +111,7 @@ raw=$(mktemp); prs=$(mktemp); skip=$(mktemp); trap 'rm -f "$raw" "$prs" "$skip"'
 # Pull requests from tooling branches (the agentic standard rollout, maintainer runs, dependency
 # bots) say who runs the tooling, not who builds the project: skip them, their reviews, and the
 # commits they merged.
-# ponytail: matched on branch name, so a human branch named like tooling is skipped too, and a
+# Matched on branch name, so a human branch named like tooling is skipped too, and a
 # rebase-merged tooling pull request leaks (its rebased commits get new shas). Use labels if that bites.
 ignore='^(chore/(agentic-standard|dept-agentic|standard-|central-context|branch-hygiene|dependabot|add-dependabot|ai-maintenance|ai-docs-maintenance|ms-migration)|feat/ms-migration|docs/ai-maintenance|ci/(stale-pr|branch-hygiene)|dependabot/|renovate/)'
 
