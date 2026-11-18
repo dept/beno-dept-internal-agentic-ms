@@ -37,9 +37,19 @@ inst() { brew install "$@" || { warn "brew install $* failed"; TODO+=("Install m
 for f in gh mise jq; do if had "$f"; then skip "$f"; else inst "$f"; fi; done
 if had code || [[ -d "/Applications/Visual Studio Code.app" ]]; then skip "VS Code"; else inst --cask visual-studio-code; fi
 if had claude; then skip "Claude Code"; else inst --cask claude-code; fi
+# .NET is only for the .NET projects, so it is opt-in: answer y, or run with DOTNET=1.
 SDKS=$(had dotnet && dotnet --list-sdks 2>/dev/null || true)
-if grep -q '^8\.' <<<"$SDKS"; then skip ".NET SDK 8"; else inst --cask dotnet-sdk@8; fi
-if grep -v '^8\.' <<<"$SDKS" | grep -q '^[0-9]'; then skip ".NET SDK (current)"; else inst --cask dotnet-sdk; fi
+NEED_DOTNET=0
+grep -q '^8\.' <<<"$SDKS" && grep -v '^8\.' <<<"$SDKS" | grep -q '^[0-9]' || NEED_DOTNET=1
+[[ "$NEED_DOTNET" == "1" ]] || skip ".NET SDK 8 and current"
+if [[ "$NEED_DOTNET" == "1" && "${DOTNET:-}" != "1" ]]; then
+  a=""; [[ -t 0 ]] && { read -r -p "Install .NET SDK 8 and current? Only needed for .NET projects. [y/N] " a || true; }
+  [[ "$a" == [yY]* ]] || { NEED_DOTNET=0; echo ".NET SDK skipped (re-run with DOTNET=1 to add it later)."; }
+fi
+if [[ "$NEED_DOTNET" == "1" ]]; then
+  if grep -q '^8\.' <<<"$SDKS"; then skip ".NET SDK 8"; else inst --cask dotnet-sdk@8; fi
+  if grep -v '^8\.' <<<"$SDKS" | grep -q '^[0-9]'; then skip ".NET SDK (current)"; else inst --cask dotnet-sdk; fi
+fi
 
 # 4. Shell config (zsh): only what this script set up
 say "Shell config (~/.zshrc)"
@@ -108,6 +118,8 @@ if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks
     echo "Import the bookmarks into a browser now? Pick a number:"
     select PICK in "${BROWSERS[@]}" "Skip"; do break; done
   fi
+  # Show the file first: Finder takes focus, so the browser opened after it ends up in front.
+  [[ -n "$PICK" && "$PICK" != "Skip" ]] && { open -R "$BM" || true; }
   case "$PICK" in
     "Google Chrome"|"Microsoft Edge"|"Brave Browser")
       case "$PICK" in
@@ -130,10 +142,9 @@ if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks
       HOW="menu File > Import From > Bookmarks HTML File (Dutch: Archief > Importeer uit > Bladwijzers-HTML-bestand)" ;;
   esac
   if [[ -n "$HOW" ]]; then
-    open -R "$BM" || true
     say "Finish the import in $PICK"
     echo "1. $HOW"
-    echo "2. Pick ~/Downloads/dept-ms-bookmarks.html (Finder shows it now)"
+    echo "2. Pick ~/Downloads/dept-ms-bookmarks.html (also shown in a Finder window behind the browser)"
     echo "You get a 'DEPT (MS)' bookmarks folder with every project."
   else
     TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (every browser imports it. Chrome, Edge, Brave: Bookmarks > Import bookmarks and settings > Bookmarks HTML file. Firefox: Cmd+Shift+O > Import and Backup > Import Bookmarks from HTML. Safari: File > Import From > Bookmarks HTML File). It adds a 'DEPT (MS)' folder with every project.")
