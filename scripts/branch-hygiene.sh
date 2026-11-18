@@ -47,7 +47,10 @@ for arg in "$@"; do
 done
 # Fail safe: only the exact string `false` acts. A typo in the repository variable (`False`, `0`,
 # `no`) would otherwise take every destructive path.
-[[ "$DRY_RUN" == "false" ]] || DRY_RUN=true
+if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+  echo "DRY_RUN='${DRY_RUN}' is neither 'true' nor 'false': running as a dry run." >&2
+  DRY_RUN=true
+fi
 
 cd "$PROJECT_DIR"
 
@@ -414,9 +417,12 @@ for b in "${ALL_BRANCHES[@]}"; do
         actions="${actions}${e}:branch moved during the run, not opened "
       else
         ensure_label
-        # Opened with the workflow's GITHUB_TOKEN, and GitHub starts no workflows for that, so
-        # say so in the PR instead of letting it look checked.
-        body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."$'\n\n'"Pull request checks did not run: GitHub starts no workflows for a pull request opened by the workflow token. Close and reopen this pull request (or push a commit) to run them."
+        body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."
+        # In Actions the PR is opened with the workflow's GITHUB_TOKEN, and GitHub starts no
+        # workflows for that, so say so instead of letting it look checked.
+        if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+          body="${body}"$'\n\n'"Pull request checks did not run: GitHub starts no workflows for a pull request opened by the workflow token. Close and reopen this pull request to run them."
+        fi
         if gh pr create --head "$b" --base "$e" --title "$title" --body "$body" --label "$LABEL" >/dev/null 2>&1; then
           actions="${actions}${e}:opened "
           PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
@@ -676,7 +682,8 @@ post_to_slack() {
       [[ -n "$merged_pills" ]] && detail="${detail:+${detail}  ·  }merged ${merged_pills}"
       detail="${detail:+${detail}  ·  }${handle}  ·  \`${age}d\`"
       card="${title}"$'\n'"${detail}"$'\n\n'
-      [[ $(( ${#flag_lines} + ${#card} )) -gt 2800 ]] && break
+      # The first card always goes in, so the list is never empty while branches need a decision.
+      [[ "$shown" -gt 0 && $(( ${#flag_lines} + ${#card} )) -gt 2800 ]] && break
       flag_lines="${flag_lines}${card}"
       shown=$((shown + 1))
     done
