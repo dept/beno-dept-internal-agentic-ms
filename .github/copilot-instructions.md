@@ -46,7 +46,9 @@ This repository supports:
 
 ## Key Concept: .ai Folder Standard
 
-Every Managed Services project should contain an .ai folder generated from these standards.
+Every Managed Services project has an .ai folder generated from these standards. It lives in the
+central context repository dept/beno-dept-ms-agentic-context under projects/<org>__<repo>/.ai/, not
+in the project repository, which gitignores .ai/.
 
 The .ai folder is the single source of truth for project intelligence and includes:
 
