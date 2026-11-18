@@ -174,7 +174,7 @@ Phase 5 of `prompts/migrate.prompt.md` holds the exact list and its two gates. I
 | Project-owned agents, skills and docs that were tracked before the migration | **Keep** | Not the standard's. Phase 5 deletes only what this migration created |
 | `.ai/` | **Remove** from the working tree | It is gitignored; the central pull request carries it |
 | Discovery and maintainer agents, phase prompts and command mirrors | **Remove** | The maintainer runs in the central repository |
-| `scripts/validate.sh`, `mirror-claude.sh`, `graphify-bootstrap.sh`, `onboard-central.sh`, `confluence-adf.py` | **Remove** | They work on a `.ai/` the project no longer has |
+| `scripts/validate.sh`, `mirror-claude.sh`, `graphify-bootstrap.sh`, `onboard-central.sh`, `confluence-adf.py`, `team-activity.sh` | **Remove** | They work on a `.ai/` the project no longer has |
 | `standards/`, `config/standard-version.yml`, `config/change-impact-matrix.yml`, the Confluence docs | **Remove** | Standard-owned copies that drift |
 | `codebase-overview`, `confluence-axi`, `context-ownership` skills | **Remove** | `codebase-overview` moves to the central repository; the other two serve the maintainer |
 | `.graphifyignore`, `graphify-out/` | **Remove** | Ephemeral. Keep the `graphify-out/` line in `.gitignore`, and keep both when the repository tracked them before the migration |
@@ -308,6 +308,7 @@ dept-agentic-standards/
 │   ├── install.sh                 # Installs the standard into a target repository
 │   ├── graphify-bootstrap.sh      # Structural pre-pass helper
 │   ├── onboard-central.sh         # Hands a new project's context to the central context repository
+│   ├── team-activity.sh           # Recent committers, PR authors and reviewers, for the ## Team table
 │   ├── mirror-claude.sh           # Creates and repairs the Claude Code mirror symlinks
 │   ├── gen-dependabot.sh          # Seeds .github/dependabot.yml from tracked lockfiles
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation

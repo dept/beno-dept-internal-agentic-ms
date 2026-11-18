@@ -283,6 +283,29 @@ Promotion PRs present and a small `ahead_by` means the work branch drains: targe
 
 Majors are not part of this decision: the generated config ignores `semver-major`, so upgrading a major stays normal feature work. Security updates ignore `target-branch` and always open against the default branch.
 
+### Phase 1b: Team roster (ask, required)
+**Does:** Fills the `## Team` table of `project-context.md` (shape in
+`templates/project-context.template.md`). Inline (no separate prompt file). Git activity shows who
+touches the code; only a person knows who the client manager and delivery lead are, so always ask.
+
+1. Run `bash scripts/team-activity.sh <org>/<repo>` (needs `gh` with read access) and show the
+   table it prints.
+2. Ask, verbatim in spirit:
+
+   > Who has these roles on this project? Answer with names (and an email for the first two).
+   > Unknown is fine; it is recorded as an open item.
+   > - Client manager (required question): ...
+   > - Delivery / project lead: ...
+   > - Tech lead (suggested from activity: <top reviewer>): ...
+   > - Developers (suggested from activity: <active committers>): confirm, add or remove
+   > - QA: ...
+
+3. Keep the answers for Phase 2, which writes them into the `## Team` table with today's date as
+   `Last checked`. An `Unknown` role goes into Missing Information. Phase 4b reuses the tech lead
+   and one developer as `--owners`.
+
+If `gh` is unavailable, skip step 1 and ask step 2 without suggestions.
+
 ### Graphify Context Preparation
 **Run after Phase 1, before Phase 2.**
 **Does:** Creates or updates `.graphifyignore`, attempts Graphify, preserves `graphify-out/` for the Discovery Agent when successful. Writes nothing at all when the repository tracks `graphify-out/` itself.
@@ -291,7 +314,7 @@ Majors are not part of this decision: the generated config ignores `semver-major
 ### Phase 2: Discovery & Analysis
 **Prompt URL:** `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/refs/heads/main/prompts/02-discover.prompt.md`
 **Agent:** `.github/agents/discovery.agent.md`
-**Does:** The Discovery Agent scans agentic config, consumes `graphify-out/` when available, collects onboarding links, and generates 9 `.ai/` files + `.meta.yml`
+**Does:** The Discovery Agent scans agentic config, consumes `graphify-out/` when available, collects onboarding links, and generates 9 `.ai/` files + `.meta.yml`. Pass it the Phase 1b answers: `project-context.md` gets the `## Team` table from them.
 **Verify before continuing:** `.ai/` has 9 files + `.meta.yml`, no placeholder markers
 
 ### Phase 3: Integration
@@ -312,8 +335,8 @@ repository.
 
 1. Run `bash scripts/validate.sh .` and resolve every FAIL. This is the last time the context is
    checked in the project; after the handoff the central workflow checks it.
-2. Ask who owns the context (GitHub handles of the project's tech lead and one developer) and
-   whether Confluence was published in Phase 3.
+2. Take the owners from the Phase 1b answers (GitHub handles of the tech lead and one developer;
+   ask only if those were `Unknown`) and confirm whether Confluence was published in Phase 3.
 3. Run, from the project root:
 
    ```bash
@@ -397,7 +420,7 @@ not committed. Inline (no separate prompt file). Run it only after Phase 4b prin
 - `.ai/` from the working tree (it is gitignored; the central pull request carries it). Keep the `.gitignore` line
 - The standard's agents: `.github/agents/discovery.agent.md`, `maintainer.agent.md` and `support.agent.md`, and their `.claude/agents/` links. Any other agent belongs to the project and stays
 - `.github/prompts/migrate.prompt.md`, `01` to `04`, and their mirrors in `.claude/commands/ms-*.md` and `.cursor/commands/ms-*.md`
-- `scripts/validate.sh`, `scripts/mirror-claude.sh`, `scripts/graphify-bootstrap.sh`, `scripts/onboard-central.sh`, `scripts/confluence-adf.py`
+- `scripts/validate.sh`, `scripts/mirror-claude.sh`, `scripts/graphify-bootstrap.sh`, `scripts/onboard-central.sh`, `scripts/confluence-adf.py`, `scripts/team-activity.sh`
 - `standards/`, `config/standard-version.yml`, `config/change-impact-matrix.yml`, `docs/confluence-page-standard.md`, `docs/confluence-layout.md`
 - `.agents/skills/codebase-overview/`, `.agents/skills/confluence-axi/`, `.agents/skills/context-ownership/`
 - `.graphifyignore` and `graphify-out/`. **Leave the `graphify-out/` line in `.gitignore`**
@@ -442,6 +465,10 @@ After all phases complete, output:
 
 ### Phase 1a: Dependabot configuration
 - .github/dependabot.yml: [generated / declined / already present, hand-tuned]
+
+### Phase 1b: Team roster
+- Client manager: [name / Unknown, open item]; Delivery lead: [name / Unknown]
+- Tech lead: [name]; Developers: [count] confirmed; QA: [name / none]
 
 ### Phase 2: Discovery
 - .ai/ files: 9/9 generated
