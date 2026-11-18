@@ -98,7 +98,46 @@ fi
 BM="$HOME/Downloads/dept-ms-bookmarks.html"
 if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks.py" > "$BM.tmp"; then
   mv "$BM.tmp" "$BM"
-  TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (Chrome: Bookmarks > Import bookmarks and settings > Bookmarks HTML file). It adds a 'DEPT (MS)' folder with every project.")
+  # Browsers have no command-line import, so open the chosen browser's import page and show the file.
+  BROWSERS=()
+  for b in "Google Chrome" "Microsoft Edge" "Brave Browser" "Firefox" "Safari"; do
+    [[ -d "/Applications/$b.app" || -d "$HOME/Applications/$b.app" ]] && BROWSERS+=("$b")
+  done
+  PICK="" HOW=""
+  if [[ -t 0 && ${#BROWSERS[@]} -gt 0 ]]; then
+    echo "Import the bookmarks into a browser now? Pick a number:"
+    select PICK in "${BROWSERS[@]}" "Skip"; do break; done
+  fi
+  case "$PICK" in
+    "Google Chrome"|"Microsoft Edge"|"Brave Browser")
+      case "$PICK" in
+        "Google Chrome") URL="chrome://settings/importData" ;;
+        "Microsoft Edge") URL="edge://settings/profiles/importBrowsingData" ;;
+        *) URL="brave://settings/importData" ;;
+      esac
+      # chrome:// style pages only open through AppleScript (macOS asks to let Terminal control the browser).
+      if osascript -e "tell application \"$PICK\"" -e "activate" -e "if (count of windows) = 0 then make new window" \
+        -e "tell front window to make new tab with properties {URL:\"$URL\"}" -e "end tell" >/dev/null; then
+        HOW="in the import tab that just opened (check it is your work profile), choose 'Bookmarks HTML file', then Choose file"
+      else
+        warn "Could not open the import page in $PICK"
+      fi
+      ;;
+    # Menu names follow the macOS language, so the Dutch names are given too.
+    "Firefox") open -a Firefox || true
+      HOW="press Cmd+Shift+O (Library), click Import and Backup (Importeren en back-up), then Import Bookmarks from HTML" ;;
+    "Safari") open -a Safari || true
+      HOW="menu File > Import From > Bookmarks HTML File (Dutch: Archief > Importeer uit > Bladwijzers-HTML-bestand)" ;;
+  esac
+  if [[ -n "$HOW" ]]; then
+    open -R "$BM" || true
+    say "Finish the import in $PICK"
+    echo "1. $HOW"
+    echo "2. Pick ~/Downloads/dept-ms-bookmarks.html (Finder shows it now)"
+    echo "You get a 'DEPT (MS)' bookmarks folder with every project."
+  else
+    TODO+=("Import ~/Downloads/dept-ms-bookmarks.html in your browser (every browser imports it. Chrome, Edge, Brave: Bookmarks > Import bookmarks and settings > Bookmarks HTML file. Firefox: Cmd+Shift+O > Import and Backup > Import Bookmarks from HTML. Safari: File > Import From > Bookmarks HTML File). It adds a 'DEPT (MS)' folder with every project.")
+  fi
 else
   rm -f "$BM.tmp"
 fi
