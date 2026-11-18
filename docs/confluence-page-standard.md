@@ -91,7 +91,7 @@ The `[Project Name]` page is the top-level Confluence entry point. It should let
 - **Overview** — what the system does, business capabilities, key packages
 - **Architecture and Package Map** — service boundaries, external systems, packages
 - **Environments and Access** — environment URLs, CI/CD, env vars
-- **Onboarding and Handover** — local setup, troubleshooting, key contacts
+- **Onboarding and Handover** — local setup, troubleshooting, escalation
 
 ## Key contacts
 > [!WARNING]
