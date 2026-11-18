@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.9.1"
-  release_date: "2026-11-16"
+  version: "2.9.2"
+  release_date: "2026-11-18"
   changelog:
+    - version: "2.9.2"
+      date: "2026-11-18"
+      changes:
+        - "scripts/dev-setup/macos.sh asks which installed browser (Chrome, Edge, Brave, Firefox, Safari) should get the MS bookmarks, opens that browser's import page and shows the file in Finder. Firefox and Safari have no import page to open, so the script opens the browser and prints the menu path (with the Dutch menu names) and reveals the file. Browsers have no command-line import, so the developer still confirms the file in the browser's dialog. Skip, or a run without a terminal, keeps the import as a manual step at the end."
     - version: "2.9.1"
       date: "2026-11-16"
       changes:
