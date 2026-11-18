@@ -135,11 +135,10 @@ if [[ -f "$CTX/onboarding/bookmarks.py" ]] && python3 "$CTX/onboarding/bookmarks
         warn "Could not open the import page in $PICK"
       fi
       ;;
-    # Menu names follow the macOS language, so the Dutch names are given too.
     "Firefox") open -a Firefox || true
-      HOW="press Cmd+Shift+O (Library), click Import and Backup (Importeren en back-up), then Import Bookmarks from HTML" ;;
+      HOW="press Cmd+Shift+O (Library), click Import and Backup, then Import Bookmarks from HTML" ;;
     "Safari") open -a Safari || true
-      HOW="menu File > Import From > Bookmarks HTML File (Dutch: Archief > Importeer uit > Bladwijzers-HTML-bestand)" ;;
+      HOW="menu File > Import From > Bookmarks HTML File" ;;
   esac
   if [[ -n "$HOW" ]]; then
     say "Finish the import in $PICK"
