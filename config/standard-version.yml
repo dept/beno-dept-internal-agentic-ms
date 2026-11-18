@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.11.0"
+  version: "2.12.0"
   release_date: "2026-11-18"
   changelog:
+    - version: "2.12.0"
+      date: "2026-11-18"
+      changes:
+        - "The Confluence landing page drops its `## AI tooling status` section. It listed context files, agents, skills and MCP servers, which is agent-facing, and after the move to the central repository it described a setup projects no longer have (`.ai/` and `.github/agents/` in the project repository). `agent-registry.md` stays in `.ai/` but is no longer synced: the `agent-registry.md: landing` entry is gone from the `sync_map` schema, the page mapping, the integrate prompt and the maintainer, and the maintainer must not add the section back. The `Key contacts` table gains a `GitHub` column, matching the `## Team` table, with each handle a link to `https://github.com/<handle>`. Existing projects: the section was removed from the landing pages and the `sync_map` entry from the central contexts in dept/beno-dept-ms-agentic-context#75."
     - version: "2.11.0"
       date: "2026-11-18"
       changes:

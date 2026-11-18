@@ -88,7 +88,7 @@ Generate structured summary with:
 Read the `confluence:` block from `.ai/.meta.yml` (schema + `.ai/`→page mapping in `docs/confluence-page-standard.md`).
 
 - Resolve empty page `id`s by walking `confluence.pages.landing.id`'s children and matching the exact full title — never a bare title search across the shared space, which can select another project's similarly named page; write resolved IDs back to `.meta.yml` (prevents duplicates)
-- Route each changed `.ai/` file to its `sync_map` page, transformed into that page's storage/ADF format per the layout rule below — never the raw agent-facing Markdown (ownership header, agent pointers, confidence notes) pasted verbatim; `agent-registry.md` → landing page `## AI tooling status`
+- Route each changed `.ai/` file to its `sync_map` page, transformed into that page's storage/ADF format per the layout rule below — never the raw agent-facing Markdown (ownership header, agent pointers, confidence notes) pasted verbatim; `agent-registry.md` is not synced
 - Push critical/moderate updates only; skip minor (reduce noise)
 - Never write confidence scores or `Confidence:` markers to Confluence, in any form (own paragraph or inline in a sentence). They are agent bookkeeping for `.ai/`; strip them from every page you touch
 - Never update a page holding a macro or extension (the Mermaid diagram viewer, a status or TOC macro) through a write that round-trips the page body through Markdown, wiki markup or storage format: the community MCP's `update_page` does, and it deletes the extension or mangles its `guestParams`. Write it as ADF with `scripts/confluence-adf.py get`/`put` instead, which refuses a write that drops an extension; skip and list it in the PR body only when the script cannot run
