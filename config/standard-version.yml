@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.12.0"
+  version: "2.12.1"
   release_date: "2026-11-18"
   changelog:
+    - version: "2.12.1"
+      date: "2026-11-18"
+      changes:
+        - "scripts/branch-hygiene.sh fails safe: only the exact `DRY_RUN` value `false` acts, any other value (a typo such as `False` or `0` in `BRANCH_HYGIENE_SCHEDULE_DRY_RUN`) runs as a dry run instead of taking the delete, archive and promote paths. `master` joins the default keep patterns in the script, the workflow template and the README, so a legacy `master` that is not an env branch is never deleted or archived. Promotion pull requests say in their body that no checks ran (GitHub starts no workflows for a pull request opened by the workflow token) and how to start them. The Slack digest stops listing tier 3 branches at 2800 characters as well as at `SLACK_MAX_LISTED`, so long branch names can no longer push the section over Slack's 3000-character limit and get the whole message rejected; the \"more not shown\" count follows the number actually listed. Found by Copilot review on dept/uki-hubo-store#539. Existing projects pick it up on their next standard update."
     - version: "2.12.0"
       date: "2026-11-18"
       changes:

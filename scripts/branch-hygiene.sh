@@ -45,6 +45,9 @@ for arg in "$@"; do
     *) PROJECT_DIR="$arg" ;;
   esac
 done
+# Fail safe: only the exact string `false` acts. A typo in the repository variable (`False`, `0`,
+# `no`) would otherwise take every destructive path.
+[[ "$DRY_RUN" == "false" ]] || DRY_RUN=true
 
 cd "$PROJECT_DIR"
 
@@ -52,7 +55,7 @@ ENV_BRANCHES_RAW="${ENV_BRANCHES:-develop,test,acceptance,main}"
 STALE_DAYS="${STALE_DAYS:-60}"
 ARCHIVE_DAYS="${ARCHIVE_DAYS:-180}"
 PR_LIMIT="${PR_LIMIT:-5000}"
-KEEP_PATTERNS_RAW="${KEEP_PATTERNS:-release/*,hotfix/*,keep/*,dependabot/*,renovate/*}"
+KEEP_PATTERNS_RAW="${KEEP_PATTERNS:-master,release/*,hotfix/*,keep/*,dependabot/*,renovate/*}"
 # Tier 2 opens one pull request per branch per missing env, and the first run of a repository
 # that has never been cleaned finds years of them at once. The cap bounds that first run to
 # something a team can actually review; the rest are reported and picked up next month.
@@ -64,6 +67,7 @@ PROMOTE_MAX="${PROMOTE_MAX:-5}"
 PROMOTE_DELAY_DAYS="${PROMOTE_DELAY_DAYS:-7}"
 # Most tier 3 branches listed in the Slack digest. A Slack section block is rejected above
 # 3000 characters and a neglected repository has dozens, so the rest are a count plus a link.
+# The list also stops at a character budget, since long branch names can pass 3000 before the cap.
 SLACK_MAX_LISTED="${SLACK_MAX_LISTED:-10}"
 LABEL="branch-hygiene"
 
@@ -410,7 +414,9 @@ for b in "${ALL_BRANCHES[@]}"; do
         actions="${actions}${e}:branch moved during the run, not opened "
       else
         ensure_label
-        body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."
+        # Opened with the workflow's GITHUB_TOKEN, and GitHub starts no workflows for that, so
+        # say so in the PR instead of letting it look checked.
+        body="Found merged into ${PRODUCTION} (production) but absent from ${e}. Opened automatically by branch-hygiene."$'\n\n'"Pull request checks did not run: GitHub starts no workflows for a pull request opened by the workflow token. Close and reopen this pull request (or push a commit) to run them."
         if gh pr create --head "$b" --base "$e" --title "$title" --body "$body" --label "$LABEL" >/dev/null 2>&1; then
           actions="${actions}${e}:opened "
           PROMOTED_COUNT=$((PROMOTED_COUNT + 1))
@@ -637,10 +643,11 @@ post_to_slack() {
   # profile, and the age. Slack chat has no real table (that block is Canvas-only) and a
   # code block would drop every link, so cards are the styled layout that keeps the links.
   # Cards are joined with a blank line and rendered in one section, so the block budget and
-  # the 3000-character section limit both hold at the SLACK_MAX_LISTED cap.
-  local flag_lines=""
+  # the 3000-character section limit both hold: the list stops at SLACK_MAX_LISTED cards or at
+  # 2800 characters (room for the section heading), whichever comes first.
+  local flag_lines="" shown=0
   if [[ ${#ROWS_FLAG[@]} -gt 0 ]]; then
-    local row branch sha age author envs action login num handle title e shown=0
+    local row branch sha age author envs action login num handle title e card
     local merged_part missing_part merged_pills missing_pills detail
     for row in "${ROWS_FLAG[@]}"; do
       [[ "$shown" -ge "$SLACK_MAX_LISTED" ]] && break
@@ -668,7 +675,9 @@ post_to_slack() {
       [[ -n "$missing_pills" ]] && detail="missing ${missing_pills}"
       [[ -n "$merged_pills" ]] && detail="${detail:+${detail}  ·  }merged ${merged_pills}"
       detail="${detail:+${detail}  ·  }${handle}  ·  \`${age}d\`"
-      flag_lines="${flag_lines}${title}"$'\n'"${detail}"$'\n\n'
+      card="${title}"$'\n'"${detail}"$'\n\n'
+      [[ $(( ${#flag_lines} + ${#card} )) -gt 2800 ]] && break
+      flag_lines="${flag_lines}${card}"
       shown=$((shown + 1))
     done
   fi
@@ -686,7 +695,7 @@ post_to_slack() {
     --argjson flagged "${#ROWS_FLAG[@]}" \
     --argjson archived "${#ROWS_ARCHIVE[@]}" \
     --argjson untouched "$UNTOUCHED_COUNT" \
-    --argjson max "$SLACK_MAX_LISTED" '
+    --argjson shown "$shown" '
       ($dry == "true") as $isdry
       | (if $isdry then "would delete" else "deleted" end) as $d
       | (if $isdry then "would open" else "opened" end) as $p
@@ -715,9 +724,9 @@ post_to_slack() {
                  [ { type: "section",
                      text: { type: "mrkdwn",
                              text: ("*Promote, revert or review*\n" + ($flag_lines | rtrimstr("\n"))) } } ]
-                 + (if $flagged > $max then
+                 + (if $flagged > $shown then
                       [ { type: "context", elements: [ { type: "mrkdwn",
-                          text: "\($flagged - $max) more not shown" } ] } ]
+                          text: "\($flagged - $shown) more not shown" } ] } ]
                     else [] end)
                else [] end)
             + (if ($run_url | length) > 0 then
