@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.12.3"
-  release_date: "2026-11-18"
+  version: "2.13.0"
+  release_date: "2026-11-19"
   changelog:
+    - version: "2.13.0"
+      date: "2026-11-19"
+      changes:
+        - "New scripts/dev-setup/windows.ps1: the macOS developer setup for Windows 10/11, run with `irm ... | iex` in PowerShell. Installs Git (with Git Bash), GitHub CLI, mise with Node LTS and corepack, jq, VS Code, Python, Claude Code and, when asked, .NET SDK 8 and current, all through winget and only when missing. Then git identity, `gh` login, the context repository, the ms-agentic-context skill and the bookmarks file with a browser import step, the same as on macOS."
     - version: "2.12.3"
       date: "2026-11-18"
       changes:

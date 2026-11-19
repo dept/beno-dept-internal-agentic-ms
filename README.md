@@ -99,7 +99,7 @@ The full migration can pre-scan your repo with **Graphify** before Discovery. Th
 
 See [docs/graphify-integration.md](docs/graphify-integration.md) for setup and troubleshooting.
 
-### New MS developer: set up your Mac
+### New MS developer: set up your Mac or Windows PC
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/dev-setup/macos.sh)
@@ -108,6 +108,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dept/beno-dept-internal-agen
 Installs the toolchain (Homebrew, git, gh, mise, corepack, VS Code, Claude Code, .NET SDKs),
 then, once your GitHub access works, the ms-agentic-context skill and a browser bookmarks file
 generated from every project's context.
+On Windows 10/11, in PowerShell (same steps, with winget instead of Homebrew):
+
+```powershell
+irm https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/scripts/dev-setup/windows.ps1 | iex
+```
+
 Safe to re-run. Access requests and everything else are on the Confluence page
 [MS Developer Onboarding](https://dept-nl.atlassian.net/wiki/spaces/MS/pages/21692416055).
 
@@ -314,6 +320,7 @@ dept-agentic-standards/
 │   ├── scaffold.sh                # Deterministic .ai/ folder creation
 │   ├── validate.sh                # Quality gate for .ai/ compliance
 │   ├── dev-setup/macos.sh         # One-run Mac setup for a new MS developer (not installed into projects)
+│   ├── dev-setup/windows.ps1      # The same setup for Windows 10/11 (PowerShell, winget)
 │   └── version-report.sh          # Which projects run an outdated standard version
 ├── standards/
 │   ├── agentic-project-standard.md # The formal standard definition
