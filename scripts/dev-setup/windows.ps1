@@ -182,11 +182,11 @@ else {
       Start-Sleep -Seconds 1
       $exe, $url = $browsers[$pick]
       if ($url) {
-        # Browsers ignore chrome:// style URLs passed on the command line, so the import page URL
-        # goes on the clipboard for the user to paste.
+        # Windows often keeps the new browser window behind other windows, and some browsers ignore
+        # settings URLs from the command line, so the URL also goes on the clipboard.
         Set-Clipboard -Value $url
-        Start-Process $exe
-        $how = "in the browser that just opened (check it is your work profile), press Ctrl+L, Ctrl+V, Enter to open $url (already on your clipboard). Choose 'Bookmarks HTML file', then Choose file."
+        Start-Process $exe $url
+        $how = "switch to $pick via the taskbar (Windows can open it behind other windows) and check it is your work profile. No import page? Press Ctrl+L, Ctrl+V, Enter to open $url (already on your clipboard). Choose 'Bookmarks HTML file', then Choose file."
       } else {
         Start-Process $exe
         $how = "press Ctrl+Shift+O (Library), click Import and Backup, then Import Bookmarks from HTML"
