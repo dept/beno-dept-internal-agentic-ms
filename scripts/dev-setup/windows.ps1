@@ -106,6 +106,7 @@ if (Had git) {
   if (-not (git config --global pull.rebase)) { git config --global pull.rebase false }
   # node_modules paths get longer than the old 260-character Windows limit
   if (-not (git config --global core.longpaths)) { git config --global core.longpaths true }
+  Write-Host "Git commits as $(git config --global user.name) <$(git config --global user.email)>"
 }
 
 # 4. GitHub login (HTTPS through gh, no SSH key needed)
@@ -181,8 +182,11 @@ else {
       Start-Sleep -Seconds 1
       $exe, $url = $browsers[$pick]
       if ($url) {
-        Start-Process $exe $url
-        $how = "in the import tab that just opened (check it is your work profile), choose 'Bookmarks HTML file', then Choose file. No import tab? Open Settings > Import bookmarks and settings."
+        # Browsers ignore chrome:// style URLs passed on the command line, so the import page URL
+        # goes on the clipboard for the user to paste.
+        Set-Clipboard -Value $url
+        Start-Process $exe
+        $how = "in the browser that just opened (check it is your work profile), press Ctrl+L, Ctrl+V, Enter to open $url (already on your clipboard). Choose 'Bookmarks HTML file', then Choose file."
       } else {
         Start-Process $exe
         $how = "press Ctrl+Shift+O (Library), click Import and Backup, then Import Bookmarks from HTML"
