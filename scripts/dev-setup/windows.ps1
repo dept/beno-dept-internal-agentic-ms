@@ -56,7 +56,7 @@ if (Had claude) { Skip "Claude Code" } else {
 # .NET is only for the .NET projects, so it is opt-in: answer y, or set $env:DOTNET = '1' first.
 $sdks = if (Had dotnet) { (dotnet --list-sdks 2>$null) -join "`n" } else { '' }
 $has8 = $sdks -match '(?m)^8\.'
-# ponytail: current major is fixed here; bump it (and the winget id below) when a new .NET LTS/STS ships.
+# The current .NET major is fixed here: bump it (and the winget id below) when a new .NET LTS/STS ships.
 $dotnetCurrent = 10
 $hasNew = [bool](($sdks -split "`n") | Where-Object { $_ -match '^(\d+)\.' -and [int]$Matches[1] -ge $dotnetCurrent })
 if ($has8 -and $hasNew) { Skip ".NET SDK 8 and current" } else {
