@@ -117,7 +117,9 @@ if (Had gh) {
   gh auth status *> $null
   $ghOk = $LASTEXITCODE -eq 0
   if (-not $ghOk) { $TODO.Add("Log in to GitHub: gh auth login --web, then re-run this script.") }
-  elseif (-not (git config --global --get-regexp '^credential\.https://github\.com')) { gh auth setup-git }
+  # Any helper that already applies to github.com (for example Git Credential Manager from the Git
+  # installer, in system config) is left as it is; gh becomes the helper only when there is none.
+  elseif (-not (git config --get-urlmatch credential.helper https://github.com)) { gh auth setup-git }
 }
 
 # 5. MS project context + ms-agentic-context skill for Claude Code
