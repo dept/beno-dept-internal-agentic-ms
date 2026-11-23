@@ -9,6 +9,7 @@ standard:
     - version: "2.13.0"
       date: "2026-11-19"
       changes:
+        - "config/mcp-registry.yml wires the Atlassian MCP to `https://mcp.atlassian.com/v2/mcp`. The `/v1/mcp` endpoint is deprecated and Atlassian removes it on 2027-03-01; until then every session on it receives a deprecation notice to relay. Only the path moves, OAuth is unchanged and needs one re-authorization. Already-migrated repositories carry the v1 URL in their MCP configs until edited."
         - "New scripts/dev-setup/windows.ps1: the macOS developer setup for Windows 10/11, run with `irm ... | iex` in PowerShell. Installs Git (with Git Bash), GitHub CLI, mise with Node LTS and corepack, jq, VS Code, Python, Claude Code and, when asked, .NET SDK 8 and current, all through winget and only when missing. Then git identity, `gh` login, the context repository, the ms-agentic-context skill and the bookmarks file with a browser import step, the same as on macOS."
     - version: "2.12.3"
       date: "2026-11-18"

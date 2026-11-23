@@ -150,10 +150,10 @@ servers:
     protocol: http
     vscode_config:
       type: "http"
-      url: "https://mcp.atlassian.com/v1/mcp"
+      url: "https://mcp.atlassian.com/v2/mcp"
     auth: "OAuth (browser flow on first connect)"
-    note: "Covers Jira, Confluence, and other Atlassian products in one server. Uses OAuth."
-    last_verified: "2026-06-17"
+    note: "Covers Jira, Confluence, and other Atlassian products in one server. Uses OAuth. `/v2/mcp` is the supported path: `/v1/mcp` (and `/v1/sse`, `/v1/mcp/authv2`) is deprecated and removed on 2027-03-01."
+    last_verified: "2026-11-11"
 
   # ─── Design ───────────────────────────────────────────────────────────────
 
