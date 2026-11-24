@@ -32,8 +32,9 @@
 # what happened without opening the run. Without them the run says so and carries on.
 #
 # Run the first pass with dry_run true (the default below): it prints the full report and
-# an issue preview but deletes, tags and opens nothing. Only trust the schedule once a dry
-# run has been read and the env chain and keep patterns look right for this repo.
+# an issue preview but deletes, tags and opens nothing. The schedule is a dry run as well until
+# BRANCH_HYGIENE_SCHEDULE_DRY_RUN is set to 'false': flip it only once a dry run has been read
+# and the env chain and keep patterns look right for this repo.
 name: Branch hygiene
 
 on:
@@ -72,9 +73,10 @@ jobs:
       - name: Run branch hygiene
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Scheduled runs always act for real; workflow_dispatch honours the dry_run input
-          # (default true), so a first manual run is safe by default.
-          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          # Dry run first: the scheduled run reports but deletes, tags and opens nothing until
+          # this repository sets the BRANCH_HYGIENE_SCHEDULE_DRY_RUN variable to 'false' (unset
+          # counts as 'true'). workflow_dispatch always honours its own dry_run input (default true).
+          DRY_RUN: ${{ github.event_name == 'schedule' && (vars.BRANCH_HYGIENE_SCHEDULE_DRY_RUN || 'true') || inputs.dry_run }}
           # Repository variables, each optional. An unset variable is the empty string, which
           # is falsy in an Actions expression, so `||` supplies the default without the repo
           # having to define anything. The script applies the same defaults again, so a local
