@@ -84,9 +84,15 @@ echo "dry_run=${DRY_RUN} stale_days=${STALE_DAYS} archive_days=${ARCHIVE_DAYS} p
 # ---------------------------------------------------------------------------
 
 # CI checks out with a remote named "origin". A local clone can have it under any name
-# (e.g. a fork remote), so fall back to the sole configured remote when "origin" is absent.
-REMOTE="origin"
-if ! git remote get-url origin >/dev/null 2>&1; then
+# (e.g. a fork remote): an explicit REMOTE wins, else "origin", else the sole configured remote.
+if [[ -n "${REMOTE:-}" ]]; then
+  if ! git remote get-url "$REMOTE" >/dev/null 2>&1; then
+    echo "REMOTE='${REMOTE}' is not a configured remote." >&2
+    exit 1
+  fi
+elif git remote get-url origin >/dev/null 2>&1; then
+  REMOTE="origin"
+else
   # `mapfile`/`readarray` is bash 4.0+; the macOS default bash is 3.2, so read line by line.
   declare -a remotes=()
   while IFS= read -r r; do
@@ -123,7 +129,7 @@ for e in "${env_list[@]}"; do
 done
 
 if [[ ${#ENV_CHAIN[@]} -eq 0 ]]; then
-  echo "No configured env branch exists on origin (ENV_BRANCHES=${ENV_BRANCHES_RAW}); nothing to do."
+  echo "No configured env branch exists on ${REMOTE} (ENV_BRANCHES=${ENV_BRANCHES_RAW}); nothing to do."
   exit 0
 fi
 

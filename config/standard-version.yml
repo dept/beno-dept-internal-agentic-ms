@@ -3,9 +3,13 @@
 # Bump this when templates, required files, or agent definitions change.
 
 standard:
-  version: "2.13.0"
-  release_date: "2026-11-19"
+  version: "2.13.1"
+  release_date: "2026-11-24"
   changelog:
+    - version: "2.13.1"
+      date: "2026-11-24"
+      changes:
+        - "scripts/branch-hygiene.sh honors an explicit `REMOTE` environment variable (and stops when it names no configured remote). Before, the script always started from `origin`, so the \"set REMOTE explicitly\" hint for a clone with several remotes and no `origin` had no effect."
     - version: "2.13.0"
       date: "2026-11-19"
       changes:
