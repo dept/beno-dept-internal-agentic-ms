@@ -254,7 +254,7 @@ outright, and the keep patterns and the env branches themselves are never touche
 
 **Safe by default.** A `workflow_dispatch` run is a dry run unless you clear the `dry_run` box: it
 prints the full report and deletes, tags and opens nothing. The monthly schedule is a dry run too
-until the repository variable `BRANCH_HYGIENE_SCHEDULE_DRY_RUN` is set to `false`: read a report
+until the repository variable `BRANCH_HYGIENE_SCHEDULE_DRY_RUN` is set to `false` (exactly, lowercase; any other value keeps it a dry run): read a report
 first, then flip it to let the schedule act for real.
 
 **A run reports to three places.** The job summary carries all five tiers, each row with the
