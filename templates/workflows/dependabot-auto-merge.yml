@@ -50,7 +50,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr checks "$PR_URL" --watch --fail-fast --interval 60
+          SELF: ${{ github.job }}
+        # Not `gh pr checks --watch`: that also waits on this job's own check, which cannot finish
+        # while it watches, so every run sat until the timeout and merged nothing. Earlier runs of
+        # this job cancelled by the concurrency group would also count as failures. Both carry
+        # this job's name, so the loop drops it and judges the other checks only.
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + 55 * 60))
+          while [[ $SECONDS -lt $deadline ]]; do
+            # gh exits non-zero while checks are pending or failed; the JSON is still printed.
+            json=$(gh pr checks "$PR_URL" --json name,bucket 2>/dev/null || true)
+            others=$(jq -c --arg self "$SELF" '[.[]? | select(.name != $self)]' <<< "${json:-[]}")
+            total=$(jq 'length' <<< "$others")
+            failed=$(jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' <<< "$others")
+            pending=$(jq '[.[] | select(.bucket == "pending")] | length' <<< "$others")
+            echo "checks: $total total, $pending pending, $failed failed"
+            if [[ $failed -gt 0 ]]; then
+              jq -r '.[] | select(.bucket == "fail" or .bucket == "cancel") | "failed: \(.name)"' <<< "$others"
+              exit 1
+            fi
+            if [[ $total -gt 0 && $pending -eq 0 ]]; then
+              exit 0
+            fi
+            sleep 60
+          done
+          echo "checks still pending after 55 minutes"
+          exit 1
 
       - name: Merge
         if: steps.checks.outcome == 'success'
