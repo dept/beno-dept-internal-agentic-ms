@@ -28,6 +28,8 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  checks: read
+  statuses: read
 
 concurrency:
   group: dependabot-auto-merge-${{ github.event.pull_request.number }}
@@ -58,9 +60,13 @@ jobs:
         run: |
           set -euo pipefail
           deadline=$((SECONDS + 55 * 60))
+          green=0
           while [[ $SECONDS -lt $deadline ]]; do
             # gh exits non-zero while checks are pending or failed; the JSON is still printed.
-            json=$(gh pr checks "$PR_URL" --json name,bucket 2>/dev/null || true)
+            json=$(gh pr checks "$PR_URL" --json name,bucket 2> "$RUNNER_TEMP/gh-err.txt" || true)
+            if [[ -z $json && -s "$RUNNER_TEMP/gh-err.txt" ]]; then
+              cat "$RUNNER_TEMP/gh-err.txt"
+            fi
             others=$(jq -c --arg self "$SELF" '[.[]? | select(.name != $self)]' <<< "${json:-[]}")
             total=$(jq 'length' <<< "$others")
             failed=$(jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' <<< "$others")
@@ -70,8 +76,15 @@ jobs:
               jq -r '.[] | select(.bucket == "fail" or .bucket == "cancel") | "failed: \(.name)"' <<< "$others"
               exit 1
             fi
+            # Green twice, a minute apart: a fast check can finish before a slower workflow has
+            # registered its own, and one green poll would merge before that CI ever ran.
             if [[ $total -gt 0 && $pending -eq 0 ]]; then
-              exit 0
+              green=$((green + 1))
+              if [[ $green -ge 2 ]]; then
+                exit 0
+              fi
+            else
+              green=0
             fi
             sleep 60
           done
