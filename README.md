@@ -253,8 +253,9 @@ the target and defeats the ancestor test on its own. Any branch with an open PR 
 outright, and the keep patterns and the env branches themselves are never touched.
 
 **Safe by default.** A `workflow_dispatch` run is a dry run unless you clear the `dry_run` box: it
-prints the full report and deletes, tags and opens nothing. Only the schedule runs for real. Run
-one dispatch dry run and read its report before trusting the monthly schedule for a repository.
+prints the full report and deletes, tags and opens nothing. The monthly schedule is a dry run too
+until the repository variable `BRANCH_HYGIENE_SCHEDULE_DRY_RUN` is set to `false`: read a report
+first, then flip it to let the schedule act for real.
 
 **A run reports to three places.** The job summary carries all five tiers, each row with the
 branch's tip sha, which is the recovery record for a tier 1 delete (`git branch <branch> <tip>`).

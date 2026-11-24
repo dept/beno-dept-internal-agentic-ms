@@ -377,15 +377,14 @@ promotion pull requests for what reached production but not every lower environm
 (tags, then deletes) what has not been touched in a long time. Inline (no separate prompt file).
 **Always ask**, defaulting to yes, and ask the delivery lead, not only the developer running the
 migration: this hands a bot the right to delete branches and open pull requests unattended. Only
-a manual `workflow_dispatch` defaults to a dry run (`dry_run: true`); the monthly `schedule` trigger
-always acts for real, with no separate opt-in step, so accepting this question is accepting that
-the first scheduled run (the 1st of next month by default) deletes, tags and opens pull requests,
-not just reports. Run it once by hand via `workflow_dispatch` and read the report before the
-schedule fires, per step 6 below.
+every run starts as a dry run: a manual `workflow_dispatch` through its `dry_run` input (default
+`true`), the monthly `schedule` until the repository variable `BRANCH_HYGIENE_SCHEDULE_DRY_RUN` is
+set to `false`. Accepting this question installs a monthly report; acting for real is a separate
+opt-in, taken once the team has read a report, per step 6 below.
 
 Ask, verbatim in spirit:
 
-> Install the monthly branch hygiene workflow? The schedule acts for real from its first run: run it once manually (dry run) and read the report before trusting it. Default yes. [yes / no]
+> Install the monthly branch hygiene workflow? It reports only until you set `BRANCH_HYGIENE_SCHEDULE_DRY_RUN=false` after reading a dry-run report. Default yes. [yes / no]
 
 If **yes**:
 1. Fetch `https://raw.githubusercontent.com/dept/beno-dept-internal-agentic-ms/main/templates/workflows/branch-hygiene.yml` → write to `.github/workflows/branch-hygiene.yml`. If that file already exists, show the diff and ask before overwriting.
@@ -406,7 +405,9 @@ If **yes**:
    many branches the message lists.
 5. Confirm the default-branch guard names this repo's actual default branch (`main` or `master`).
 6. Run it once via `workflow_dispatch` with `dry_run` left at its default `true`, and read the
-   report, before trusting the monthly schedule (which always runs for real).
+   report. Only then let the monthly schedule act for real:
+   `gh variable set BRANCH_HYGIENE_SCHEDULE_DRY_RUN --body false`. Until that variable is `false`
+   (unset counts as `true`), the schedule only reports.
 
 If **no**: skip it. Stale branches stay a manual cleanup.
 
