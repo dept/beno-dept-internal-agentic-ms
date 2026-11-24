@@ -9,6 +9,7 @@ standard:
     - version: "2.13.1"
       date: "2026-11-24"
       changes:
+        - "templates/workflows/dependabot-auto-merge.yml reads an optional Actions variable `DEPENDABOT_REQUIRED_CHECKS`: check names, one per line, that must each have passed (missing, pending or skipped does not count) before the wait counts as green. One per line, not comma-separated, because check names can contain commas. Without it, a repository whose CI runs outside GitHub Actions (Azure Pipelines) could merge after two green polls of a faster check, before its CI check had registered. Unset keeps the old behaviour. The Phase 4c auto-merge step in prompts/migrate.prompt.md now asks for it where CI runs outside GitHub Actions, and a timeout names the required checks that never passed. The installer does not refresh workflows: copy the step by hand, then set the variable before turning `DEPENDABOT_AUTO_MERGE` on."
         - "scripts/branch-hygiene.sh honors an explicit `REMOTE` environment variable (and stops when it names no configured remote). Before, the script always started from `origin`, so the \"set REMOTE explicitly\" hint for a clone with several remotes and no `origin` had no effect."
     - version: "2.13.0"
       date: "2026-11-19"

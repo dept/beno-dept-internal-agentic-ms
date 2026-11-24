@@ -19,6 +19,12 @@
 # *required status checks* is satisfied the moment the pull request exists, so `--auto`
 # would merge before CI had run at all. Watching the checks here holds "green first" without
 # depending on someone having marked the right check as required.
+#
+# Where CI runs outside GitHub Actions (Azure Pipelines, Jenkins), its check can register
+# minutes after the pull request opens, after a faster check has already gone green. Set the
+# Actions variable DEPENDABOT_REQUIRED_CHECKS to the check names, one per line (as the pull
+# request's Checks list shows them; a line, not a comma, because names can contain commas), and
+# the wait holds until each of them has passed: missing, pending or skipped does not count.
 name: Dependabot patch auto-merge
 
 on:
@@ -53,6 +59,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           SELF: ${{ github.job }}
+          REQUIRED: ${{ vars.DEPENDABOT_REQUIRED_CHECKS }}
         # Not `gh pr checks --watch`: that also waits on this job's own check, which cannot finish
         # while it watches, so every run sat until the timeout and merged nothing. Earlier runs of
         # this job cancelled by the concurrency group would also count as failures. Both carry
@@ -71,14 +78,19 @@ jobs:
             total=$(jq 'length' <<< "$others")
             failed=$(jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' <<< "$others")
             pending=$(jq '[.[] | select(.bucket == "pending")] | length' <<< "$others")
-            echo "checks: $total total, $pending pending, $failed failed"
+            # Names from DEPENDABOT_REQUIRED_CHECKS that have not passed yet (missing, pending, skipped).
+            missing=$(jq -r --arg req "${REQUIRED:-}" '. as $all | $req | split("\n")
+              | map(gsub("^\\s+|\\s+$"; ""))
+              | map(select(length > 0 and (. as $n | any($all[]; .name == $n and .bucket == "pass") | not)))
+              | join(", ")' <<< "$others")
+            echo "checks: $total total, $pending pending, $failed failed, missing: ${missing:-none}"
             if [[ $failed -gt 0 ]]; then
               jq -r '.[] | select(.bucket == "fail" or .bucket == "cancel") | "failed: \(.name)"' <<< "$others"
               exit 1
             fi
             # Green twice, a minute apart: a fast check can finish before a slower workflow has
             # registered its own, and one green poll would merge before that CI ever ran.
-            if [[ $total -gt 0 && $pending -eq 0 ]]; then
+            if [[ $total -gt 0 && $pending -eq 0 && -z $missing ]]; then
               green=$((green + 1))
               if [[ $green -ge 2 ]]; then
                 exit 0
@@ -88,7 +100,7 @@ jobs:
             fi
             sleep 60
           done
-          echo "checks still pending after 55 minutes"
+          echo "checks not green after 55 minutes (last poll: $total checks, $pending pending, required not passed: ${missing:-none})"
           exit 1
 
       - name: Merge
