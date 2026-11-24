@@ -22,8 +22,9 @@
 #
 # Where CI runs outside GitHub Actions (Azure Pipelines, Jenkins), its check can register
 # minutes after the pull request opens, after a faster check has already gone green. Set the
-# Actions variable DEPENDABOT_REQUIRED_CHECKS to a comma-separated list of check names (as the
-# pull request's Checks list shows them) and the wait holds until each of them exists and passed.
+# Actions variable DEPENDABOT_REQUIRED_CHECKS to the check names, one per line (as the pull
+# request's Checks list shows them; a line, not a comma, because names can contain commas), and
+# the wait holds until each of them has passed: missing, pending or skipped does not count.
 name: Dependabot patch auto-merge
 
 on:
@@ -77,10 +78,10 @@ jobs:
             total=$(jq 'length' <<< "$others")
             failed=$(jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' <<< "$others")
             pending=$(jq '[.[] | select(.bucket == "pending")] | length' <<< "$others")
-            # Names from DEPENDABOT_REQUIRED_CHECKS that have not registered on the pull request yet.
-            missing=$(jq -r --arg req "${REQUIRED:-}" '[.[].name] as $have | $req | split(",")
+            # Names from DEPENDABOT_REQUIRED_CHECKS that have not passed yet (missing, pending, skipped).
+            missing=$(jq -r --arg req "${REQUIRED:-}" '. as $all | $req | split("\n")
               | map(gsub("^\\s+|\\s+$"; ""))
-              | map(select(length > 0 and (. as $n | any($have[]; . == $n) | not)))
+              | map(select(length > 0 and (. as $n | any($all[]; .name == $n and .bucket == "pass") | not)))
               | join(", ")' <<< "$others")
             echo "checks: $total total, $pending pending, $failed failed, missing: ${missing:-none}"
             if [[ $failed -gt 0 ]]; then
@@ -99,7 +100,7 @@ jobs:
             fi
             sleep 60
           done
-          echo "checks still pending after 55 minutes"
+          echo "checks not green after 55 minutes (last poll: $total checks, $pending pending, required not passed: ${missing:-none})"
           exit 1
 
       - name: Merge
