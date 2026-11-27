@@ -371,15 +371,14 @@ version_lt() {
 }
 
 RECORDED_VERSION=$(read_version_field "${AI_DIR}/.meta.yml" "standard_version")
-# A project repository carries a vendored copy of the version file. A central project folder does
-# not, so there the standard this script ships with is the reference.
-VERSION_FILE="${PROJECT_DIR}/config/standard-version.yml"
-if [[ "$CENTRAL" = true ]]; then
-  VERSION_FILE="$(cd "$(dirname "$0")" && pwd)/../config/standard-version.yml"
-fi
-CURRENT_VERSION=$(read_version_field "$VERSION_FILE" "version")
+CURRENT_VERSION=$(read_version_field "${PROJECT_DIR}/config/standard-version.yml" "version")
 
-if [[ -z "$RECORDED_VERSION" ]] || [[ "$RECORDED_VERSION" = "null" ]]; then
+# The central repository's Maintain context workflow runs the current standard for every project,
+# so a central project folder has nothing to refresh: its standard_version only records the
+# standard that first generated the context.
+if [[ "$CENTRAL" = true ]]; then
+  echo "  skipped: the central repository maintains every project on the current standard"
+elif [[ -z "$RECORDED_VERSION" ]] || [[ "$RECORDED_VERSION" = "null" ]]; then
   echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records no standard_version, cannot check for drift"
   WARNED=$((WARNED + 1))
 elif [[ -z "$CURRENT_VERSION" ]]; then
@@ -390,9 +389,7 @@ elif [[ "$RECORDED_VERSION" = "$CURRENT_VERSION" ]]; then
   PASSED=$((PASSED + 1))
 elif version_lt "$RECORDED_VERSION" "$CURRENT_VERSION"; then
   echo -e "  ${YELLOW}△${NC} project is on standard ${RECORDED_VERSION}, current is ${CURRENT_VERSION}"
-  if [[ "$CENTRAL" != true ]]; then
-    echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
-  fi
+  echo -e "    ${YELLOW}Refresh:${NC} bash scripts/install.sh . --update"
   WARNED=$((WARNED + 1))
 else
   echo -e "  ${YELLOW}△${NC} .ai/.meta.yml records standard ${RECORDED_VERSION}, ahead of the vendored ${CURRENT_VERSION}"
