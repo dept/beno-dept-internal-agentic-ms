@@ -71,7 +71,7 @@ jobs:
           green=0
           while [[ $SECONDS -lt $deadline ]]; do
             # gh exits non-zero while checks are pending or failed; the JSON is still printed.
-            json=$(gh pr checks "$PR_URL" --json name,bucket 2> "$RUNNER_TEMP/gh-err.txt" || true)
+            json=$(gh pr checks "$PR_URL" --json name,bucket,workflow 2> "$RUNNER_TEMP/gh-err.txt" || true)
             if [[ -z $json && -s "$RUNNER_TEMP/gh-err.txt" ]]; then
               cat "$RUNNER_TEMP/gh-err.txt"
             fi
