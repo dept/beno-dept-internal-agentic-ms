@@ -1,4 +1,5 @@
-# Tiered stale-branch cleanup. Once a month it classifies every branch on origin and acts:
+# Tiered stale-branch cleanup. Once a month it classifies every branch on origin and, once
+# BRANCH_HYGIENE_SCHEDULE_DRY_RUN is 'false' (until then it only reports), acts:
 #   1. delete    merged into every configured env branch                -> deletes it
 #   2. promote   merged into production, missing from a lower env       -> opens a promotion PR
 #   3. flag      merged into a lower env, missing from a higher one, stale -> listed in a report issue
