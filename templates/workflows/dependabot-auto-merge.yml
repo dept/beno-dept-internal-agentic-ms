@@ -58,26 +58,30 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          SELF: ${{ github.job }}
+          SELF: ${{ github.workflow }}
           REQUIRED: ${{ vars.DEPENDABOT_REQUIRED_CHECKS }}
         # Not `gh pr checks --watch`: that also waits on this job's own check, which cannot finish
         # while it watches, so every run sat until the timeout and merged nothing. Earlier runs of
-        # this job cancelled by the concurrency group would also count as failures. Both carry
-        # this job's name, so the loop drops it and judges the other checks only.
+        # this job cancelled by the concurrency group would also count as failures. The loop drops
+        # every check of this workflow by workflow name, which still holds when the job gets a
+        # `name:`, and judges the other checks only.
         run: |
           set -euo pipefail
           deadline=$((SECONDS + 55 * 60))
           green=0
           while [[ $SECONDS -lt $deadline ]]; do
             # gh exits non-zero while checks are pending or failed; the JSON is still printed.
-            json=$(gh pr checks "$PR_URL" --json name,bucket 2> "$RUNNER_TEMP/gh-err.txt" || true)
+            json=$(gh pr checks "$PR_URL" --json name,bucket,workflow 2> "$RUNNER_TEMP/gh-err.txt" || true)
             if [[ -z $json && -s "$RUNNER_TEMP/gh-err.txt" ]]; then
               cat "$RUNNER_TEMP/gh-err.txt"
             fi
-            others=$(jq -c --arg self "$SELF" '[.[]? | select(.name != $self)]' <<< "${json:-[]}")
+            others=$(jq -c --arg self "$SELF" '[.[]? | select(.workflow != $self)]' <<< "${json:-[]}")
             total=$(jq 'length' <<< "$others")
-            failed=$(jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' <<< "$others")
-            pending=$(jq '[.[] | select(.bucket == "pending")] | length' <<< "$others")
+            failed=$(jq '[.[] | select(.bucket == "fail")] | length' <<< "$others")
+            # A cancelled check is not green, but not a failure either: another workflow's own
+            # concurrency group cancels its older run when Dependabot rebases, and the new run
+            # follows. A check that stays cancelled holds the wait until the deadline.
+            pending=$(jq '[.[] | select(.bucket == "pending" or .bucket == "cancel")] | length' <<< "$others")
             # Names from DEPENDABOT_REQUIRED_CHECKS that have not passed yet (missing, pending, skipped).
             missing=$(jq -r --arg req "${REQUIRED:-}" '. as $all | $req | split("\n")
               | map(gsub("^\\s+|\\s+$"; ""))
@@ -85,7 +89,7 @@ jobs:
               | join(", ")' <<< "$others")
             echo "checks: $total total, $pending pending, $failed failed, missing: ${missing:-none}"
             if [[ $failed -gt 0 ]]; then
-              jq -r '.[] | select(.bucket == "fail" or .bucket == "cancel") | "failed: \(.name)"' <<< "$others"
+              jq -r '.[] | select(.bucket == "fail") | "failed: \(.name)"' <<< "$others"
               exit 1
             fi
             # Green twice, a minute apart: a fast check can finish before a slower workflow has
