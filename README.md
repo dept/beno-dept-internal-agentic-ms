@@ -432,6 +432,10 @@ See [docs/success-metrics.md](docs/success-metrics.md) for:
   (`bash scripts/install.sh . --update`). A missing version on either side is a warning, not a
   failure. It runs inside a project and only sees that project's vendored copy, so use
   `version-report.sh` for the comparison against the current standard.
+- **A project on the central context repository has no version to keep current.** The central
+  Maintain context workflow runs the current standard for every project folder, so the
+  `standard_version` in such a folder only records the standard that first generated the context.
+  `validate.sh` skips the drift check there, and `version-report.sh` is not run against it.
 
 ## Contributing
 
